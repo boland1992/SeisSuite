@@ -13,9 +13,19 @@ import os
 
 
 FOLDER = ""
-from pysismo.psconfig import (FOLDER)
+try:
+    from pysismo.psconfig import (FOLDER)
+except Exception as error:
+    print error
+    print "If there was an import error, please install Anaconda\n\
+http://continuum.io/downloads"
 
-if os.path.exists(FOLDER) and FOLDER != "False":
+if FOLDER == 'DEFAULT':
+    FOLDER = os.getcwd()    
+    
+print FOLDER
+
+if os.path.exists(FOLDER) and FOLDER != os.getcwd():
      raise Exception("\nThis folder path is already in use. Please go back to config\
  file and choose another path.\n")
  

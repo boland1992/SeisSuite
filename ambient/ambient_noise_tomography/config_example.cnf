@@ -62,9 +62,10 @@
 
 #Set one folder path. This folder path will be used by setup.py to create input folders (DATA, DATALESS and XML)
 #and output folders (CROSS, FTAN, TOMO and DEPTH). if folder path is set to False then 
-# default is the in the home folder
+# if folder reads DEFAULT the current working directory of the application will be chosen 
 
-FOLDER = /home/seis_suite
+
+FOLDER = DEFAULT
 
 
 #set the folder where the computer programs in seismology have been installed if required. 

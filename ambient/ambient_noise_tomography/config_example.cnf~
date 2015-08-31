@@ -158,6 +158,7 @@ CROSSCORR_TMAX = 300                 ; number of seconds for xcorr window both p
 # - estimate min spectral SNR, in FTANs()
 
 PERIOD_BANDS = [[4, 7], [7, 15], [10, 22], [15, 30], [20, 35]]
+
 # (these bands focus on periods ~5, 10, 15, 20, 25 seconds)
 
 # default parameters to define the signal and noise windows used to
