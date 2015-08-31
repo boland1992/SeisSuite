@@ -1,0 +1,23 @@
+The following is a list of reference material for the seis_suite application. 
+
+
+References
+
+Barmin, M., Ritzwoller, M., & Levshin, A. (2001). A Fast and Reliable Method for Surface Wave Tomography. Pure And Applied Geophysics, 158(8), 1351-1375. doi:10.1007/pl00001225
+
+Bensen, G., Ritzwoller, M., Barmin, M., Levshin, A., Lin, F., & Moschetti, M. et al. (2007). Processing seismic ambient noise data to obtain reliable broad-band surface wave dispersion measurements. Geophysical Journal International, 169(3), 1239-1260. doi:10.1111/j.1365-246x.2007.03374.x
+
+Langet, N., Maggi, A., Michelini, A., & Brenguier, F. (2014). Continuous Kurtosis-Based Migration for Seismic Event Detection and Location, with Application to Piton de la Fournaise Volcano, La Reunion. Bulletin Of The Seismological Society Of America, 104(1), 229-246. doi:10.1785/0120130107
+
+Levshin, A., & Ritzwoller, M. (2001). Automated Detection, Extraction, and Measurement of Regional Surface Waves. Pure And Applied Geophysics, 158(8), 1531-1545. doi:10.1007/pl00001233
+
+Rost, S. (2002). Array seismology: Methods and applications. Rev. Geophys., 40(3). doi:10.1029/2000rg000100
+
+Schimmel, M., & Gallart, J. (2007). Frequency-dependent phase coherence for noise suppression in seismic array data. J. Geophys. Res., 112(B4). doi:10.1029/2006jb004680
+
+Schimmel, M., & Paulssen, H. (1997). Noise reduction and detection of weak, coherent signals through phase-weighted stacks. Geophysical Journal International, 130(2), 497-505. doi:10.1111/j.1365-246x.1997.tb05664.x
+
+Thurber, C., Zeng, X., Thomas, A., & Audet, P. (2014). Phase-Weighted Stacking Applied to Low-Frequency Earthquakes. Bulletin Of The Seismological Society Of America, 104(5), 2567-2572. doi:10.1785/0120140077
+
+Thurber, C., Zeng, X., Thomas, A., & Audet, P. (2014). Phase-Weighted Stacking Applied to Low-Frequency Earthquakes. Bulletin Of The Seismological Society Of America, 104(5), 2567-2572. doi:10.1785/0120140077
+

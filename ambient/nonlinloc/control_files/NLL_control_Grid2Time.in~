@@ -1,0 +1,131 @@
+
+# =============================================================================
+#  Sample NonLinLoc programs control file - Edited By Abe Jones
+#
+#  NonLinLoc Version 2.3 - APR2001
+#
+#  Anthony Lomax <anthony@alomax.net>
+#
+#  See "Control File" and "Running the Sample Location" pages
+#     in the NonLicLoc on-line documentation:
+#     http://www.alomax.net/nlloc
+# =============================================================================
+
+
+# =============================================================================
+# =============================================================================
+# Generic control file statements
+# =============================================================================
+#
+#
+
+
+# INCLUDE <include_file_name>
+
+CONTROL 2 54321
+
+TRANS LAMBERT WGS-84 -39.5 115.0 0.0 1.0 0.0
+
+#MAPLINE formatType name red green blue lineStyle
+
+#MAPGRID xNum yNum zNum xOrig yOrig zOrig dx dy dz gridType
+
+#
+#
+# =============================================================================
+# END of Generic control file statements
+# =============================================================================
+# =============================================================================
+
+
+
+
+
+#
+#
+# =============================================================================
+# =============================================================================
+# Grid2Time control file statements
+# =============================================================================
+#
+#
+
+
+GTFILES  ./layers/layer  ./layers/layer P
+
+GTMODE GRID2D ANGLES_NO
+
+
+#INSERT AUTOMATED GTSRCE HERE! e.g.
+GTSRCE AUALB LATLON -34.9995 117.9046 0.0 0.050
+GTSRCE AUAYR LATLON -19.5774 147.4088 0.0 0.013
+GTSRCE AUBSH LATLON -26.8640 152.9547 0.0 0.026
+GTSRCE AUBUS LATLON -33.6601 115.3828 0.0 0.013
+GTSRCE AUCAS LATLON -34.2637 135.7219 0.0 0.072
+GTSRCE AUDCS LATLON -32.2334 148.6278 0.0 0.276
+GTSRCE AUDHS LATLON -12.4400 130.8330 0.0 0.026
+GTSRCE AUHPC LATLON -38.1068 142.3183 0.0 0.011
+GTSRCE AUJCS LATLON -33.2047 138.6098 0.0 0.464
+GTSRCE AUKAL LATLON -30.7637 121.4789 0.0 0.373
+GTSRCE AUKAR LATLON -20.7520 116.8178 0.0 0.045
+GTSRCE AUKAT LATLON -14.4624 132.2829 0.0 0.122
+GTSRCE AUKHS LATLON -33.4642 151.3827 0.0 0.027
+GTSRCE AUKSC LATLON -37.9684 145.1584 0.0 0.050
+GTSRCE AULHS LATLON -41.2519 147.2150 0.0 0.173
+GTSRCE AULRC LATLON -29.4262 147.9790 0.0 0.145
+GTSRCE AUMAG LATLON -36.1016 144.7482 0.0 0.127
+GTSRCE AUMAR LATLON -34.8916 138.6357 0.0 0.153
+GTSRCE AUMAZ LATLON -32.0069 116.0384 0.0 0.263
+GTSRCE AUMHS LATLON -35.3635 149.0888 0.0 0.615
+GTSRCE AUMOU LATLON -24.5752 149.9814 0.0 0.153
+GTSRCE AUMTC LATLON -37.6089 143.8771 0.0 0.049
+GTSRCE AUMTS LATLON -35.3188 148.9964 0.0 0.667
+GTSRCE AUMUL LATLON -28.5585 153.0372 0.0 0.060
+GTSRCE AUNHS LATLON -12.1874 136.7832 0.0 0.020
+GTSRCE AUNRC LATLON -23.3529 150.5329 0.0 0.038
+GTSRCE AUPHS LATLON -31.0990 150.8943 0.0 0.404
+GTSRCE AUROX LATLON -30.5601 136.8971 0.0 0.106
+GTSRCE AURSC LATLON -38.3680 144.8866 0.0 0.023
+GTSRCE AUSIS LATLON -35.2839 149.1147 0.0 0.585
+GTSRCE AUSMG LATLON -36.4161 148.6084 0.0 0.951
+GTSRCE AUSSC LATLON -38.0977 147.0825 0.0 0.019
+GTSRCE AUTAR LATLON -42.9425 147.3551 0.0 0.025
+GTSRCE AUTOO LATLON -27.5452 151.9668 0.0 0.687
+GTSRCE AUUHS LATLON -35.3589 150.4696 0.0 0.044
+GTSRCE AUWSH LATLON -27.3977 153.0372 0.0 0.060
+
+
+GT_PLFD  1.0e-3  0
+
+#
+#
+# =============================================================================
+# END of Grid2Time control file statements
+# =============================================================================
+# =============================================================================
+
+
+
+
+# =============================================================================
+# =============================================================================
+# NLLoc control file statements
+# =============================================================================
+#
+#
+
+# signature
+# (LOCSIG signature)
+Benjamin Boland and Abraham Jones - The University of Melbourne
+
+# comment
+# (LOCCOM comment)
+2015 Test Control File
+
+
+#
+#
+# =============================================================================
+# END of NLLoc control file statements
+# =============================================================================
+# =============================================================================

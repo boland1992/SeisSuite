@@ -1,0 +1,52 @@
+
+# =============================================================================
+#  Sample NonLinLoc programs control file - Edited By Abe Jones
+#
+#  NonLinLoc Version 2.3 - APR2001
+#
+#  Anthony Lomax <anthony@alomax.net>
+#
+#  See "Control File" and "Running the Sample Location" pages
+#     in the NonLicLoc on-line documentation:
+#     http://www.alomax.net/nlloc
+# =============================================================================
+
+
+# = comment
+
+# non-nested include files allowed, use:
+# INCLUDE <include_file_name>
+
+
+# =============================================================================
+# =============================================================================
+# Generic control file statements
+# =============================================================================
+#
+#
+
+# control (CONTROL message_flag (0:silent,1:few messages,2:verbose,...),
+#		RandomNumSeed)
+
+CONTROL 2 54321
+
+TRANS NONE
+
+#MAPLINE formatType name red green blue lineStyle
+
+#MAPGRID xNum yNum zNum xOrig yOrig zOrig dx dy dz gridType
+
+#
+#
+# =============================================================================
+# END of Generic control file statements
+# =============================================================================
+# =============================================================================
+
+
+#
+#
+# =============================================================================
+# END of NLLoc control file statements
+# =============================================================================
+# =============================================================================

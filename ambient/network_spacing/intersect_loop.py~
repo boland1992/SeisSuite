@@ -1,0 +1,118 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tues Jun 23 16:42:27 2015
+
+@author: boland
+help for interesections function came from 
+http://stackoverflow.com/questions/29465468/python-intersection-point-of-two-great-circles-lat-long
+"""
+import numpy as np
+from intersections import intersect_paths
+from info_dataless import locs_from_dataless
+import fiona
+from shapely import geometry
+import matplotlib.pyplot as plt
+
+dataless_path = 'ALL_AUSTRALIA.870093.dataless'
+
+#input_shape = "/home/boland/Dropbox/University/UniMelb/AGOS/PROGRAMS/ANT/Versions/26.04.2015/shapefiles/aus.shp"
+input_shape = '/home/boland/Programs/ANT/Versions/18.04.2015/shapefiles/aus.shp'
+
+with fiona.open(input_shape) as fiona_collection:
+
+    # In this case, we'll assume the shapefile only has one record/layer (e.g., the shapefile
+    # is just for the borders of a single country, etc.).
+    shapefile_record = fiona_collection.next()
+
+    # Use Shapely to create the polygon
+    shape = geometry.asShape( shapefile_record['geometry'] )
+
+
+
+info = locs_from_dataless(dataless_path)
+
+lats = info[:,1].astype(np.float)
+lons = info[:,2].astype(np.float)
+
+coords = np.column_stack((lons, lats))
+
+
+#find a more efficient way to do this! 
+
+
+coord_combs = []
+
+
+#coord_combs = set([[i,j] for i in coords for j in coords])
+
+for coord_comb1 in coords:
+	for coord_comb2 in coords:
+		if "%s" % coord_comb1 != "%s" % coord_comb2:
+
+			COMBINATION = [coord_comb1, coord_comb2]
+
+			coord_combs.append(COMBINATION)
+
+
+
+#coord_combs = np.unique(np.asarray(coord_combs))
+
+
+intersects = []
+counts = 0
+counts2 = 0
+
+
+#intersects = [intersect_paths(i[0], i[1], j[0],j[1]) for i in coord_combs for j in coord_combs] 
+
+#select a representative sample of station pair combinations from the circa 17000 points! 
+
+
+import random
+def random_subset( iterator, K ):
+	"""
+	Get what is known as a set of reservoir samples.
+	"""
+
+   	result = []
+        N = 0
+
+	for item in iterator:
+	        N += 1
+	        if len( result ) < K:
+	            result.append( item )
+	        else:
+	            s = int(random.random() * N)
+                    if s < K:
+                        result[ s ] = item
+
+        return result
+
+#coord_combs = random_subset(coord_combs, int(0.1*len(coord_combs)))
+
+
+
+for i in coord_combs:
+	for j in coord_combs:
+
+		if counts % 10000 == 0 and "%s" % i != "%s" % j:
+			counts2+=1
+			print counts2
+		#if   #check if two lists i.e. i and j are NOT the same coordinates!
+			points = intersect_paths(i[0], i[1], j[0],j[1])
+ # longitude, latitude
+			if shape.contains(geometry.Point(points[0][0], points[0][1])):
+				intersects.append(points[0])
+			else:
+				intersects.append(points[1])
+			
+	counts += 1
+
+intersects = np.asarray(intersects)
+	
+plt.figure()
+plt.plot([row[0] for row in intersects], [row[1] for row in intersects])
+plt.show()
+	
+
+

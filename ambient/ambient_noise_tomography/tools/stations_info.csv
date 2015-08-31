@@ -1,0 +1,31 @@
+Station Name,Latitude (degrees),Longitude (degrees),Altitude (m),Start_date,End_date,TYPE,Nearest Town,Landowner 1,Landowner 2,Telemetered?,Contact phone,Phone Type,Seismometer,Accelerometer ,Digitizer,Modem,
+CLIF,-38.01152,146.173599,276,2013-05-23 ,Ongoing,Surface,Willow Grove ,Neville Cliff ,Anne,Yes,56354260,Home,CMG-6T-1 ,CMG-5TC ,Echopro ,?,
+MRDN,-38.44796,146.137863,211,2012-11-02 ,Ongoing,Surface,Mardan ,Scott Campbell ,Larinda Campbell ,Yes ,(0)418681763,?,CMG-6T-1 ,CMG-5TC ,Echopro ,75006356,
+HOLS,-38.342331,146.026276,171,2012-06-23 ,Ongoing,Surface,Hallston ,Graeme Jackson ,N/A,No,56685268,?,CMG-6T-1 ,CMG-5TC ,Echopro ,75706359,
+HODL,-38.725414,146.11348,178,2012-08-02 ,Ongoing,Surface,Fish Creek ,Gary Wallis ,Joan Wallis ,Yes,(0)429427656 ,mobile (m),CMG-6T-1 ,CMG-5TC ,Echopro ,?,
+NARR,-38.249557,146.202377,325,2012-06-21 ,Ongoing,Surface,Narracan ,Leonie ,N/A,Yes ,(0)409359514,mobile (m),CMG-6T-1 ,CMG-5TC ,Echopro,Last of the old ones,
+KRAN,-38.359058,145.847748,255,2012-06-01 ,Ongoing,Surface,Ranceby ,Hank Van Sinderen ,N/A,Yes ,56597263,?,CMG-6T-1 ,CMG-5TC ,Echopro,?,
+OUTU,-38.48959,145.765869,186,2014-12-11 ,Ongoing,Surface,Outtrim ,Brian Hess ,Yvonne Hess ,No,0429 181 253 ,mobile (m),CMG-6T-1 ,?,Echopro ,?,
+LOCU,-38.364674,145.731308,138,2014-02-05 ,Ongoing,Surface,Loch,Bill Green ,Bev Green ,Yes ,56594276,?,CMG-6T-1 ,CMG-5TC ,Echopro ,?,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,DATA NOT AVAILABLE ON WIKI
+,,,,,,,,,,,,,,,,,MRAT
+,,,,,,,,,,,,,,,,,BRAD
+,,,,,,,,,,,,,,,,,PEGM
+,,,,,,,,,,,,,,,,,PEGU
+,,,,,,,,,,,,,,,,,S88U
+,,,,,,,,,,,,,,,,,WALM
+,,,,,,,,,,,,,,,,,SOMU
+,,,,,,,,,,,,,,,,,MELU

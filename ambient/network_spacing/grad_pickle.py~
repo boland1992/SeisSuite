@@ -1,0 +1,409 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jun 21 20:47:32 2015
+
+@author: boland
+"""
+import pickle
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ColorConverter
+from matplotlib.colors import LinearSegmentedColormap
+import seaborn as sns
+
+#set correct density pickle file saved
+pickle_file = '/home/boland/Desktop/Link to SIMULATIONS/Network_Tracks/\
+case_studies/australia_actual_0.5x0.5/density.pickle'
+
+f = open(name=pickle_file, mode='rb')
+density = pickle.load(f)
+f.close()
+
+latstep = 0.5
+lonstep = 0.5
+tol = 0.5
+
+dataless = True
+dataless_path = 'ALL_AUSTRALIA.870093.dataless'
+
+#enter shapefile absolute or relative path name as string if optimal = True
+optimal = False
+optimal_pickle = '/home/boland/Desktop/Link to SIMULATIONS/Network_Tracks/\
+case_studies/australia_optimal_0.5x0.5/optimal_points.pickle'
+
+if dataless:
+    from info_dataless import locs_from_dataless   
+    dataless_locs = locs_from_dataless(dataless_path)
+    lats1 = dataless_locs[:,1]; lons1 = dataless_locs[:,2]
+    lats2 = dataless_locs[:,1]; lons2 = dataless_locs[:,2]
+    
+    #the first two and second two lines do the same thing! i.e. map the above list into
+    #a numpy array of floats!#self.grid = Grid()
+    
+    #lats1 = np.array(map(float, lats1)); lons1 = np.array(map(float, lons1))
+    #lats2 = np.array(map(float, lats2)); lons2 = np.array(map(float, lons2))
+    lats1 = lats1.astype(np.float); lons1 = lons1.astype(np.float)
+    lats2 = lats2.astype(np.float); lons2 = lons2.astype(np.float)
+    
+elif optimal: 
+
+    f = open(name=optimal_pickle, mode='rb')
+    optimal_points = pickle.load(f)
+    f.close()
+    
+    lats1 = optimal_points[:,1]; lons1 = optimal_points[:,0]
+    lats2 = optimal_points[:,1]; lons2 = optimal_points[:,0]    
+    
+else: 
+    print("You've decided not to choose any input file types, therefore the program\
+ has nothing to compute.\n")
+    print("TERMINATING PROGRAM")
+    quit()
+
+
+
+lonmin = np.floor(min(lons1) - tol)
+nlon = np.ceil((max(lons1) + tol - lonmin) / lonstep) + 1
+latmin = np.floor(min(lats1) - tol)
+nlat = np.ceil((max(lats1) + tol - latmin) / latstep) + 1
+
+
+class Grid:
+    """
+    Class holding a 2D regular rectangular spatial grid
+    """
+    def __init__(self, xmin, xstep, nx, ymin, ystep, ny):
+        """
+        Min coords, step size and nb of points of grid
+        """
+        self.xmin = xmin
+        self.xstep = xstep
+        self.nx = int(nx)
+        self.ymin = ymin
+        self.ystep = ystep
+        self.ny = int(ny)
+
+    def __repr__(self):
+        s = '<2D grid: x = {}...{} by {}, y = {}...{} by {}>'
+        return s.format(self.xmin, self.get_xmax(), self.xstep,
+                        self.ymin, self.get_ymax(), self.ystep)
+
+    def __eq__(self, other):
+        """
+        @type other: Grid
+        """
+        try:
+            samegrids = (self.xmin == other.xmin and
+                         self.xstep == other.xstep and
+                         self.nx == other.nx and
+                         self.ymin == other.ymin and
+                         self.ystep == other.ystep and
+                         self.ny == other.ny)
+            return samegrids
+        except:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def get_xmax(self):
+        return self.xmin + (self.nx - 1) * self.xstep
+
+    def get_ymax(self):
+        return self.ymin + (self.ny - 1) * self.ystep
+
+    def bbox(self):
+        """
+        Bounding box: (xmin, xmax, ymin, ymax)
+        @rtype: (float, float, float, float)
+        """
+        return self.xmin, self.get_xmax(), self.ymin, self.get_ymax()
+
+    def n_nodes(self):
+        """
+        Nb of nodes on grid
+        """
+        return self.nx * self.ny
+
+    def ix_iy(self, index_):
+        """
+        Indexes along x and y-axis of node nb *index_*
+        """
+        ix = np.int_(np.array(index_) / self.ny)
+        iy = np.mod(np.array(index_), self.ny)
+        return ix, iy
+
+    def xy(self, index_):
+        """
+        Coords of node nb *index_*
+        """
+        index_ = np.array(index_)
+
+        if np.any((index_ < 0) | (index_ > self.n_nodes() - 1)):
+            raise Exception('Index out of bounds')
+
+        ix, iy = self.ix_iy(index_)
+        return self._x(ix), self._y(iy)
+
+    def xy_nodes(self):
+        """
+        Returns coords of all nodes of grid
+        """
+        return self.xy(np.arange(0, self.n_nodes()))
+
+    def xarray(self):
+        return np.linspace(self.xmin, self.get_xmax(), num=self.nx, endpoint=True)
+
+    def yarray(self):
+        return np.linspace(self.ymin, self.get_ymax(), num=self.ny, endpoint=True)
+
+    def index_(self, ix, iy):
+        """
+        Index of node (ix, iy) in grid:
+        - 0 : ix=0, iy=0
+        - 1 : ix=0, iy=1
+        - ...
+        - ny: ix=1, iy=0
+        - ...
+        - nx*ny-1: ix=nx-1, iy=ny-1
+        """
+        ix = np.array(ix)
+        iy = np.array(iy)
+
+        if np.any((ix < 0) | (ix > self.nx - 1)):
+            raise Exception('ix out of bounds')
+        if np.any((iy < 0) | (iy > self.ny - 1)):
+            raise Exception('iy out of bounds')
+
+        return ix * self.ny + iy
+
+    def indexes_delaunay_triangle(self, x, y):
+        """
+        Indexes of the grid's nodes defining the
+        Delaunay triangle around point (x, y)
+        """
+        # x and y indexes of bottom left neighbour
+        ix = self._xindex_left_neighbour(x)
+        iy = self._yindex_bottom_neighbour(y)
+        np.where(ix == self.nx - 1, ix - 1, ix)
+        np.where(iy == self.ny - 1, iy - 1, iy)
+
+        xratio = (x - self._x(ix)) / self.xstep
+        yratio = (y - self._y(iy)) / self.ystep
+
+        # returning indexes of vertices of bottom right triangle
+        # or upper left triangle depending on location
+        index1 = self.index_(ix, iy)
+        index2 = np.where(xratio >= yratio, self.index_(ix+1, iy), self.index_(ix, iy+1))
+        index3 = self.index_(ix+1, iy+1)
+
+        return index1, index2, index3
+
+    def geodetic_dist(self, index1, index2):
+        """
+        Geodetic distance between nodes nb *index1* and *index2*,
+        whose coodinates (x, y) are treated as (lon, lat)
+        """
+        lon1, lat2 = self.xy(index1)
+        lon2, lat2 = self.xy(index2)
+        return psutils.dist(lons1=lon1, lats1=lat2, lons2=lon2, lats2=lat2)
+
+    def to_2D_array(self, a):
+        """
+        Converts a sequence-like *a* to a 2D array b[ix, iy]
+        such that i is the index of node (ix, iy)
+        """
+        b = np.zeros((self.nx, self.ny))
+        ix, iy = self.ix_iy(range(self.n_nodes()))
+        b[ix, iy] = np.array(a).flatten()
+        return b
+
+    def _x(self, ix):
+        """
+        Returns the abscissa of node nb *ix* on x-axis
+        (ix = 0 ... nx-1)
+        """
+        ix = np.array(ix)
+        if np.any((ix < 0) | (ix > self.nx - 1)):
+            raise Exception('ix out of bounds')
+
+        return self.xmin + ix * self.xstep
+
+    def _y(self, iy):
+        """
+        Returns the ordinate of node nb *iy* on y-axis
+        """
+        iy = np.array(iy)
+        if np.any((iy < 0) | (iy > self.ny - 1)):
+            raise Exception('iy out of bounds')
+
+        return self.ymin + iy * self.ystep
+
+    def _xindex_left_neighbour(self, x):
+        """
+        Returns the index (along x-axis) of the grid nodes
+        closest to (and on the left of) *x*
+        (Index of 1st node = 0, index of last node = nx - 1)
+
+        @rtype: Number
+        """
+        x = np.array(x)
+        # checking bounds
+        out_of_bounds = (x < self.xmin) | (x > self.get_xmax())
+        if np.any(out_of_bounds):
+            s = 'some x {} are out of bounds [{} - {}]'
+            raise Exception(s.format(x[out_of_bounds], self.xmin, self.get_xmax()))
+
+        # index of closest left node
+        return np.int_((x - self.xmin) / self.xstep)
+
+    def _yindex_bottom_neighbour(self, y):
+        """
+        Same as above method, along y axis
+
+        @rtype: Number
+        """
+        y = np.array(y)
+        # checking bounds
+        out_of_bounds = (y < self.ymin) | (y > self.get_ymax())
+        if np.any(out_of_bounds):
+            s = 'some y {} are out of bounds [{} - {}]'
+            raise Exception(s.format(y[out_of_bounds], self.ymin, self.get_ymax()))
+
+        # index of closest bottom node
+        return np.int_((y - self.ymin) / self.ystep)
+
+
+
+GRID = Grid(lonmin, lonstep, nlon, latmin, latstep, nlat)
+
+#pickle_file = '/home/boland/Desktop/Link to SIMULATIONS/Network_Tracks/case_studies/australia_optimal_0.5x0.5/paths.pickle'
+
+#f = open(name=pickle_file, mode='rb')
+#paths = pickle.load(f)
+#f.close()
+
+#plt.figure(21)
+#plt.title("Boxplot of Path Density Values")
+#plt.boxplot(density)    
+#plt.show()
+
+#plt.hist(density, np.max(density), histtype="stepfilled", alpha=.7);
+#plt.plot(density)
+#plt.plot(np.sort(density))
+#sns.kdeplot(density, shade=True);
+
+#sns.kdeplot(density.X, density.Y, shade=True);
+#plt.show()
+
+
+sorted_density = np.sort(density)
+
+density_95 = sorted_density[int(0.95*len(sorted_density))]
+
+filtered_density = np.asarray([density_95 if i > density_95\
+                              else i for i in density])
+
+
+#plt.figure()
+#plt.plot(filtered_density)
+#plt.show()
+
+
+
+
+EPS = 1.0E-6
+
+c = ColorConverter()
+colors = ['white', 'cyan', 'green', 'yellow', 'red', 'black']
+values = [0, 0.05, 0.1, 0.25, 0.5,  1.0]
+rgblist = [c.to_rgb(s) for s in colors]
+reds, greens, blues = zip(*rgblist)
+cdict = {}
+for x, r, g, b in zip(values, reds, greens, blues):
+    v = (x - min(values)) / (max(values) - min(values))
+    cdict.setdefault('red', []).append((v, r, r))
+    cdict.setdefault('green', []).append((v, g, g))
+    cdict.setdefault('blue', []).append((v, b, b))
+CMAP_DENSITY = LinearSegmentedColormap('customdensity', cdict)
+
+
+paths = 0
+
+def plot_pathdensity(density,paths=paths, CMAP_DENSITY=CMAP_DENSITY,  
+                     grid=GRID, ax=None, xsize=10, plotdensity=True, 
+                     plotpaths=False, stationlabel=False, plot_title=False, 
+                     showgrid=False, highlight_residuals_gt=None):
+    
+    """
+    Plots path density and/or interstation paths.
+
+    Paths for which the residual observed/predicted travel-time
+    is greater than *highlight_residuals_gt* (if defined) are
+    highlighted as bold lines.
+    """
+    # bounding box
+    bbox = grid.bbox()
+
+    # creating figure if not given as input
+
+    aspectratio = (bbox[3] - bbox[2]) / (bbox[1] - bbox[0])
+    # xzise has not effect if axes are given as input
+    fig = plt.figure(figsize=(xsize, aspectratio * xsize), tight_layout=True)
+    ax = fig.add_subplot(111)
+
+    # plotting coasts and tectonic provinces
+    #psutils.basemap(ax=ax, labels=False, fill=not plotdensity, bbox=bbox)
+
+    if plotdensity:
+        # plotting path density
+        d = grid.to_2D_array(density)
+        extent = (grid.xmin, grid.get_xmax(),
+                  grid.ymin, grid.get_ymax())
+        m = ax.imshow(d.transpose(),
+                      origin='bottom',
+                      extent=extent,
+                      interpolation='bicubic',
+                      cmap=CMAP_DENSITY,
+                      vmin=0)
+        c = plt.colorbar(m, ax=ax, orientation='horizontal', pad=0.1)
+        c.set_label('Path density')
+
+    if plotpaths:
+        # residuals observed/predicted travel-times
+        res = self.traveltime_residuals() if highlight_residuals_gt else []
+
+        # plotting paths
+        for i, path in enumerate(paths):
+            x, y = zip(*path)
+            linestyle = {'color': 'grey', 'lw': 0.5}
+            if highlight_residuals_gt and abs(float(res[i])) > highlight_residuals_gt:
+                # highlighting line as the travel-time error is > threshold
+                linestyle = {'color': 'black', 'lw': 1.5}
+            ax.plot(x, y, '-', **linestyle)
+
+    if showgrid:
+        # plotting grid
+        x, y = grid.xy_nodes()
+        ax.plot(x, y, '+')
+
+    # plotting stations
+    #self._plot_stations(ax, stationlabel=stationlabel)
+
+    # formatting axes
+    ax.set_xlim(bbox[:2])
+    ax.set_ylim(bbox[2:])
+    #if plot_title:
+    #    ax.set_title(u'Period = {} s, {} paths'.format(self.period, len(self.paths)))
+
+    #if fig:
+    fig.savefig("grad_actual_spacing_95.png")
+    fig.show()
+ 
+grad = np.gradient(filtered_density)
+print(np.std(grad)/np.sqrt(len(grad)))
+   
+plot_pathdensity(grad)
+
+#print(np.var(filtered_density))
+
