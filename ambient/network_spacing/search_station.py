@@ -5,9 +5,11 @@ Created on Fri Jul  3 08:44:50 2015
 @author: boland
 
 CODE DESCRIPTION: 
-The following python script is used to perform a station spacings point density
-on a given data set with respect to the UniMelb short-period seismometer 
-network in the Gippsland basin. 
+The following python script searches for M new random points atop N set station
+points. The tests performed have to do with point density distribution of
+points representing all combinations of great-circlel lines that could 
+be physically possible between seismic stations. An extension is to select
+low point density points as a new cluster to search for new station points. 
 """
 #------------------------------------------------------------------------------
 # MODULES
@@ -39,27 +41,8 @@ from shapely import geometry
 # VARIABLES
 #------------------------------------------------------------------------------
 
-verbose = False
-#Enter path to boundary shape file.
-shape_boundary = False
-shape_path = '/home/boland/Desktop/Link to SIMULATIONS/GIPPSLAND/GIPPSLAND.shp'
-dataless = True
-# Enter path to dataless file
-dataless_path = 'UOM.dataless'
-#dataless_path = 'UOM.dataless'
-# Enter number new stations desired.
-N = 3
-# Enter km spacing between path density points.
-km_points = 0.25
 # Reference elipsoid to calculate distance.
 wgs84 = pyproj.Geod(ellps='WGS84')
-# Enter number of bins for 2D Histogram density calculation. 
-nbins = 75
-# Enter estimated average shear wave velocity. 3kms-1 is the default!
-velocity = 3.0
-# Define your ambient noise period range OR individual period in seconds.
-global period_range
-period_range = [1,40]
 
 #------------------------------------------------------------------------------
 # CLASSES
@@ -149,10 +132,6 @@ class InShape:
         exterior_coords = self.extract_poly_coords(poly)
         
         return  exterior_coords
-
-
-def parallelpoint_check(point):
-    InShape(shape_path).point_check(point)
     
 class InPoly:
     """
@@ -298,7 +277,7 @@ class InPoly:
             INSHAPE = InShape(self.boundary)
             shape = self.node_poly(INSHAPE.external_coords())
             xmin, xmax, ymin, ymax = INSHAPE.shape_bounds()
-        poly = self.node_poly(SHAPE.external_coords(shape=shape))
+        poly = self.node_poly(shape.external_coords(shape=shape))
         points = self.rand_poly(poly=poly, N=N, IN=IN)
         return points
 
@@ -374,7 +353,7 @@ class Convex:
         X = abs(maxx - minx) * np.random.rand(10*K**2,1) + minx
         Y = abs(maxy - miny) * np.random.rand(10*K**2,1) + miny
         new_coords = np.column_stack((X,Y))
-
+        return new_coords
 
 class Geodesic:
     """
@@ -585,13 +564,12 @@ class Density:
         Function that calculates the 2D histogram and generates H, xedges, 
         and yedges. 
         """
-
         if paths is None:
             paths = self.paths
-        #if any(item in acceptible_channels for item in channel_list):
+            
         self.H, self.xedges, self.yedges = np.histogram2d(paths[:,0],
-                                                          paths[:,1],
-                                                          bins=nbins)
+                                           paths[:,1],
+                                           bins=self.nbins)
         return self.H, self.xedges, self.yedges
             
     def hgrad(self, H=None):
@@ -657,7 +635,7 @@ class Density:
         high=True or is not None, then high density points are chosen from
         H >perc*np.average(H). Perc=0.1 by default.
         """
-        
+        H = self.H
         if high is None:
             search = np.where(H<perc*np.average(self.H))
         else:
@@ -674,12 +652,8 @@ class Density:
     
     def plot_field(self, grad=False, SHAPE=None, swell=0.05):
         
-        if SHAPE is None:
-            lonmin, lonmax, latmin, latmax = self.plot_lims()
-        else:
-            lonmin, latmin, lonmax, latmax = SHAPE.shape_bounds()
-            
-            
+        lonmin, lonmax, latmin, latmax = self.plot_lims()
+        
         fig = plt.figure(figsize=(15,10), dpi=100)
         
         plt.xlabel('longitude (degrees)')
@@ -695,7 +669,7 @@ class Density:
                 H_masked = self.H_masked
             else:                    
                 H_masked = self.transform_h()
-            plt.pcolor(xedges, yedges, H_masked, norm=LogNorm(\
+            plt.pcolor(self.xedges, self.yedges, H_masked, norm=LogNorm(\
             vmin=np.min(H_masked), vmax=np.max(H_masked)), cmap='rainbow',\
             alpha=0.6, zorder = 3)
             col = plt.colorbar()
@@ -709,7 +683,7 @@ class Density:
                 raise Exception("grad_masked has not yet been defined. please\
                 run the necessary functions e.g. transform_grad before plotting")
                 
-            plt.pcolor(xedges, yedges, grad_masked, norm=LogNorm(\
+            plt.pcolor(self.xedges, self.yedges, grad_masked, norm=LogNorm(\
             vmin=np.min(grad), vmax=np.max(grad)), cmap='rainbow',\
             alpha=0.6, zorder = 3)
             col = plt.colorbar()
@@ -720,7 +694,6 @@ class Density:
                    know what to do.")
 
         if SHAPE is not None:
-            SHAPE = SHAPE.shape_poly()
             patch = PolygonPatch(SHAPE, facecolor='white',\
             edgecolor='k', zorder=1)
             ax = fig.add_subplot(111)
@@ -731,7 +704,7 @@ class Density:
                         latmax+0.05*abs(latmax-latmin))
                             
         #plt.scatter(new_coords[:,0], new_coords[:,1],c='r', s=30)
-        fig.savefig("GIPPSLAND_plot_density.png")
+        fig.savefig("plot_density.png")
         fig.clf()
 
 
@@ -752,7 +725,7 @@ def longitude(dist, sigma01, alpha0, lon0):
 vlat_func = np.vectorize(latitude)
 vlon_func = np.vectorize(longitude)
 
-def waypoint_init(path_info, km=km_points):
+def waypoint_init(path_info, km=20):
     R = 6371
     lon1, lat1, lon2, lat2, dist = radians(path_info[0]), \
     radians(path_info[1]), radians(path_info[2]), \
@@ -776,87 +749,3 @@ def waypoint_init(path_info, km=km_points):
     lons, lats = vlon_func(all_d, sigma01, alpha0, lon0), vlat_func(all_d, sigma01, alpha0, lon0)   
     
     return np.column_stack((lons, lats))
-
-
-GEODESIC = Geodesic()
-COORDS = Coordinates()
-INPOLY = InPoly(shape_path)
-
-
-
-# Generate InShape class
-SHAPE = InShape(shape_path)
-# Create shapely polygon from imported shapefile 
-limits = SHAPE.shape_bounds()
-
-
-# Enter path to dataless file
-coords = locs_from_dataless(dataless_path)
-coords = np.asarray(coords)
-
-
-
-# remove coords outside the shapefile
-
-lonmin, lonmax = np.floor(min(coords[:,0])), np.ceil(max(coords[:,0]))
-latmin, latmax = np.floor(min(coords[:,1])), np.ceil(max(coords[:,1]))
-print lonmin,lonmax,latmin,latmax
-
-kappa = [np.vstack([[coord1[0],coord1[1],coord2[0],coord2[1]]\
-                    for coord2 in coords]) for coord1 in coords]
-                        
-
-
-
-def spread_paths(coord_list):
-    return GEODESIC.fast_paths(coord_list)
-    
-t0 = datetime.datetime.now()
-pool = mp.Pool()    
-paths = pool.map(spread_paths, kappa)
-pool.close()
-pool.join()
-t1 = datetime.datetime.now()
-print t1-t0
-
-
-counter, counter2 = 0, 0
-#cd Desktop/Link\ to\ SIMULATIONS/Network_Tracks/smarter_model/
-grad_ideal, grad_check1, grad_check2, H_avg1, H_avg2 = 0, 0, 0, 0, 0
-perc_high = 0.01
-low_counter = 0
-random_counter = 0
-#new_coord = 0
-infinite_counter = 0
-find_it = []
-check_coord = None
-use_old_path = False
-searches_per_point = 3
-factor = 0.05
-cluster = False
-
-
-
-#paths = list(paths)
-paths = np.asarray(paths)
-
-paths = GEODESIC.combine_paths( paths)
-
-paths = GEODESIC.remove_zeros(paths)
-
-# make sure that your density coords are within the boundary shape        
-paths = INPOLY.points_in(paths)
-
-DENSITY = Density(paths=paths)
-
-H, xedges, yedges = DENSITY.hist2d(paths=paths)
-grad = DENSITY.hgrad(H=H)
-    
-H_avg1 = np.average(H)
-grad_check1 = np.std(grad)
-    
-H_masked = DENSITY.transform_h(H=H)
-grad = DENSITY.transform_grad(grad=grad)
-
-
-DENSITY.plot_field(SHAPE=SHAPE)
