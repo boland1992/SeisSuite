@@ -5,21 +5,21 @@
 
 from distutils.core import setup
 
-setup(name='seis-suite',
-	version='0.1.22',
+setup(name='seissuite',
+	version='0.1.23',
 	description='Python Tools for Ambient Noise Seismology',
 	author='Benjamin Boland',
 	author_email='bolandb@student.unimelb.edu.au',
 	url='tbc',
-	packages=['ambient',
-                  'ambient/misc',
-                  'ambient/azimuth',
-                  'ambient/ant', 
-                  'ambient/spacing',
-                  'ambient/spectrum',
-                  'ambient/trigger',
-                  'ambient/database',
-                  'ambient/response'
+	packages=['seissuite',
+                  'seissuite/misc',
+                  'seissuite/azimuth',
+                  'seissuite/ant', 
+                  'seissuite/spacing',
+                  'seissuite/spectrum',
+                  'seissuite/trigger',
+                  'seissuite/database',
+                  'seissuite/response'
                   ],
       long_description=open('README.txt').read(),
 	#package_dir = {'waveloc' : 'PyProgs', 'waveloc_examples' : 'examples'},
