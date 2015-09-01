@@ -1,4 +1,4 @@
 1. Attempt to keep the CHANGES.txt file up-to-date
 2. Allow for choice of where the config is stored in case the os.getcwd() option is not desirable. 
 3. Allow for choice of different extensions in create_database.py
-4. Get the new_station_search.py script to work with config file!
+4. Get the new_station_search.py script to work for 

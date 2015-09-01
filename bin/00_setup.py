@@ -4,8 +4,8 @@ Created on Sun May  3 13:14:51 2015
 
 @author: boland
 """
-
 import os
+import sqlite3 as lite
 
 # ====================================================
 # SETUP INITIAL FILE STRUCTURE
@@ -13,12 +13,14 @@ import os
 
 
 FOLDER = ""
-try:
-    from pysismo.psconfig import (FOLDER)
-except Exception as error:
-    print error
-    print "If there was an import error, please install Anaconda\n\
-http://continuum.io/downloads"
+
+#try:
+from seissuite.ant.psconfig import FOLDER, DATABASE_DIR
+
+#except Exception as error:
+#    print error
+#    print "If there was an import error, please install Anaconda\n\
+#http://continuum.io/downloads"
 
 if FOLDER == 'DEFAULT':
     FOLDER = os.getcwd()    
@@ -44,7 +46,7 @@ else:
     #create file structure
     INPUT = "{}/INPUT".format(FOLDER)
     OUTPUT = "{}/OUTPUT".format(FOLDER)
-    input_dirs = ["DATA", "DATALESS", "XML"]
+    input_dirs = ["DATA", "DATALESS", "XML", "DATABASES"]
     output_dirs = ["CROSS", "FTAN", "TOMO", "DEPTH"]
 
     
@@ -63,3 +65,14 @@ else:
     for i in output_dirs:
         if not os.path.exists("{}/{}".format(OUTPUT, i)):\
         os.makedirs("{}/{}".format(OUTPUT, i))   
+
+
+    #if no two SQL databases exist, then create them! 
+    TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
+    RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
+    lite.connect(TIMELINE_DB); lite.connect(RESP_DB)
+    from seissuite.database import create_database, response_database
+
+    
+
+

@@ -2,7 +2,6 @@
 Definition of a class managing general information
 on a seismic station
 """
-import sys; sys.path.append('..')
 import pserrors
 import psutils
 import obspy
@@ -17,11 +16,14 @@ import itertools as it
 import numpy as np
 import sqlite3 as lite
 from obspy.core import UTCDateTime
-import itertools
 # ====================================================
 # parsing configuration file to import some parameters
 # ====================================================
-from psconfig import MSEED_DIR, STATIONXML_DIR, DATALESS_DIR
+from seissuite.ant.psconfig import (MSEED_DIR, 
+                                    STATIONXML_DIR, 
+                                    DATALESS_DIR,
+                                    DATABASE_DIR
+                                    )
 
 
 class StationSQL:
@@ -86,7 +88,7 @@ class StationSQL:
         #import_end = endtime.timestamp
         
         #connect SQL database
-        database_name = 'timeline_database.db'
+        database_name = os.path.join(DATABASE_DIR, 'timeline.db')
 
         if not os.path.exists(database_name):
             raise Exception("Database doesn't exist")
@@ -259,7 +261,7 @@ def get_stationsSQL(SQL_db, xml_inventories=(),
 
     if not os.path.exists(SQL_db):
         raise Exception("Database doesn't exist. Please \
-re-run create_database.py")
+re-run create_database in seissuite.database")
 
     # connect the database
     conn = lite.connect(SQL_db)

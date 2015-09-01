@@ -14,7 +14,11 @@ low point density points as a new cluster to search for new station points.
 #------------------------------------------------------------------------------
 # MODULES
 #------------------------------------------------------------------------------
-from search_station import InShape, InPoly, Geodesic, Coordinates, Density
+from seissuite.spacing.search_station import (InShape, 
+                                              InPoly, 
+                                              Geodesic, 
+                                              Coordinates, 
+                                              Density)
 
 import os
 import pickle
@@ -24,8 +28,8 @@ import numpy as np
 import datetime as dt
 #import pointshape as ps
 import multiprocessing as mp
-from info_dataless import locs_from_dataless
 from scipy.cluster.vq import kmeans
+from seissuite.misc.dataless import Dataless
 
 #------------------------------------------------------------------------------
 # VARIABLES
@@ -57,7 +61,7 @@ period_range = [1,40]
 # Enter path to dataless file
 dataless_path = 'ALL_AUSTRALIA.870093.dataless'
 
-coords = locs_from_dataless(dataless_path)
+coords = Dataless.locs_from_dataless(dataless_path)
 
 shape_path = "/home/boland/Dropbox/University/UniMelb\
 /AGOS/PROGRAMS/ANT/Versions/26.04.2015/shapefiles/aus.shp"
@@ -107,7 +111,7 @@ cluster_points = np.asarray(kmeans(inner_poly_points, 130)[0])
 ideal_path = 'ideal_coordinates.pickle'
 #if no paths have been done before, start afresh!
 if dataless:
-    coords = locs_from_dataless(dataless_path)
+    coords = Dataless.locs_from_dataless(dataless_path)
     original_coords = coords
 elif os.path.exists(ideal_path):
     f = open(name=ideal_path, mode='rb')

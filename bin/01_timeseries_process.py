@@ -60,37 +60,15 @@ Note that all the parameters mentioned above are defined in the
 configuration file.
 
 When all the cross-correlations are calculated, the script exports
-several files in dir *CROSSCORR_DIR*, whose name (without extension)
-is:
+several files in dir *CROSS*
 
-xcorr[_<stations of subset>]_<first year>-<last year>[_1bitnorm] ...
-      _[datalesspaz][+][xmlresponse][_<suffix>]
-
-where <suffix> is provided by the user. For example:
-"xcorr_1996-2012_xmlresponse"
-
-The files, depending on their extension, contain the following data:
-
-- .pickle       = set of all cross-correlations (instance of
-                  pscrosscorr.CrossCorrelationCollection) exported in binary
-                  format with module pickle;
-
-- .txt          = all cross-correlations exported in ascii format
-                  (one column per pair);
-
-- .stats.txt    = general information on cross-correlations in ascii
-                  format: stations coordinates, number of days, inter-
-                  station distance etc.
-
-- .stations.txt = general information on the stations: coordinates,
-                  nb of cross-correlations in which it appears, total
-                  nb of days it has been cross-correlated etc.
-
-- .png          = figure showing all the cross-correlations (normalized to
-                  unity), stacked as a function of inter-station distance.
 """
 
-from pysismo import pscrosscorr, psstation, pspreprocess, pserrors, psstationSQL
+from seissuite.ant import (pscrosscorr,
+                           psstation, 
+                           pspreprocess, 
+                           pserrors, 
+                           psstationSQL)
 import os
 import warnings
 import datetime as dt
@@ -99,8 +77,8 @@ import pickle
 import obspy.signal.cross_correlation
 import time
 import glob
-import matplotlib.pyplot as plt
-import numpy as np
+#import matplotlib.pyplot as plt
+#import numpy as np
 # turn on multiprocessing to get one merged trace per station?
 # to preprocess trace? to stack cross-correlations?
 MULTIPROCESSING = {'merge trace': True,
@@ -121,29 +99,30 @@ if SQL:
 # parsing configuration file to import some parameters
 # ====================================================
 
-from pysismo.psconfig import (MSEED_DIR, 
-                              DATALESS_DIR, 
-                              STATIONXML_DIR, 
-                              CROSSCORR_DIR,
-                              USE_DATALESSPAZ, 
-                              USE_STATIONXML, 
-                              CROSSCORR_STATIONS_SUBSET, 
-                              CROSSCORR_SKIPLOCS,
-                              FIRSTDAY, 
-                              LASTDAY, 
-                              MINFILL, 
-                              FREQMIN, 
-                              FREQMAX, 
-                              CORNERS, 
-                              ZEROPHASE, 
-                              PERIOD_RESAMPLE,
-                              ONEBIT_NORM, 
-                              FREQMIN_EARTHQUAKE, 
-                              FREQMAX_EARTHQUAKE, 
-                              WINDOW_TIME, 
-                              WINDOW_FREQ,
-                              XCORR_INTERVAL,
-                              CROSSCORR_TMAX)
+from seissuite.ant.psconfig import (MSEED_DIR,
+                                    DATABASE_DIR,
+                                    DATALESS_DIR, 
+                                    STATIONXML_DIR, 
+                                    CROSSCORR_DIR,
+                                    USE_DATALESSPAZ, 
+                                    USE_STATIONXML, 
+                                    CROSSCORR_STATIONS_SUBSET, 
+                                    CROSSCORR_SKIPLOCS,
+                                    FIRSTDAY, 
+                                    LASTDAY, 
+                                    MINFILL, 
+                                    FREQMIN, 
+                                    FREQMAX, 
+                                    CORNERS, 
+                                    ZEROPHASE, 
+                                    PERIOD_RESAMPLE,
+                                    ONEBIT_NORM, 
+                                    FREQMIN_EARTHQUAKE, 
+                                    FREQMAX_EARTHQUAKE, 
+                                    WINDOW_TIME, 
+                                    WINDOW_FREQ,
+                                    XCORR_INTERVAL,
+                                    CROSSCORR_TMAX)
 
 print "\nProcessing parameters:"
 print "- dir of miniseed data: " + MSEED_DIR
@@ -304,7 +283,7 @@ if USE_STATIONXML:
 #                                  verbose=False)
 
 #connect SQL database
-SQL_db = 'timeline_database.db'
+SQL_db = os.path.join(DATABASE_DIR, 'timeline.db')
 
 stations, subdir_len = psstationSQL.get_stationsSQL(SQL_db, 
                                   xml_inventories=xml_inventories,

@@ -12,7 +12,8 @@ import datetime as dt
 import numpy as np
 
 
-def select_and_parse_config_file(basedir='.', ext='cnf', verbose=True):
+def select_and_parse_config_file(basedir=os.getcwd(), 
+                                 ext='cnf', verbose=True):
     """
     Reads a configuration file and returns an instance of ConfigParser:
 
@@ -61,22 +62,29 @@ def shift(xcorr_len):
 # parsing configuration file
 # ==========================
 
-config = select_and_parse_config_file(basedir='.', ext='cnf', verbose=True)
+config = select_and_parse_config_file(basedir='.', 
+                                      ext='cnf', 
+                                      verbose=True)
 
 # -----
 # paths
 # -----
+
 FOLDER = config.get('paths', 'FOLDER')
 
-# input dirs
 
-if FOLDER == "False":
+#TIMELINE_DB = config.get('paths', 'TIMELINE_DB')
+#RESPONSE_DB = config.get('paths', 'RESPONSE_DB')
+
+
+# input dirs
+if FOLDER == "DEFAULT":
     #fold = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
     fold = os.getcwd()
     MSEED_DIR = "{}/INPUT/DATA".format(fold)
     STATIONXML_DIR = "{}/INPUT/XML".format(fold)
     DATALESS_DIR = "{}/INPUT/DATALESS".format(fold)
-    
+    DATABASE_DIR = "{}/INPUT/DATABASES".format(fold)
     # output dirs
     CROSSCORR_DIR = "{}/OUTPUT/CROSS".format(fold)
     FTAN_DIR = "{}/OUTPUT/FTAN".format(fold)
@@ -87,7 +95,8 @@ else:
     MSEED_DIR = "{}/INPUT/DATA".format(FOLDER)
     STATIONXML_DIR = "{}/INPUT/XML".format(FOLDER)
     DATALESS_DIR = "{}/INPUT/DATALESS".format(FOLDER)
-    
+    DATABASE_DIR = "{}/INPUT/DATABASES".format(fold)
+
     # output dirs
     CROSSCORR_DIR = "{}/OUTPUT/CROSS".format(FOLDER)
     FTAN_DIR = "{}/OUTPUT/FTAN".format(FOLDER)
@@ -97,6 +106,9 @@ else:
 # dir of the Computer Programs in Seismology (can be None)
 COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR = config.get('paths',
                                                  'COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR')
+
+
+
 
 # ---------------
 # maps parameters

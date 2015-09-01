@@ -18,7 +18,13 @@ import sys
 from xml.etree.ElementTree import parse
 import matplotlib.pyplot as plt
 import sqlite3 as lite
-from pysismo.psconfig import STATIONXML_DIR, DATALESS_DIR
+
+from seissuite.ant.psconfig import (MSEED_DIR, 
+                                    DATABASE_DIR, 
+                                    STATIONXML_DIR, 
+                                    DATALESS_DIR)
+
+
 import itertools 
 from obspy.xseed import Parser
 from obspy.signal.invsim import pazToFreqResp
@@ -84,8 +90,12 @@ def paths_sortsize(paths):
     for i, path in enumerate(paths):
         inst_list = [path, float(os.path.getsize(path))]
         path_list.append(inst_list)
-
-    return np.asarray(sorted(path_list,key=lambda x: x[1]))[:,0]
+    
+    if len(path_list) > 0:
+        return np.asarray(sorted(path_list, key=lambda x: x[1]))[:,0]
+    else:
+        raise Exception('There is no data to process, please place one or \
+more MSEED files in the MSEED_DIR')
     
     
     

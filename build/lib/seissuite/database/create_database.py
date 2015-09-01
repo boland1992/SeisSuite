@@ -12,14 +12,15 @@ import itertools
 import os
 import datetime
 import sqlite3 as lite
+from seissuite.ant.psconfig import MSEED_DIR, DATABASE_DIR
+from seissuite.misc.path_search import paths
+from seissuite.database import response_database
 
 try:
     import cPickle as pickle
 except:
     import pickle
     print "Caution, database code may run slow because cPickle failed to import"
-
-#from pysismo.psconfig import MSEED_DIR
 
 multiprocess = False
 
@@ -29,48 +30,8 @@ if multiprocess:
 
 t_total0 = datetime.datetime.now()
 
-#SCANNING FUNCTIONS 
-def paths_sort(path):
-    """
-    Function defined for customised sorting of the abs_paths list
-    and will be used in conjunction with the sorted() built in python
-    function in order to produce file paths in chronological order.
-    """
-    base_name = os.path.basename(path)
-    stat_name, date= base_name.split('.')[0], base_name.split('.')[1]     
-    try:
-        date = datetime.datetime.strptime(date, '%Y-%m-%d')
-        return date, stat_name
-    except Exception as e:
-        print(e)
-        
-def paths(folder_path, extension, sort=False):
-    """
-    Function that returns a list of desired absolute paths called abs_paths
-    of files that contains a given extension e.g. .txt should be entered as
-    folder_path, txt. This function will run recursively through and find
-    any and all files within this folder with that extension!
-    """
-    abs_paths = []
-    for root, dirs, files in os.walk(folder_path):
-        for f in files:
-            fullpath = os.path.join(root, f)
-            if os.path.splitext(fullpath)[1] == '.{}'.format(extension):
-                abs_paths.append(fullpath)
-    if sort:
-        abs_paths = sorted(abs_paths, key=paths_sort)
-        
-    return abs_paths
-    
-
 # set folder with all waveform files in it. Can be recursive! 
-
-#folder_path = 'small_borehole_quakes'
-#folder_path = '/storage/ABE/borehole_data'
-#folder_path = '/storage/ANT/INPUT/DATA/AGOS-FULL-DATA_LOWSAMPLE'
-
-
-folder_path = 'small_borehole_quakes'
+folder_path = MSEED_DIR
 
 # set file extension
 extensions = ['m', 'mseed', 'miniseed', 'MSEED']
@@ -143,13 +104,32 @@ for key in timeline.keys():
 # =============================================================================
 
 # create database if it doesn't exist already, if it does, stop the programme.
-database_name = 'timeline_database.db'
+TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
 
-if os.path.exists(database_name): 
-    raise Exception("The SQL database {} already exists, quitting programme."\
-    .format(database_name))
+if os.path.exists(TIMELINE_DB):
+    yeses = ['y','Y','yes','Yes','YES']    
+    nos = ['n','N','no','No','NO']    
+    
+    condition = False
+    while condition is False:
+    
+        answer = raw_input('Would you like to remove the existing database\
+ and start afresh? (y/n): ')
+    
+        if answer in yeses:
+            os.remove(TIMELINE_DB)
+            condition = True
+            
+        elif answer in nos:
+            raise Exception("The SQL database {} already exists, \
+quitting programme.".format(TIMELINE_DB))
+            condition = True
 
-conn = lite.connect(database_name)
+        else:
+            print "The input answer must be of yes or no format."
+            condition = False
+            
+conn = lite.connect(TIMELINE_DB)
 c = conn.cursor()
 
 # Create table called timeline for timeline database
@@ -184,25 +164,3 @@ for key in timeline.keys():
         
     except Exception as error: 
         print error
-    
-    
-for row in c.execute('SELECT * FROM timeline ORDER BY stat_name'):
-    print row
-
-
-# =============================================================================
-# USING PICKLE
-# =============================================================================
-
-#outfile = 'tmp/timeline_database.pickle'
-
-#if not os.path.exists(outfile):
-#    with open(outfile, 'wb') as f:
-#        print "\nExporting new timeline database to: " + f.name
-#        pickle.dump(timeline, f, protocol=2)
-#else:
-#    raise Exception("Could not create new pickle database as one already exists")
-        
-#t_total1 = datetime.datetime.now()
-#print 'Total time taken to initialise timeline database for {} was: {}'.format(
-#            os.path.basename(folder_path), t_total1-t_total0)
