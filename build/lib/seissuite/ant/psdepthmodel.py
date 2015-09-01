@@ -14,7 +14,7 @@ from easyprocess import EasyProcess
 import tempfile
 
 # getting the dir of the binaries of the Computer Programs in Seismology
-from psconfig import COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR
+from seissuite.ant.psconfig import COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR
 
 
 # default header of the model file:

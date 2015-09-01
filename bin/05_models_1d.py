@@ -84,7 +84,8 @@ list of observed dispersion curves, as a list of numpy arrays
 distribution by the MCMC algorithm, as a list of instances of VsModel
 (module psdepthmodel) [vsmodel1, vsmodel2 ...]
 """
-from pysismo import psdepthmodel, psmcsampling
+from seissuite.ant import psdepthmodel, psmcsampling
+
 import os
 import shutil
 import pickle
@@ -92,7 +93,8 @@ import numpy as np
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import glob
-from pysismo.psconfig import TOMO_DIR, DEPTHMODELS_DIR
+
+from seissuite.ant.psconfig import TOMO_DIR, DEPTHMODELS_DIR
 
 # ==================================================================
 # locations and associated names, {name: (lon, lat)}, around which

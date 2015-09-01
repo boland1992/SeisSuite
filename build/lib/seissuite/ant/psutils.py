@@ -22,7 +22,8 @@ from pyPdf import PdfFileReader, PdfFileWriter
 # ====================================================
 # parsing configuration file to import some parameters
 # ====================================================
-from psconfig import CROSSCORR_SKIPLOCS, COAST_SHP, TECTO_SHP, TECTO_LABELS, TECTO_COLORS
+from seissuite.ant.psconfig import (CROSSCORR_SKIPLOCS, COAST_SHP, TECTO_SHP, 
+                                    TECTO_LABELS, TECTO_COLORS)
 
 # reference elipsoid to calculate distance
 wgs84 = pyproj.Geod(ellps='WGS84')

@@ -58,7 +58,8 @@ when the inversion is performed, in pstomo.VelocityMap().
 The results are exported in a pdf file in dir *TOMO_DIR*
 """
 
-from pysismo import pstomo, psutils
+from seissuite.ant import (pstomo, psutils)
+
 import os
 import shutil
 import glob
@@ -77,7 +78,7 @@ BETAS = [200]
 LAMBDAS = [0.3]
 
 # parsing configuration file to import dirs
-from pysismo.psconfig import FTAN_DIR, TOMO_DIR
+from seissuite.ant.psconfig import (FTAN_DIR, TOMO_DIR)
 
 # selecting dispersion curves
 flist = sorted(glob.glob(os.path.join(FTAN_DIR, 'FTAN*.pickle*')))

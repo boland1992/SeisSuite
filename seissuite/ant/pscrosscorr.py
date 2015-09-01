@@ -5,12 +5,14 @@ processing, such as frequency-time analysis (FTAN) to measure
 dispersion curves.
 """
 
-import pserrors, psstation, psutils, pstomo
+
+from seissuite.ant import pserrors, psstation, psutils, pstomo
+
 import obspy.signal
 import obspy.xseed
 import obspy.signal.cross_correlation
 import obspy.signal.filter
-from obspy.core import AttribDict, read, UTCDateTime, Trace
+from obspy.core import AttribDict, read, UTCDateTime
 from obspy.signal.invsim import cosTaper
 import numpy as np
 from numpy.fft import rfft, irfft, fft, ifft, fftfreq
@@ -37,15 +39,21 @@ plt.ioff()  # turning off interactive mode
 # ====================================================
 # parsing configuration file to import some parameters
 # ====================================================
-from psconfig import (
-    CROSSCORR_DIR, FTAN_DIR, PERIOD_BANDS, CROSSCORR_TMAX, PERIOD_RESAMPLE,
-    CROSSCORR_SKIPLOCS, MINFILL, FREQMIN, FREQMAX, CORNERS, ZEROPHASE,
-    ONEBIT_NORM, FREQMIN_EARTHQUAKE, FREQMAX_EARTHQUAKE, WINDOW_TIME, WINDOW_FREQ,
-    SIGNAL_WINDOW_VMIN, SIGNAL_WINDOW_VMAX, SIGNAL2NOISE_TRAIL, NOISE_WINDOW_SIZE,
-    RAWFTAN_PERIODS, CLEANFTAN_PERIODS, FTAN_VELOCITIES, FTAN_ALPHA, STRENGTH_SMOOTHING,
-    USE_INSTANTANEOUS_FREQ, MAX_RELDIFF_INST_NOMINAL_PERIOD, MIN_INST_PERIOD,
-    HALFWINDOW_MEDIAN_PERIOD, MAX_RELDIFF_INST_MEDIAN_PERIOD, BBOX_LARGE, 
-    BBOX_SMALL, MSEED_DIR)
+from seissuite.ant.psconfig import (CROSSCORR_DIR, FTAN_DIR, PERIOD_BANDS, 
+                                    CROSSCORR_TMAX, PERIOD_RESAMPLE,
+                                    CROSSCORR_SKIPLOCS, MINFILL, FREQMIN, 
+                                    FREQMAX, CORNERS, ZEROPHASE,ONEBIT_NORM, 
+                                    FREQMIN_EARTHQUAKE, FREQMAX_EARTHQUAKE, 
+                                    WINDOW_TIME, WINDOW_FREQ, 
+                                    SIGNAL_WINDOW_VMIN, SIGNAL_WINDOW_VMAX, 
+                                    SIGNAL2NOISE_TRAIL, NOISE_WINDOW_SIZE,
+                                    RAWFTAN_PERIODS, CLEANFTAN_PERIODS, 
+                                    FTAN_VELOCITIES, FTAN_ALPHA, 
+                                    STRENGTH_SMOOTHING, USE_INSTANTANEOUS_FREQ, 
+                                    MAX_RELDIFF_INST_NOMINAL_PERIOD, 
+                                    MIN_INST_PERIOD, HALFWINDOW_MEDIAN_PERIOD, 
+                                    MAX_RELDIFF_INST_MEDIAN_PERIOD, BBOX_LARGE, 
+                                    BBOX_SMALL)
 
 # ========================
 # Constants and parameters

@@ -23,12 +23,10 @@ import itertools
 import shapefile
 import numpy as np
 import datetime as dt
-import pointshape as ps
 import multiprocessing as mp
 import matplotlib.pyplot as plt
 from math import sqrt, atan2, asin, degrees, radians, tan, sin, cos
 from shapely.geometry import asPolygon, Polygon
-from info_dataless import locs_from_dataless
 from descartes.patch import PolygonPatch
 from matplotlib.colors import LogNorm
 from scipy.spatial import ConvexHull
@@ -36,6 +34,9 @@ from scipy.cluster.vq import kmeans
 from shapely.affinity import scale
 from matplotlib.path import Path
 from shapely import geometry
+
+
+
 
 #------------------------------------------------------------------------------
 # VARIABLES

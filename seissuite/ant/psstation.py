@@ -2,9 +2,10 @@
 Definition of a class managing general information
 on a seismic station
 """
-import sys; sys.path.append('..')
-import pserrors
-import psutils
+
+
+from seisuite.ant import (pserrors, psutils)
+
 import obspy
 import obspy.core
 from obspy import read_inventory
@@ -16,11 +17,10 @@ from copy import copy
 import itertools as it
 import numpy as np
 import sqlite3 as lite
-from obspy.core import UTCDateTime
 # ====================================================
 # parsing configuration file to import some parameters
 # ====================================================
-from psconfig import MSEED_DIR, STATIONXML_DIR, DATALESS_DIR
+from seissuite.ant.psconfig import (MSEED_DIR, STATIONXML_DIR, DATALESS_DIR)
 
 
 class Station:

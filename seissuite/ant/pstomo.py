@@ -3,7 +3,7 @@ Definition of classes handling dispersion curves and
 velocity maps (obtained by inverting dispersion curves)
 """
 
-import pserrors, psutils
+from seissuite.ant import pserrors, psutils
 import itertools as it
 import numpy as np
 from scipy.optimize import curve_fit
@@ -24,11 +24,13 @@ from inspect import getargspec
 # ====================================================
 # parsing configuration file to import some parameters
 # ====================================================
-from psconfig import (
-    SIGNAL_WINDOW_VMIN, SIGNAL_WINDOW_VMAX, SIGNAL2NOISE_TRAIL, NOISE_WINDOW_SIZE,
-    MINSPECTSNR, MINSPECTSNR_NOSDEV, MAXSDEV, MINNBTRIMESTER, MAXPERIOD_FACTOR,
-    LONSTEP, LATSTEP, CORRELATION_LENGTH, ALPHA, BETA, LAMBDA,
-    FTAN_ALPHA, FTAN_VELOCITIES_STEP, PERIOD_RESAMPLE)
+from seissuite.ant.psconfig import (SIGNAL_WINDOW_VMIN, SIGNAL_WINDOW_VMAX, 
+                                    SIGNAL2NOISE_TRAIL, NOISE_WINDOW_SIZE,
+                                    MINSPECTSNR, MINSPECTSNR_NOSDEV, MAXSDEV, 
+                                    MINNBTRIMESTER, MAXPERIOD_FACTOR, LONSTEP, 
+                                    LATSTEP, CORRELATION_LENGTH, ALPHA, BETA, 
+                                    LAMBDA, FTAN_ALPHA, FTAN_VELOCITIES_STEP, 
+                                    PERIOD_RESAMPLE)
 
 # ========================
 # Constants and parameters

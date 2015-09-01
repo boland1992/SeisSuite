@@ -6,7 +6,8 @@ should then be used to find the cross-correlation function of the waveforms
 with time.
 """
 
-import pserrors, psstation, psutils
+
+from seissuite.ant import pserrors, psstation, psutils
 import obspy.signal
 import obspy.xseed
 import obspy.signal.cross_correlation
@@ -21,7 +22,7 @@ import datetime as dt
 # ====================================================
 # parsing configuration file to import some parameters
 # ====================================================
-from psconfig import (CROSSCORR_SKIPLOCS, MINFILL, MSEED_DIR)
+from seissuite.ant.psconfig import (CROSSCORR_SKIPLOCS, MINFILL)
 
 # ========================
 # Constants and parameters

@@ -1,9 +1,11 @@
 """
 Definition of a class managing general information
-on a seismic station
+on a seismic station taken from the SQL databases initialised by the 
+00_setup.py script
 """
-import pserrors
-import psutils
+
+from seisuite.ant import (pserrors, psutils)
+
 import obspy
 import obspy.core
 from obspy import read_inventory
@@ -19,11 +21,9 @@ from obspy.core import UTCDateTime
 # ====================================================
 # parsing configuration file to import some parameters
 # ====================================================
-from seissuite.ant.psconfig import (MSEED_DIR, 
-                                    STATIONXML_DIR, 
+from seissuite.ant.psconfig import (STATIONXML_DIR, 
                                     DATALESS_DIR,
-                                    DATABASE_DIR
-                                    )
+                                    DATABASE_DIR)
 
 
 class StationSQL:

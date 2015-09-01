@@ -44,12 +44,12 @@ cross-correlations are produced:
   with module pickle
 """
 
-from pysismo import pscrosscorr
+from seissuite.ant import pscrosscorr
+from seissuite.ant.psconfig import (CROSSCORR_DIR)
 import glob
 import os
 
 # parsing configuration file to import dir of cross-corr results
-from pysismo.psconfig import CROSSCORR_DIR
 
 # loading cross-correlations (looking for *.pickle files in dir *CROSSCORR_DIR*)
 folder_list = sorted(glob.glob(os.path.join(CROSSCORR_DIR, '*')))

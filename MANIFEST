@@ -3,7 +3,6 @@ README.txt
 setup.py
 seissuite/__init__.py
 seissuite/ant/__init__.py
-seissuite/ant/preprocess.py
 seissuite/ant/psconfig.py
 seissuite/ant/pscrosscorr.py
 seissuite/ant/psdepthmodel.py
@@ -22,11 +21,14 @@ seissuite/azimuth/__init__.py
 seissuite/azimuth/decluster.py
 seissuite/azimuth/extended_geodesic.py
 seissuite/azimuth/heatinterpolate.py
+seissuite/database/__init__.py
 seissuite/database/create_database.py
 seissuite/database/response_database.py
+seissuite/misc/__init__.py
 seissuite/misc/convex.py
 seissuite/misc/dataless.py
 seissuite/misc/event_mag.py
+seissuite/misc/path_search.py
 seissuite/misc/union.py
 seissuite/response/FDSN_resp.py
 seissuite/response/__init__.py
@@ -35,6 +37,7 @@ seissuite/spacing/__init__.py
 seissuite/spacing/dataless_map.py
 seissuite/spacing/greatcircle_intersect.py
 seissuite/spacing/plot_dataless_locs.py
+seissuite/spacing/pointshape.py
 seissuite/spacing/search_station.py
 seissuite/spectrum/S_spectrum.py
 seissuite/spectrum/Sfind_extrema.py

@@ -69,8 +69,8 @@ period) are exported in binary format using module pickle
 as a dict: {period: instance of pstomo.VelocityMap}.
 """
 
-from pysismo import pstomo, psutils
-from pysismo.pserrors import CannotPerformTomoInversion
+from seissuite.ant import (pstomo, psutils)
+from seissuite.ant.pserrors import CannotPerformTomoInversion
 import os
 import shutil
 import glob
@@ -91,7 +91,7 @@ BETAS = (200, 200)
 LAMBDAS = (0.3, 0.3)
 
 # parsing configuration file to import dirs
-from pysismo.psconfig import FTAN_DIR, TOMO_DIR
+from seissuite.ant.psconfig import (FTAN_DIR, TOMO_DIR)
 
 # selecting dispersion curves
 flist = sorted(glob.glob(os.path.join(FTAN_DIR, 'FTAN*.pickle*')))
