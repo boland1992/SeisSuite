@@ -1,4 +1,4 @@
-Seis-Suite
+SeisSuite
 ========================
 This project is dedicated to provide a Python framework for seismic noise tomography, 
 based on [ObsPy](https://github.com/obspy/obspy/wiki) and numerical Python packages 
@@ -42,34 +42,61 @@ Optionally, you may want to install:
 
 How to start
 ------------
-You should start reading the example configuration file, `tomo_Brazil.cnf`, which
-contains global parameters and detailed instructions. You should then create 
+If you are reading this, then you have either directly downloaded the tar ball or 
+cloned this project from github.com/boland1992/SeisSuite/ 
+In both cases, now you should cd into the SeisSuite directory and run the following
+line in the terminal:
+
+>>> python setup.py install 
+
+This should successfully install all of the module package files required for seissuite. 
+If you wish to check for a successful installation, run this line in any python shell 
+that is correctly linked to your PYTHONPATH: 
+
+>>> import seissuite
+
+If no errors occur, then the installation has been successful. 
+
+Next, you should start reading the example configuration file contained in:
+
+./bin/config_example.cnf 
+
+which contains global parameters and detailed instructions. You should then create 
 your own configuration file (any name with cnf extension, \*.cnf) with your
 own parameters, and place it in the same folder as the scripts. It is not advised
-to simply modify `tomo_Brazil.cnf`, as any update may revert your changes.
+to simply modify `./bin/config_example.cnf`, as any update may revert your changes.
 
-You may then use the scripts in the following order:
+You may then process in recommended order (items and tools from the seissuite module can
+be used independently of these scripts to create your own application if necessary):
 
-- `00_setup.py` sets up the initial required file structure for the programme,
+- `00_setup.py` sets up the initial required file structure for the applications.
 
-- `01_timeseries_process.py` takes seismic waveforms as input in order to first
+AFTER THE FILE STRUCTURE HAS BEEN INITIALISED IT IS RECOMMENDED THAT YOU THEN PLACE YOUR
+MSEED RAW WAVEFORMS FILES IN THE ./INPUT/DATA FOLDER AND THE ASSOCIATED METADATA IN THE
+./INPUT/XML OR THE ./INPUT/DATALESS FOLDERS. 
+
+- `01_database_init.py` sets up the initial databases required for finding files and
+general processing. It requires MSEED files to be in the ./INPUT/DATA folder, and metadata
+to be in either the ./INPUT/XML or the ./INPUT/DATALESS folders. 
+
+- `02_timeseries_process.py` takes seismic waveforms as input in order to first
 preprocess the waveforms and then and export cross-correlations between 
 pairs of stations,
 
-- `02_dispersion_curves.py` takes cross-correlations as input and applies
+- `03_dispersion_curves.py` takes cross-correlations as input and applies
 a frequency-time analysis (FTAN) in order to extract and export group velocity
 dispersion curves,
 
-- `03_tomo_inversion_testparams.py` takes dispersion curves as input and applies
+- `04_tomo_inversion_testparams.py` takes dispersion curves as input and applies
  a tomographic inversion to produce dispersion maps; the inversion parameters
  are systematically varied within user-defined ranges,
 
-- `04_tomo_inversion_2pass.py` takes dispersion curves as input and applies
+- `05_tomo_inversion_2pass.py` takes dispersion curves as input and applies
  a two-pass tomographic inversion to produce dispersion maps: an overdamped
  inversion is performed in the first pass in order to detect and reject outliers
  from the second pass.
  
-- `05_1d_models.py` takes dispersion maps as input and invert them for a 1-D
+- `06_1d_models.py` takes dispersion maps as input and invert them for a 1-D
   shear velocity model at selected locations, using a Markov chain Monte Carlo
   method to sample to posterior distribution of the model's parameters.
  

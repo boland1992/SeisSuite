@@ -67,12 +67,6 @@ else:
         os.makedirs("{}/{}".format(OUTPUT, i))   
 
 
-    #if no two SQL databases exist, then create them! 
-    TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
-    RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
-    lite.connect(TIMELINE_DB); lite.connect(RESP_DB)
-    from seissuite.database import create_database, response_database
 
-    
 
 

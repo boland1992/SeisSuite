@@ -4,7 +4,7 @@ on a seismic station taken from the SQL databases initialised by the
 00_setup.py script
 """
 
-from seisuite.ant import (pserrors, psutils)
+from seissuite.ant import (pserrors, psutils)
 
 import obspy
 import obspy.core
@@ -258,7 +258,7 @@ def get_stationsSQL(SQL_db, xml_inventories=(),
 
     # initializing list of stations by scanning name of miniseed files
     stations = []
-
+    print SQL_db
     if not os.path.exists(SQL_db):
         raise Exception("Database doesn't exist. Please \
 re-run create_database in seissuite.database")

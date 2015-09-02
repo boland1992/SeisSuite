@@ -12,15 +12,15 @@ import itertools
 import os
 import datetime
 import sqlite3 as lite
-from seissuite.ant.psconfig import MSEED_DIR, DATABASE_DIR
 from seissuite.misc.path_search import paths
-from seissuite.database import response_database
 
 try:
     import cPickle as pickle
 except:
     import pickle
-    print "Caution, database code may run slow because cPickle failed to import"
+    print "Caution, database code may run slow due to cPickle failed import"
+
+from seissuite.ant.psconfig import (MSEED_DIR, DATABASE_DIR)
 
 multiprocess = False
 
@@ -30,137 +30,184 @@ if multiprocess:
 
 t_total0 = datetime.datetime.now()
 
-# set folder with all waveform files in it. Can be recursive! 
+
+    
 folder_path = MSEED_DIR
 
 # set file extension
 extensions = ['m', 'mseed', 'miniseed', 'MSEED']
  
-# set desired component e.g. E, N or Z
-
 abs_paths = []
 for extension in extensions:
     abs_paths.append(paths(folder_path, extension))
-#['/home/boland/Dropbox/University/UniMelb/Research/SIMULATIONS/Triggers/chch_earthquake.MSEED']
+
 #flatten the list of absolute paths containing all relevant data files
 abs_paths = list(itertools.chain(*abs_paths))
+
 # initialise timeline dictionary, one key per station!
+global timeline
 timeline = {}
 
 if not os.path.exists('tmp'): os.mkdir('tmp')
 
-LENGTH = len(abs_paths)
-counter = 0
-loop_times = []
-try: 
-    for path in abs_paths:
-        
-        t0 = datetime.datetime.now()
-        headers = read(path, headonly=True)
-        headers.select(component='Z')
-
-    
-        for trace in headers:
-            code ='{}.{}'.format(trace.stats.network, trace.stats.station)
-            starttime = trace.stats.starttime
-            endtime = trace.stats.starttime + trace.stats.npts * \
-                (1/trace.stats.sampling_rate)
-            if code not in timeline.keys():
-                timeline[code] = []
-                timeline[code].append([starttime, endtime, path])
-            else:
-                timeline[code].append([starttime, endtime, path])
-        
-        t1 = datetime.datetime.now()
-        #print 'time taken to process previous loop: ', t1-t0
-        loop_times.append((t1-t0).total_seconds())
-        avg_time = np.average(loop_times)        
-        counter += 1
-        loops_remaining = LENGTH - counter
-        print "loops remaining: ", loops_remaining
-        print "time for previous loop was: ", t1-t0
-        #time_remaining = avg_time * loops_remaining
-        #mins_remaining = int(time_remaining / 60)
-        #seconds_left = time_remaining % 60
-        
-        #print "estimated processing time remaining: %d mins %0.2f secs" \
-        #%(mins_remaining, seconds_left)
-        
-        
-        
-except Exception as error:
-    print error
-#pool = mp.Pool(4)
-#info = pool.map(scan_path, abs_paths)
-#pool.close()
-#pool.join()
-
-# sort the dictionary database using numpy
-for key in timeline.keys():
-    timeline[key] = np.sort(np.asarray(timeline[key]), axis=0)
 
 # =============================================================================
-# USING SQL
+# SQL
 # =============================================================================
 
 # create database if it doesn't exist already, if it does, stop the programme.
-TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
+database_name = os.path.join(DATABASE_DIR, 'timeline.db')
 
-if os.path.exists(TIMELINE_DB):
+if os.path.exists(database_name):
     yeses = ['y','Y','yes','Yes','YES']    
     nos = ['n','N','no','No','NO']    
     
     condition = False
     while condition is False:
-    
-        answer = raw_input('Would you like to remove the existing database\
- and start afresh? (y/n): ')
+        
+        answer = raw_input('Would you like to remove the existing database \
+and start afresh? (y/n): ')
     
         if answer in yeses:
-            os.remove(TIMELINE_DB)
+            os.remove(database_name)
             condition = True
             
         elif answer in nos:
             raise Exception("The SQL database {} already exists, \
-quitting programme.".format(TIMELINE_DB))
+quitting programme.".format(database_name))
             condition = True
 
         else:
             print "The input answer must be of yes or no format."
             condition = False
-            
-conn = lite.connect(TIMELINE_DB)
-c = conn.cursor()
 
-# Create table called timeline for timeline database
-# the table will contain the station ID which is net.stat_name
-# the start time and end time for each trace and the absolute file path loc
-# the goal is to have one line per trace!
+# =============================================================================
+# =============================================================================
+
+def extract_info(info):    
+    trace, path = info
+    
+    stats = trace.stats
+    code ='{}.{}.{}'.format(stats.network, stats.station, stats.channel)
+    starttime = trace.stats.starttime.timestamp
+    endtime = (trace.stats.starttime + trace.stats.npts * \
+              (1/trace.stats.sampling_rate)).timestamp
+
+    return (code, starttime, endtime, path)
+
+def info_from_headers(path):
+ 
+    #t0 = datetime.datetime.now()
+    headers = read(path, headonly=True)
+    headers.select(component='Z')
+    info = []
+    for trace in headers:
+        info.append([trace, path])
+        
+    timeline_header = map(extract_info, info)
+    
+    return timeline_header
+    #t1 = datetime.datetime.now()
+    #print 'time taken to process previous loop: ', t1-t0
+    #print "time for previous loop was: ", t1-t0
+    
+t0 = datetime.datetime.now()
+
+if multiprocess:
+    pool = mp.Pool(None)
+    timeline = pool.map(info_from_headers, abs_paths)
+    pool.close()
+    pool.join()
+else:
+    timeline = map(info_from_headers, abs_paths)
+#flatten output list
+timeline = np.asarray(list(itertools.chain(*timeline)))
+
+t1 = datetime.datetime.now()
+print "time taken to read in and process timeline database: ", t1-t0
+
+
+# =============================================================================
+# USING SQL
+# =============================================================================
+
+    
+print 'creating SQL database ... '
+conn = lite.connect(database_name)
+c = conn.cursor()
+print 'SQL database cursor initialised'
 
 try:
+    # Create table called timeline for timeline database
+    # the table will contain the station ID which is net.stat_name
+    # the start time and end time for each trace and the absolute file path loc
+    # the goal is to have one line per trace!
     c.execute('''CREATE TABLE timeline
-                 (stat_name, starttime, endtime, file_path)''')
+                 (station text, starttime real, 
+                 endtime real, file_path text)''')
+    print 'timeline table created'
+
+    # create another table called file extrema
+    # this table contains the station code, the file path and the start and
+    # end times of that specific table!
+    # one line per file path!
+    c.execute('''CREATE TABLE file_extrema
+                 (station text, starttime real, 
+                 endtime real, file_path text)''')
+    print 'file extrema created'
+    
 except Exception as error:
     print error             
-                 
-for key in timeline.keys():
-    try:
-        stat_name = key        
-        for stat_info in timeline[key]:            
-            start, end, file_path = stat_info
-            example_row = '\'{}\',\'{}\',\'{}\',\'{}\''.format(stat_name, 
-                                                               start,
-                                                               end, 
-                                                               file_path)
-                                                               
-            #print example_row
-    
-            # Insert a row of data
-            c.execute("INSERT INTO timeline VALUES ({})".format(example_row))
 
-            # Save (commit) the changes
-            conn.commit()
-        
-        
-    except Exception as error: 
-        print error
+t0 = datetime.datetime.now()
+# commit many rows of information! 
+c.executemany('INSERT INTO timeline VALUES (?,?,?,?)', timeline)
+
+t1 = datetime.datetime.now()
+conn.commit()
+
+print "Time taken to commit rows to SQL db: ", t1-t0
+
+# create another table called file extrema
+# this table contains the station code, the file path and the start and
+# end times of that specific table!
+# one line per file path!
+
+try:
+    c.execute('''CREATE TABLE file_extrema
+                 (station text, starttime real, 
+                  endtime real, file_path text)''')
+    print 'file extrema table created'
+
+except Exception as error:
+    print error
+    
+
+paths = c.execute('''SELECT DISTINCT file_path FROM timeline''')
+
+# find out how many unique paths there are!
+global paths_list
+paths_list = []
+def append_fast(list_):
+    paths_list.append(str(list_[0]))    
+map(append_fast, paths)
+# convert to tuple
+paths_list = tuple(paths_list)
+
+file_extrema = []
+for path in paths_list:
+    path = (path,)
+
+    row_extrema = c.execute('''SELECT station, MIN(starttime), 
+                            MAX(endtime), file_path FROM timeline 
+                            WHERE file_path=?''', path)   
+   
+    for info in row_extrema: file_extrema.append(info)
+  
+file_extrema = tuple(file_extrema)
+
+c.executemany('INSERT INTO file_extrema VALUES (?,?,?,?)', file_extrema)
+
+conn.commit()
+
+conn.close()

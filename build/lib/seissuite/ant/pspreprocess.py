@@ -167,7 +167,7 @@ class Preprocess:
         halfwindow = int(round(self.window_freq / deltaf / 2.0))
         weight = psutils.moving_avg(abs(fft), halfwindow=halfwindow)
         # normalizing spectrum and back to time domain
-        trace.data = irfft(fft / weight, n=len(trace.data))
+        trace.data =  np.asarray(irfft(fft / weight, n=len(trace.data)))
         # re bandpass to avoid low/high freq noise
         trace.filter(type="bandpass",
                      freqmin=self.freqmin,
@@ -259,6 +259,7 @@ class Preprocess:
         if paz is not None:
             trace = self.remove_resp(trace, paz=paz)
 
+        
         # trimming, demeaning, detrending
         midt = trace.stats.starttime + (trace.stats.endtime -
                                         trace.stats.starttime) / 2.0
@@ -273,7 +274,7 @@ class Preprocess:
             
         # take a copy of the trace to calculate weights of time-normalization
         trcopy = trace
-    
+
         # =========
         # Band-pass
         # =========
@@ -283,6 +284,7 @@ class Preprocess:
         # =========
         self.trace_downsample(trace)
         
+
         # ==================
         # Time normalization
         # ==================
@@ -290,16 +292,16 @@ class Preprocess:
             # one-bit normalization
             trace.data = np.sign(trace.data)
         else:
-            trace.data = self.time_norm(trace, trcopy)
+            trace.data = np.asarray(self.time_norm(trace, trcopy))
             # ==================
             # Spectral whitening
             # ==================
         trace = self.spectral_whitening(trace)
-                    
+        
         # Verifying that we don't have nan in trace data
         if np.any(np.isnan(trace.data)):
             raise pserrors.CannotPreprocess("Got NaN in trace data")
-            
+    
         return trace
 
     def get_merged_trace(self, station, date, xcorr_interval, 
@@ -344,7 +346,8 @@ class Preprocess:
         
         
         #station_path_old = station.getpath(date, MSEED_DIR)
-        station_path_SQL = station.getpath(t0, t0+dt.timedelta(minutes=xcorr_interval))
+        station_path_SQL = station.getpath(t0, t0+dt.timedelta\
+                                                      (minutes=xcorr_interval))
         #print "station old path: ", station_path_old
         #print "station SQl path: ", station_path_SQL
         
@@ -355,6 +358,7 @@ class Preprocess:
         for tr in [tr for tr in st if tr.stats.location in skiplocs]:
             st.remove(tr)
 
+            
         if not st.traces:
             # no remaining trace!
             raise pserrors.CannotPreprocess("No trace")

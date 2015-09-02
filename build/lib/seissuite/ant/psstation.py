@@ -4,7 +4,7 @@ on a seismic station
 """
 
 
-from seisuite.ant import (pserrors, psutils)
+from seissuite.ant import (pserrors, psutils)
 
 import obspy
 import obspy.core

@@ -346,7 +346,9 @@ class Instrument:
             self.dataless_resp()
 
 # create database if it doesn't exist already, if it does, stop the programme.
-database_name = 'response_database.db'
+
+database_name = os.path.join(DATABASE_DIR, 'response.db')
+
 if os.path.exists(database_name):
     yeses = ['y','Y','yes','Yes','YES']    
     nos = ['n','N','no','No','NO']    
@@ -377,6 +379,6 @@ abs_paths = list(itertools.chain(*[xml_paths, dataless_paths]))
 # sort by size
 abs_paths = paths_sortsize(abs_paths)
 for abs_path in abs_paths:
-    print '\n\nScanning file: ', abs_path
+    print '\nScanning file: ', abs_path
     INVENTORY = Instrument(abs_path, database_name)
     INVENTORY.dataless_or_xml()

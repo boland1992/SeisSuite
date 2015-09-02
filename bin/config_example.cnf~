@@ -66,8 +66,6 @@
 
 
 FOLDER = DEFAULT
-TIMLINE_DB = timeline_database.db
-RESPONSE_DB = response_database.db
 
 #set the folder where the computer programs in seismology have been installed if required. 
 # example CPIS dir:

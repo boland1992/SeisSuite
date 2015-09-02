@@ -292,7 +292,6 @@ stations, subdir_len = psstationSQL.get_stationsSQL(SQL_db,
                                   endday=LASTDAY,
                                   verbose=False)
 
-
 # Loop on time interval
  #number of time steps
 N = int(((LASTDAY - FIRSTDAY).days + 1)*60*24 / XCORR_INTERVAL)
@@ -340,17 +339,8 @@ now to: " + f.name
  time-interval between times: {} and {}".format(date.date(), \
     int(XCORR_INTERVAL)  , date.time(), \
     (date + dt.timedelta(minutes=XCORR_INTERVAL)).time())
-
-    # loop on stations appearing in subdir corresponding to current month
-    if subdir_len == 7:
-
-        iterate_subdir = '{year}-{month:02d}'.format(year=date.year, month=date.month)
-        iterate_stations = sorted(sta for sta in stations if iterate_subdir in sta.subdirs)
-    if subdir_len == 4:
-
-        iterate_subdir = '{year}'.format(year=date.year)
-        iterate_stations = sorted(sta for sta in stations if iterate_subdir in sta.subdirs)
-        
+    
+    iterate_stations = sorted(sta for sta in stations)
 
     # subset if stations (if provided)
     if CROSSCORR_STATIONS_SUBSET:
@@ -360,7 +350,7 @@ now to: " + f.name
     # =================
     # processing traces
     # =================                          
-    iterate_stations = sorted(sta for sta in stations)
+
     # =============================================================
     # preparing functions that get one merged trace per station
     # and pre-process trace, ready to be parallelized (if required)
@@ -378,11 +368,12 @@ now to: " + f.name
                                                  xcorr_interval=XCORR_INTERVAL,
                                                  skiplocs=CROSSCORR_SKIPLOCS,
                                                  minfill=MINFILL)
+    
             errmsg = None
         except pserrors.CannotPreprocess as err:
             # cannot preprocess if no trace or daily fill < *minfill*
             trace = None
-            errmsg = '{}: skipping'.format(err)
+            errmsg = '{}: skipping 1'.format(err)
         except Exception as err:
             # unhandled exception!
             trace = None
@@ -407,6 +398,7 @@ now to: " + f.name
 
         if not trace or response is False:
             return
+        
 
         try:
             Preprocess.preprocess_trace(trace=trace, paz=response)
@@ -458,6 +450,8 @@ now to: " + f.name
 
     responses = []
     for tr in traces:
+
+        
         if not tr:
             responses.append(None)
             continue
@@ -476,7 +470,7 @@ now to: " + f.name
         except pserrors.CannotPreprocess as err:
             # response not found
             response = False
-            errmsg = '{}: skipping'.format(err)
+            errmsg = '{}: skipping 5'.format(err)
         except Exception as err:
             # unhandled exception!
             response = False
@@ -488,9 +482,13 @@ now to: " + f.name
             print '{}.{} [{}] '.format(tr.stats.network, 
                                        tr.stats.station, 
                                        errmsg),
+
     # =================
     # processing traces
     # =================
+
+
+        
     if MULTIPROCESSING['process trace']:
         # multiprocessing turned on: one process per station
         pool = mp.Pool(NB_PROCESSES)
