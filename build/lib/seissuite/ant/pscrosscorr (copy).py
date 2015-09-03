@@ -6,7 +6,7 @@ dispersion curves.
 """
 
 
-from seissuite.ant import pserrors, psstation, psstationSQL, psutils, pstomo
+from seissuite.ant import pserrors, psstation, psutils, pstomo
 
 import obspy.signal
 import obspy.xseed
@@ -183,10 +183,8 @@ class CrossCorrelation:
         nmax = int(xcorr_tmax / xcorr_dt)
         self.timearray = np.arange(-nmax * xcorr_dt, (nmax + 1)*xcorr_dt, xcorr_dt)
         self.dataarray = np.zeros(2 * nmax + 1)
-        self.phasearray = np.zeros(2 * nmax + 1)
-        self.pws = np.zeros(2 * nmax + 1)
-        self.SNR_lin = [] #SNR with each time-step for linear stack
-        self.SNR_pws = [] #SNR with each time-step for phase-weighted stack
+        self.phasearray = self.dataarray
+        self.pws = self.phasearray
         
         #  has cross-corr been symmetrized? whitened?
         self.symmetrized = False
@@ -242,13 +240,18 @@ class CrossCorrelation:
             # calculating cross-corr using obspy, if not already provided
             xcorr = obspy.signal.cross_correlation.xcorr(
                 tr1, tr2, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
-                        
+                
+            xcorr = scipy.signal.correlate(tr1, tr2, mode='same')
+        
         # verifying that we don't have NaN
         if np.any(np.isnan(xcorr)):
             s = u"Got NaN in cross-correlation between traces:\n{tr1}\n{tr2}"
             raise pserrors.NaNError(s.format(tr1=tr1, tr2=tr2))
 
+        xcorr = xcorr / np.max(xcorr)
         
+        #xcorr = xcorr - np.mean(xcorr)
+
         inst_phase = np.arctan2(xcorr, range(0,len(xcorr)))
         # phase-stacking cross-corr
         self.phasearray += np.real(np.exp(1j*inst_phase))
@@ -270,12 +273,13 @@ class CrossCorrelation:
         # each iteration one atop the other! note also that nday is the
         # number of iterations performed, NOT the number of days passed. 
         
-        linear_comp = self.dataarray #- np.mean(self.dataarray))
-        phase_comp = np.abs(self.phasearray)# - \
-        #np.mean(np.abs(self.phasearray))) 
+        N = self.nday
+        linear_comp = (self.dataarray - np.mean(self.dataarray))
+        phase_comp = (np.abs(self.phasearray) - \
+        np.mean(np.abs(self.phasearray))) 
         self.pws = linear_comp * (phase_comp ** power_v)
-        #self.pws = self.pws / np.max(self.pws)
-        #self.pws = self.pws - np.mean(self.pws)
+        self.pws = self.pws / np.max(self.pws)
+ 
        
     def add(self, tr1, tr2, xcorr=None):
         """
@@ -306,8 +310,8 @@ class CrossCorrelation:
             raise pserrors.NaNError(s.format(tr1=tr1, tr2=tr2))
         
         
-        #
-        self.dataarray += xcorr#/ np.max(xcorr) #/ (self.nday + 1)
+        #/ np.max(xcorr)
+        self.dataarray += xcorr #/ (self.nday + 1)
         # reduce stack about zero
         #self.dataarray = self.dataarray - np.mean(self.dataarray)
         # normalise about 0, max amplitude 1
@@ -413,8 +417,7 @@ class CrossCorrelation:
         xcout.whitened = True
         return xcout
 
-    def signal_noise_windows(self, vmin, vmax, signal2noise_trail, 
-                             noise_window_size):
+    def signal_noise_windows(self, vmin, vmax, signal2noise_trail, noise_window_size):
         """
         Returns the signal window and the noise window.
         The signal window is defined by *vmin* and *vmax*:
@@ -444,129 +447,11 @@ class CrossCorrelation:
             # the noise window hits the rightmost limit:
             # let's shift it to the left without crossing
             # the signal window
-            delta = min(tmax_noise-self.timearray.max(),tmin_noise-tmax_signal)
+            delta = min(tmax_noise - self.timearray.max(), tmin_noise - tmax_signal)
             tmin_noise -= delta
             tmax_noise -= delta
 
         return (tmin_signal, tmax_signal), (tmin_noise, tmax_noise)
-
-    def SNR_table(self, vmin=SIGNAL_WINDOW_VMIN, vmax=SIGNAL_WINDOW_VMAX,
-                  signal2noise_trail=SIGNAL2NOISE_TRAIL,
-                  noise_window_size=NOISE_WINDOW_SIZE, verbose=False):
-        """
-        This function provides a means to calculate the SNR of a given signal
-        (either the linear or phase-weighted stack of an input station pair)
-        and returns is as a signal float value which is then appended to the
-        lists: SNR_lin and SNR_pws.
-        """
-        #======================================================================
-        # RUN FOR LINEAR STACK PROCESSES 
-        #======================================================================
-
-        # linear stack at current time step of the xcorrs for station pair 
-        dataarray = self.dataarray
-        timearray = self.timearray
-        try:
-            # signal and noise windows
-            tsignal, tnoise = self.signal_noise_windows(
-            vmin, vmax, signal2noise_trail, noise_window_size)
-            
-            signal_window_plus = (timearray >= tsignal[0]) & \
-                                 (timearray <= tsignal[1])
-                                 
-            signal_window_minus = (timearray <= -tsignal[0]) & \
-                                  (timearray >= -tsignal[1])
-            
-            peak1 = np.abs(dataarray[signal_window_plus]).max()
-            peak2 = np.abs(dataarray[signal_window_minus]).max()
-            peak = max([peak1, peak2])                      
-
-            noise_window1 = (timearray > tsignal[1]) & \
-                            (timearray <= self.timearray[-1])
-            
-            noise_window2 = (timearray > -tsignal[0]) & \
-                           (timearray < tsignal[0])
-            
-            noise_window3 = (timearray >= self.timearray[0]) & \
-                            (timearray < -tsignal[1])
-        
-
-            
-            noise1 = dataarray[noise_window1]
-            noise2 = dataarray[noise_window2]
-            noise3 = dataarray[noise_window3]
-            
-            noise_list = list(it.chain(*[noise1, noise2, noise3]))
-            
-            noise = np.std(noise_list)
-            #SNR with each time-step for linear stack
-            self.SNR_lin.append(peak / noise) 
-            
-        except Exception as err:
-            if verbose:
-                print 'There was an unexpected error: ', err
-            else:
-                a=5
-        
-        #======================================================================
-        # RUN FOR PHASE-WEIGHTED STACK PROCESSES 
-        #======================================================================
-        # pws at current time step of the xcorrs for station pair 
-        pws = self.pws
-        
-        try:
-            # signal and noise windows
-            tsignal, tnoise = self.signal_noise_windows(
-            vmin, vmax, signal2noise_trail, noise_window_size)
-            
-            signal_window_plus = (timearray >= tsignal[0]) & \
-                                 (timearray <= tsignal[1])
-                                 
-            signal_window_minus = (timearray <= -tsignal[0]) & \
-                                  (timearray >= -tsignal[1])
-            
-            peak1 = np.abs(pws[signal_window_plus]).max()
-            peak2 = np.abs(pws[signal_window_minus]).max()
-            peak = max([peak1, peak2])                      
-
-            noise_window1 = (timearray > tsignal[1]) & \
-                            (timearray <= self.timearray[-1])
-            
-            noise_window2 = (timearray > -tsignal[0]) & \
-                           (timearray < tsignal[0])
-            
-            noise_window3 = (timearray >= self.timearray[0]) & \
-                            (timearray < -tsignal[1])
-            
-            noise1 = pws[noise_window1]
-            noise2 = pws[noise_window2]
-            noise3 = pws[noise_window3]
-            
-            noise_list = list(it.chain(*[noise1, noise2, noise3]))
-            
-            #plt.figure()
-            #plt.plot(self.timearray[noise_window1], 
-            #         pws[noise_window1], color='green')
-            #plt.plot(self.timearray[noise_window2], 
-            #         pws[noise_window2], color='green')
-            #plt.plot(self.timearray[noise_window3],
-            #         pws[noise_window3], color='green')
-            #plt.plot(self.timearray[signal_window_plus], 
-            #         pws[signal_window_plus], color='blue')
-            #plt.plot(self.timearray[signal_window_minus], 
-            #         pws[signal_window_minus], color='blue')
-            
-            #plt.show()
-            
-            noise = np.std(noise_list)
-            #SNR with each time-step for phase-weighted stack 
-            self.SNR_pws.append(peak / noise)
-                        
-        except Exception as err:
-            if verbose:
-                print 'There was an unexpected error: ', err
-            else:
-                a=5
 
     def SNR(self, periodbands=None,
             centerperiods_and_alpha=None,
@@ -621,7 +506,7 @@ class CrossCorrelation:
             xcout = xcout.whiten(inplace=False)
 
         # cross-corr of desired months
-        xcdata = xcout._get_monthyears_xcdataarray(months=None)
+        xcdata = xcout._get_monthyears_xcdataarray(months=months)
 
         # filter type and associated arguments
         if periodbands:
@@ -635,41 +520,36 @@ class CrossCorrelation:
         else:
             filtertype = None
             kwargslist = [{}]
-        
+
         SNR = []
-        try:
-            for filterkwargs in kwargslist:
-                if not filtertype:
-                    dataarray = xcdata
-                else:
-                    # bandpass filtering data before calculating SNR
-                    dataarray = psutils.bandpass(data=xcdata,
-                                                 dt=xcout._get_xcorr_dt(),
-                                                 filtertype=filtertype,
-                                                 **filterkwargs)
+        for filterkwargs in kwargslist:
+            if not filtertype:
+                dataarray = xcdata
+            else:
+                # bandpass filtering data before calculating SNR
+                dataarray = psutils.bandpass(data=xcdata,
+                                             dt=xcout._get_xcorr_dt(),
+                                             filtertype=filtertype,
+                                             **filterkwargs)
 
-                # signal and noise windows
-                tsignal, tnoise = xcout.signal_noise_windows(
-                    vmin, vmax, signal2noise_trail, noise_window_size)
-            
-                signal_window = (xcout.timearray >= tsignal[0]) & \
-                                (xcout.timearray <= tsignal[1])
+            # signal and noise windows
+            tsignal, tnoise = xcout.signal_noise_windows(
+                vmin, vmax, signal2noise_trail, noise_window_size)
 
-                noise_window = (xcout.timearray >= tnoise[0]) & \
-                               (xcout.timearray <= tnoise[1])
+            signal_window = (xcout.timearray >= tsignal[0]) & \
+                            (xcout.timearray <= tsignal[1])
 
+            noise_window = (xcout.timearray >= tnoise[0]) & \
+                           (xcout.timearray <= tnoise[1])
 
-                peak = np.abs(dataarray[signal_window]).max()
-                noise = dataarray[noise_window].std()
+            peak = np.abs(dataarray[signal_window]).max()
+            noise = dataarray[noise_window].std()
 
-                # appending SNR
-                SNR.append(peak / noise)
+            # appending SNR
+            SNR.append(peak / noise)
 
-            # returning 1d array if spectral SNR, 0d array if normal SNR
-            return np.array(SNR) if len(SNR) > 1 else np.array(SNR[0])
-            
-        except Exception as err:
-            print 'There was an unexpected error: ', err
+        # returning 1d array if spectral SNR, 0d array if normal SNR
+        return np.array(SNR) if len(SNR) > 1 else np.array(SNR[0])
 
     def plot(self, whiten=False, sym=False, vmin=SIGNAL_WINDOW_VMIN,
              vmax=SIGNAL_WINDOW_VMAX, months=None):
@@ -1840,10 +1720,8 @@ class CrossCorrelationCollection(AttribDict):
                 # getting pre-calculated cross-corr, if provided
                 xcorr = xcorrdict.get((s1name, s2name), None)
                 self[s1name][s2name].add(tr1, tr2, xcorr=xcorr)
-                self[s1name][s2name].phase_stack(tr1, tr2, xcorr=xcorr)
-                self[s1name][s2name].phase_weighted_stack()
-                self[s1name][s2name].SNR_table()
-                
+                #self[s1name][s2name].phase_stack(tr1, tr2, xcorr=xcorr)
+                #self[s1name][s2name].phase_weighted_stack()
                 
             except pserrors.NaNError:
                 # got NaN
@@ -2401,9 +2279,9 @@ class CrossCorrelationCollection(AttribDict):
             xc = self[s1][s2]
             assert isinstance(xc, CrossCorrelation)
 
-           # try:
+            try:
                 # complete FTAN analysis
-            rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
+                rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
                     whiten=whiten, months=monthyears,
                     vmin=vmin, vmax=vmax,
                     signal2noise_trail=signal2noise_trail,
@@ -2411,7 +2289,7 @@ class CrossCorrelationCollection(AttribDict):
                     **kwargs)
 
                 # plotting raw-clean FTAN
-            fig = xc.plot_FTAN(rawampl, rawvg, cleanampl, cleanvg,
+                fig = xc.plot_FTAN(rawampl, rawvg, cleanampl, cleanvg,
                                    whiten=whiten,
                                    normalize_ampl=normalize_ampl,
                                    logscale=logscale,
@@ -2420,15 +2298,15 @@ class CrossCorrelationCollection(AttribDict):
                                    signal2noise_trail=signal2noise_trail,
                                    noise_window_size=noise_window_size,
                                    **kwargs)
-            pdf.savefig(fig)
-            plt.close()
+                pdf.savefig(fig)
+                plt.close()
 
                 # appending clean vg curve
-            cleanvgcurves.append(cleanvg)
+                cleanvgcurves.append(cleanvg)
 
-            #except Exception as err:
+            except Exception as err:
                 # something went wrong with this FTAN
-               # print "\nGot unexpected error:\n\n{}\n\nSKIPPING PAIR!".format(err)
+                print "\nGot unexpected error:\n\n{}\n\nSKIPPING PAIR!".format(err)
 
         print "\nSaving files..."
 
@@ -2604,6 +2482,307 @@ class CrossCorrelationCollection(AttribDict):
                 raise Exception(s)
 
         return reftimearray
+
+
+def get_merged_trace(station, date, xcorr_interval, skiplocs=CROSSCORR_SKIPLOCS, minfill=MINFILL):
+    """
+    Returns one trace extracted from selected station, at selected date
+    (+/- 1 hour on each side to avoid edge effects during subsequent
+    processing).
+    
+    for 45 minute xcorr interval, change edge effects by 1 minute!
+    
+    
+
+    Traces whose location belongs to *skiplocs* are discarded, then
+    if several locations remain, only the first is kept. Finally,
+    if several traces (with the same location) remain, they are
+    merged, WITH GAPS FILLED USING LINEAR INTERPOLATION.
+
+    Raises CannotPreprocess exception if:
+    - no trace remain after discarded the unwanted locations
+    - data fill is < *minfill*
+
+    @type station: L{psstation.Station}
+    @type date: L{datetime.date}
+    @param skiplocs: list of locations to discard in station's data
+    @type skiplocs: iterable
+    @param minfill: minimum data fill to keep trace
+    @rtype: L{Trace}
+    """
+    #calculate edge addition and subtraction as 1/24th of the overall time interval
+    #
+    startminutes = (xcorr_interval / 24.0)
+    endminutes = xcorr_interval + startminutes
+
+    # getting station's stream at selected date
+    # (+/- one hour to avoid edge effects when removing response)
+    t0 = UTCDateTime(date)  # date at time 00h00m00s
+        
+    path_start = t0 - dt.timedelta(minutes=startminutes)
+    path_end = t0 + dt.timedelta(minutes=endminutes)
+        
+        
+    #station_path_old = station.getpath(date, MSEED_DIR)
+    station_path_SQL = station.getpath(t0, t0+dt.timedelta\
+                                                      (minutes=xcorr_interval))
+        #print "station old path: ", station_path_old
+        #print "station SQl path: ", station_path_SQL
+        
+    st = read(pathname_or_url=station_path_SQL,
+              starttime=path_start, endtime=path_end)
+                  
+              
+    #st = read(pathname_or_url=station.getpath(date),
+    #          starttime=t0 - dt.timedelta(hours=1),
+    #          endtime=t0 + dt.timedelta(days=1, hours=1))
+
+    # removing traces of stream from locations to skip
+    for tr in [tr for tr in st if tr.stats.location in skiplocs]:
+        st.remove(tr)
+
+    if not st.traces:
+        # no remaining trace!
+        raise pserrors.CannotPreprocess("No trace")
+
+    # if more than one location, we retain only the first one
+    if len(set(tr.id for tr in st)) > 1:
+        select_loc = sorted(set(tr.stats.location for tr in st))[0]
+        for tr in [tr for tr in st if tr.stats.location != select_loc]:
+            st.remove(tr)
+
+    # Data fill for current date
+    fill = psutils.get_fill(st, starttime=t0, endtime=t0 + dt.timedelta(minutes=endminutes))
+    if fill < minfill:
+        # not enough data
+        raise pserrors.CannotPreprocess("{:.0f}% fill".format(fill * 100))
+
+    # Merging traces, FILLING GAPS WITH LINEAR INTERP
+    st.merge(fill_value='interpolate')
+    trace = st[0]
+
+    return trace
+
+
+def get_or_attach_response(trace, dataless_inventories=(), xml_inventories=()):
+    """
+    Returns or attach instrumental response, from dataless seed inventories
+    (as returned by psstation.get_dataless_inventories()) and/or StationXML
+    inventories (as returned by psstation.get_stationxml_inventories()).
+    If a response if found in a dataless inventory, then a dict of poles
+    and zeros is returned. If a response is found in a StationXML
+    inventory, then it is directly attached to the trace and nothing is
+    returned.
+
+    Raises CannotPreprocess exception if no instrumental response is found.
+
+    @type trace: L{Trace}
+    @param dataless_inventories: inventories from dataless seed files (as returned by
+                                 psstation.get_dataless_inventories())
+    @type dataless_inventories: list of L{obspy.xseed.parser.Parser}
+    @param xml_inventories: inventories from StationXML files (as returned by
+                            psstation.get_stationxml_inventories())
+    @type xml_inventories: list of L{obspy.station.inventory.Inventory}
+    """
+    t1 = dt.datetime.now()
+    # looking for instrument response...
+    try:
+        # ...first in dataless seed inventories
+        paz = psstation.get_paz(channelid=trace.id,
+                                t=trace.stats.starttime,
+                                inventories=dataless_inventories)
+        return paz
+    except pserrors.NoPAZFound:
+        # ... then in dataless seed inventories, replacing 'BHZ' with 'HHZ'
+        # in trace's id (trick to make code work with Diogo's data)
+        try:
+            paz = psstation.get_paz(channelid=trace.id.replace('BHZ', 'HHZ'),
+                                    t=trace.stats.starttime,
+                                    inventories=dataless_inventories)
+            return paz
+        except pserrors.NoPAZFound:
+            # ...finally in StationXML inventories
+            try:
+                trace.attach_response(inventories=xml_inventories)
+            except:
+                # no response found!
+                raise pserrors.CannotPreprocess("No response found")
+    
+    delta = (dt.datetime.now() - t1).total_seconds()
+    print "\nProcessed response attachment in {:.1f} seconds".format(delta)
+
+
+def preprocess_trace(trace, paz=None, freqmin=FREQMIN, freqmax=FREQMAX,
+                     freqmin_earthquake=FREQMIN_EARTHQUAKE,
+                     freqmax_earthquake=FREQMAX_EARTHQUAKE,
+                     corners=CORNERS, zerophase=ZEROPHASE,
+                     period_resample=PERIOD_RESAMPLE,
+                     onebit_norm=ONEBIT_NORM,
+                     window_time=WINDOW_TIME, window_freq=WINDOW_FREQ):
+    """
+    Preprocesses a trace (so that it is ready to be cross-correlated),
+    by applying the following steps:
+    - removal of instrument response, mean and trend
+    - band-pass filtering between *freqmin*-*freqmax*
+    - downsampling to *period_resample* secs
+    - time-normalization (one-bit normalization or normalization
+      by the running mean in the earthquake frequency band)
+    - spectral whitening (if running mean normalization)
+
+    Raises CannotPreprocess exception if:
+    - trace only contains 0 (happens sometimes...)
+    - a normalization weight is 0 or NaN
+    - a Nan appeared in trace data
+
+    Note that the processing steps are performed in-place.
+
+    @type trace: L{Trace}
+    @param paz: poles and zeros of instrumental response
+                (set None if response is directly attached to trace)
+    @param freqmin: low frequency of the band-pass filter
+    @param freqmax: high frequency of the band-pass filter
+    @param freqmin_earthquake: low frequency of the earthquake band
+    @param freqmax_earthquake: high frequency of the earthquake band
+    @param corners: nb or corners of the band-pass filter
+    @param zerophase: set to True for filter not to shift phase
+    @type zerophase: bool
+    @param period_resample: resampling period in seconds
+    @param onebit_norm: set to True to apply one-bit normalization (else,
+                        running mean normalization is applied)
+    @type onebit_norm: bool
+    @param window_time: width of the window to calculate the running mean
+                        in the earthquake band (for the time-normalization)
+    @param window_freq: width of the window to calculate the running mean
+                        of the amplitude spectrum (for the spectral whitening)
+    """
+
+    # ============================================
+    # Removing instrument response, mean and trend
+    # ============================================
+
+    # removing response...
+    if paz:
+        # ...using paz:
+        if trace.stats.sampling_rate > 10.0:
+            # decimating large trace, else fft crashes
+            factor = int(np.ceil(trace.stats.sampling_rate / 10))
+            trace.decimate(factor=factor, no_filter=True)
+        trace.simulate(paz_remove=paz,
+                       paz_simulate=obspy.signal.cornFreq2Paz(0.01),
+                       remove_sensitivity=True,
+                       simulate_sensitivity=True,
+                       nfft_pow2=True)
+    else:
+        # ...using StationXML:
+        # first band-pass to downsample data before removing response
+        # (else remove_response() method is slow or even hangs)
+        trace.filter(type="bandpass",
+                     freqmin=freqmin,
+                     freqmax=freqmax,
+                     corners=corners,
+                     zerophase=zerophase)
+        psutils.resample(trace, dt_resample=period_resample)
+        trace.remove_response(output="VEL", zero_mean=True)
+    
+    t1 = dt.datetime.now()
+
+    # trimming, demeaning, detrending
+    midt = trace.stats.starttime + (trace.stats.endtime - trace.stats.starttime) / 2.0
+    t0 = UTCDateTime(midt.date)  # date of trace, at time 00h00m00s
+    trace.trim(starttime=t0, endtime=t0 + dt.timedelta(days=1))
+    trace.detrend(type='constant')
+    trace.detrend(type='linear')
+
+    if np.all(trace.data == 0.0):
+        # no data -> skipping trace
+        raise pserrors.CannotPreprocess("Only zeros")
+    
+    delta = (dt.datetime.now() - t1).total_seconds()
+    #print "\nProcessed trim in {:.1f} seconds".format(delta)
+    # =========
+    # Band-pass
+    # =========
+
+    t0 = dt.datetime.now()
+    # keeping a copy of the trace to calculate weights of time-normalization
+    trcopy = trace.copy()
+    
+    # band-pass
+    trace.filter(type="bandpass",
+                 freqmin=freqmin,
+                 freqmax=freqmax,
+                 corners=corners,
+                 zerophase=zerophase)
+
+    # downsampling trace if not already done
+    if abs(1.0 / trace.stats.sampling_rate - period_resample) > EPS:
+        psutils.resample(trace, dt_resample=period_resample)
+    
+    #delta = (dt.datetime.now() - t0).total_seconds()
+    #print "\nProcessed filters in {:.1f} seconds".format(delta)
+    # ==================
+    # Time normalization
+    # ==================
+    t0 = dt.datetime.now()
+    if onebit_norm:
+        # one-bit normalization
+        trace.data = np.sign(trace.data)
+    else:
+        # normalization of the signal by the running mean
+        # in the earthquake frequency band
+        trcopy.filter(type="bandpass",
+                      freqmin=freqmin_earthquake,
+                      freqmax=freqmax_earthquake,
+                      corners=corners,
+                      zerophase=zerophase)
+        # decimating trace
+        psutils.resample(trcopy, period_resample)
+
+        # Time-normalization weights from smoothed abs(data)
+        # Note that trace's data can be a masked array
+        halfwindow = int(round(window_time * trcopy.stats.sampling_rate / 2))
+        mask = ~trcopy.data.mask if np.ma.isMA(trcopy.data) else None
+        tnorm_w = psutils.moving_avg(np.abs(trcopy.data),
+                                     halfwindow=halfwindow,
+                                     mask=mask)
+        if np.ma.isMA(trcopy.data):
+            # turning time-normalization weights into a masked array
+            s = "[warning: {}.{} trace's data is a masked array]"
+            print s.format(trace.stats.network, trace.stats.station),
+            tnorm_w = np.ma.masked_array(tnorm_w, trcopy.data.mask)
+
+        if np.any((tnorm_w == 0.0) | np.isnan(tnorm_w)):
+            # illegal normalizing value -> skipping trace
+            raise pserrors.CannotPreprocess("Zero or NaN normalization weight")
+
+        # time-normalization
+        trace.data /= tnorm_w
+       # delta = (dt.datetime.now() - t0).total_seconds()
+       # print "\nProcessed time-normalisation in {:.1f} seconds".format(delta)
+
+        # ==================
+        # Spectral whitening
+        # ==================
+
+        fft = rfft(trace.data)  # real FFT
+        deltaf = trace.stats.sampling_rate / trace.stats.npts  # frequency step
+        # smoothing amplitude spectrum
+        halfwindow = int(round(window_freq / deltaf / 2.0))
+        weight = psutils.moving_avg(abs(fft), halfwindow=halfwindow)
+        # normalizing spectrum and back to time domain
+        trace.data = irfft(fft / weight, n=len(trace.data))
+        # re bandpass to avoid low/high freq noise
+        trace.filter(type="bandpass",
+                     freqmin=freqmin,
+                     freqmax=freqmax,
+                     corners=corners,
+                     zerophase=zerophase)
+                     
+
+
+    # Verifying that we don't have nan in trace data
+    if np.any(np.isnan(trace.data)):
+        raise pserrors.CannotPreprocess("Got NaN in trace data")
 
 
 def load_pickled_xcorr(pickle_file):

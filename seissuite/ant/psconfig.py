@@ -95,7 +95,7 @@ else:
     MSEED_DIR = "{}/INPUT/DATA".format(FOLDER)
     STATIONXML_DIR = "{}/INPUT/XML".format(FOLDER)
     DATALESS_DIR = "{}/INPUT/DATALESS".format(FOLDER)
-    DATABASE_DIR = "{}/INPUT/DATABASES".format(fold)
+    DATABASE_DIR = "{}/INPUT/DATABASES".format(FOLDER)
 
     # output dirs
     CROSSCORR_DIR = "{}/OUTPUT/CROSS".format(FOLDER)

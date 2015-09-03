@@ -97,32 +97,16 @@ class Preprocess:
             psutils.resample(trace, dt_resample=self.period_resample)
             trace.remove_response(output="VEL", zero_mean=True)
         return trace
-        
-    def bandpass_filt(self, trace):
-        """
-        Function to apply a butterworth bandpass-filter to an obspy
-        trace input object. Note: MUST only be one trace. No streams.
-        """
-    
-        # band-pass
-        return trace.filter(type="bandpass",
-                            freqmin=self.freqmin,
-                            freqmax=self.freqmax,
-                            corners=self.corners,
-                            zerophase=self.zerophase)
-                     
-    def trace_downsample(self, trace):
-
-        # downsampling trace if not already done
-        if abs(1.0 / trace.stats.sampling_rate - self.period_resample) > EPS:
-            psutils.resample(trace, dt_resample=self.period_resample)
-            
-        return trace
 
     def time_norm(self, trace, trcopy):
-        # normalization of the signal by the running mean
-        # in the earthquake frequency band
-        trcopy.filter(type="bandpass",
+        
+        if self.onebit_norm:
+            # one-bit normalization
+            trace.data = np.sign(trace.data)
+        else:
+            # normalization of the signal by the running mean
+            # in the earthquake frequency band
+            trcopy.filter(type="bandpass",
                       freqmin=self.freqmin_earthquake,
                       freqmax=self.freqmax_earthquake,
                       corners=self.corners,
@@ -145,8 +129,7 @@ class Preprocess:
 
         if np.any((tnorm_w == 0.0) | np.isnan(tnorm_w)):
             # illegal normalizing value -> skipping trace
-            raise pserrors.CannotPreprocess("Zero or NaN normalisation \
-                                            weight")
+            raise pserrors.CannotPreprocess("Zero or NaN normalization weight")
 
         # time-normalization
         trace.data /= tnorm_w
@@ -228,7 +211,8 @@ class Preprocess:
         print "\nProcessed response attachment in {:.1f} seconds".format(delta)
 
 
-    def preprocess_trace(self, trace, paz=None):
+
+    def preprocess_trace(self, trace, paz=None, verbose=False):
         """
         Preprocesses a trace (so that it is ready to be cross-correlated),
         by applying the following steps:
@@ -255,55 +239,69 @@ class Preprocess:
         # ============================================
         # Removing instrument response, mean and trend
         # ============================================
-        
-        if paz is not None:
-            trace = self.remove_resp(trace, paz=paz)
+        trace = self.remove_resp(trace, paz=paz)
 
+        t1 = dt.datetime.now()
         
         # trimming, demeaning, detrending
-        midt = trace.stats.starttime + (trace.stats.endtime -
-                                        trace.stats.starttime) / 2.0
+        midt = trace.stats.starttime + (trace.stats.endtime - trace.stats.starttime) / 2.0
         t0 = UTCDateTime(midt.date)  # date of trace, at time 00h00m00s
         trace.trim(starttime=t0, endtime=t0 + dt.timedelta(days=1))
         trace.detrend(type='constant')
         trace.detrend(type='linear')
 
-        if np.all(trace.data == 0.0):   
+        if np.all(trace.data == 0.0):
             # no data -> skipping trace
             raise pserrors.CannotPreprocess("Only zeros")
-            
-        # take a copy of the trace to calculate weights of time-normalization
-        trcopy = trace
-
+    
+        delta = (dt.datetime.now() - t1).total_seconds()
+        if verbose:
+            print "\nProcessed trim in {:.1f} seconds".format(delta)
         # =========
         # Band-pass
         # =========
-        trace = self.bandpass_filt(trace)
-        # =========
-        # Downsample
-        # =========
-        self.trace_downsample(trace)
         
+        t0 = dt.datetime.now()
+        # keeping a copy of the trace to calculate weights of time-normalization
+        trcopy = trace.copy()
+    
+        #band-pass
+        trace.filter(type="bandpass",
+                     freqmin=self.freqmin,
+                     freqmax=self.freqmax,
+                     corners=self.corners,
+                     zerophase=self.zerophase)
 
+        # downsampling trace if not already done
+        if abs(1.0 / trace.stats.sampling_rate - self.period_resample) > EPS:
+            psutils.resample(trace, dt_resample=self.period_resample)
+    
+        delta = (dt.datetime.now() - t0).total_seconds()
+        if verbose:
+            print "\nProcessed filters in {:.1f} seconds".format(delta)
+            
         # ==================
         # Time normalization
         # ==================
-        if self.onebit_norm:
-            # one-bit normalization
-            trace.data = np.sign(trace.data)
-        else:
-            trace.data = np.asarray(self.time_norm(trace, trcopy))
-            # ==================
-            # Spectral whitening
-            # ==================
+        t0 = dt.datetime.now()
+        trace = self.time_norm(trace, trcopy)        
+        delta = (dt.datetime.now() - t0).total_seconds()
+        if verbose:
+            print "\nProcessed time-normalisation in {:.1f} seconds".format(delta)
+
+        # ==================
+        # Spectral whitening
+        # ==================
+        t0 = dt.datetime.now()
         trace = self.spectral_whitening(trace)
-        
+        delta = (dt.datetime.now() - t0).total_seconds()
+        if verbose:
+            print "\nProcessed spectral whitening in {:.1f} seconds".format(delta)
+
         # Verifying that we don't have nan in trace data
         if np.any(np.isnan(trace.data)):
             raise pserrors.CannotPreprocess("Got NaN in trace data")
-    
-        return trace
-
+        
     def get_merged_trace(self, station, date, xcorr_interval, 
                          skiplocs=CROSSCORR_SKIPLOCS, 
                          minfill=MINFILL):
@@ -311,20 +309,20 @@ class Preprocess:
         Returns one trace extracted from selected station, at selected date
         (+/- 1 hour on each side to avoid edge effects during subsequent
         processing).
-    
+        
         for 45 minute xcorr interval, change edge effects by 1 minute!
     
     
-    
+
         Traces whose location belongs to *skiplocs* are discarded, then
         if several locations remain, only the first is kept. Finally,
         if several traces (with the same location) remain, they are
         merged, WITH GAPS FILLED USING LINEAR INTERPOLATION.
-
+        
         Raises CannotPreprocess exception if:
             - no trace remain after discarded the unwanted locations
             - data fill is < *minfill*
-
+            
         @type station: L{psstation.Station}
         @type date: L{datetime.date}
         @param skiplocs: list of locations to discard in station's data
@@ -336,14 +334,14 @@ class Preprocess:
         #
         startminutes = (xcorr_interval / 24.0)
         endminutes = xcorr_interval + startminutes
-    
+        
         # getting station's stream at selected date
         # (+/- one hour to avoid edge effects when removing response)
         t0 = UTCDateTime(date)  # date at time 00h00m00s
-        
+            
         path_start = t0 - dt.timedelta(minutes=startminutes)
         path_end = t0 + dt.timedelta(minutes=endminutes)
-        
+            
         
         #station_path_old = station.getpath(date, MSEED_DIR)
         station_path_SQL = station.getpath(t0, t0+dt.timedelta\
@@ -354,11 +352,15 @@ class Preprocess:
         st = read(pathname_or_url=station_path_SQL,
                   starttime=path_start, endtime=path_end)
                   
+              
+        #st = read(pathname_or_url=station.getpath(date),
+        #          starttime=t0 - dt.timedelta(hours=1),
+        #          endtime=t0 + dt.timedelta(days=1, hours=1))
+
         # removing traces of stream from locations to skip
         for tr in [tr for tr in st if tr.stats.location in skiplocs]:
             st.remove(tr)
 
-            
         if not st.traces:
             # no remaining trace!
             raise pserrors.CannotPreprocess("No trace")
@@ -370,10 +372,10 @@ class Preprocess:
                 st.remove(tr)
 
         # Data fill for current date
-        fill = psutils.get_fill(st, starttime=t0, 
-                                endtime=t0 + dt.timedelta(minutes=endminutes))
+        fill = psutils.get_fill(st, starttime=t0, endtime=t0 + dt.timedelta(minutes
+        =endminutes))
         if fill < minfill:
-            # not enough data
+        # not enough data
             raise pserrors.CannotPreprocess("{:.0f}% fill".format(fill * 100))
 
         # Merging traces, FILLING GAPS WITH LINEAR INTERP
@@ -381,7 +383,3 @@ class Preprocess:
         trace = st[0]
 
         return trace
-        
-if __name__ == '__main__':
-    # loading pickled cross-correlations
-    a=5

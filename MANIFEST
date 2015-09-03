@@ -4,6 +4,7 @@ setup.py
 seissuite/__init__.py
 seissuite/ant/__init__.py
 seissuite/ant/psconfig.py
+seissuite/ant/pscrosscorr (copy).py
 seissuite/ant/pscrosscorr.py
 seissuite/ant/psdepthmodel.py
 seissuite/ant/pserrors.py

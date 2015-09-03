@@ -48,14 +48,11 @@ from seissuite.ant import pscrosscorr
 from seissuite.ant.psconfig import (CROSSCORR_DIR)
 import glob
 import os
-
 # parsing configuration file to import dir of cross-corr results
 
 # loading cross-correlations (looking for *.pickle files in dir *CROSSCORR_DIR*)
 folder_list = sorted(glob.glob(os.path.join(CROSSCORR_DIR, '*')))
 
-#conditional = False
-#while conditional == False:
 if len(folder_list) < 1: 
     print("There are no files or folders in the data input folder \
 please re-run cross-correlation.py to get some results")
@@ -66,20 +63,22 @@ sets to be be processed: ")
     print '\n'.join('{} - {}'.format(i + 1, os.path.basename(f))
         for i, f in enumerate(folder_list))
     res = raw_input('\n')  
-    #conditional = True #break from the loop
 
 #create list of pickle file names within 
 pickle_list = []
 
 for folder in folder_list:
+    
+    pickle_files = glob.glob(os.path.join(folder, '*.pickle'))
     #check to see if there are any pickle files in the xcorr time folder 
-    if len(glob.glob(os.path.join(folder, '*.pickle'))) < 1:
-        #print("There are no .pickle files in this folder. Skipping ...")
+    if len(pickle_files) < 1:
+        print("There are no .pickle files in this folder. Skipping ...")
         continue
     else:
-        #append name of pickle file path location string to pickle_list 
-        pickle_list.append(glob.glob(os.path.join(folder, \
-        '*.pickle'))[0])
+        #append name of pickle file path location string to pickle_list
+        for pickle_file in pickle_files:
+            if 'metadata.pickle' not in pickle_file:
+                pickle_list.append(pickle_file)
 
 #create list of pickle files to process FTAN for
 if not res or res == "0":

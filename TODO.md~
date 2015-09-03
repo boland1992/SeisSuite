@@ -10,3 +10,13 @@ The following is a list of things to-do to improve the SeisSuite package.
 8. Create functional tool to search frequency response window in the response.db, and also create tests to check if the response.db is correct!
 9. Create new timeline database to keep track of when the processing for preprocessing and xcorr is. This is in case the whole terminal crashes or is interupted for any reason. Currently it uses pickle, but SQL feels like a better fit for the task. 
 10. Fix problems with False multiprocess option in 02_timeseries_process.py
+11. Fix problem with not being able to set either nothing or / at the end of the FOLDER path in .cnf
+12. Create SNR with time for all station pairs' signals and for each stack type e.g. SNR_lin stack or SNR_pws (phase-weighted Stack). 
+13. 
+
+
+
+Fixed:
+
+1. Fixed issues with pspreprocess not yielding correct results!
+2. Tidied up the SNR_table function in pscrosscorr, it is now working nominally. 

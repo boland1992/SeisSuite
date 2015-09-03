@@ -62,10 +62,12 @@
 
 #Set one folder path. This folder path will be used by setup.py to create input folders (DATA, DATALESS and XML). Set the default TIMLINE_DB, and RESPONSE_DB for these SQL databases to be saved
 #and output folders (CROSS, FTAN, TOMO and DEPTH). if folder path is set to False then 
-# if folder reads DEFAULT the current working directory of the application will be chosen 
+# if folder reads DEFAULT the current working directory of the application will be chosen. 
+# Ensure that the folder path does NOT have / at the end
 
 
 FOLDER = DEFAULT
+#FOLDER = /storage/ANT/PROGRAMS/ANT_OUTPUT
 
 #set the folder where the computer programs in seismology have been installed if required. 
 # example CPIS dir:
@@ -133,7 +135,7 @@ XCORR_INTERVAL = 45.0                ; number of minutes in xcorr time series
 USE_DATALESSPAZ = True               ; use dataless files to remove instrument response?
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
 FIRSTDAY = 01/01/2014                ; first day of cross-correlation (d/m/y)
-LASTDAY = 02/01/2014                 ; last day of cross-correlation (d/m/y)
+LASTDAY = 01/06/2014                 ; last day of cross-correlation (d/m/y)
 MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%
 CROSSCORR_STATIONS_SUBSET = null     ; subset of stations (null if all, else JSON list)
 CROSSCORR_SKIPLOCS = ["50"]          ; locations to skip (JSON list)

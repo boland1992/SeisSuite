@@ -77,7 +77,7 @@ import pickle
 import obspy.signal.cross_correlation
 import time
 import glob
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 #import numpy as np
 # turn on multiprocessing to get one merged trace per station?
 # to preprocess trace? to stack cross-correlations?
@@ -292,6 +292,7 @@ stations, subdir_len = psstationSQL.get_stationsSQL(SQL_db,
                                   endday=LASTDAY,
                                   verbose=False)
 
+
 # Loop on time interval
  #number of time steps
 N = int(((LASTDAY - FIRSTDAY).days + 1)*60*24 / XCORR_INTERVAL)
@@ -404,8 +405,8 @@ now to: " + f.name
             Preprocess.preprocess_trace(trace=trace, paz=response)
             msg = 'ok'
             print '{}.{} [{}] '.format(trace.stats.network, 
-                                       trace.stats.station, 
-                                       msg),
+                                        trace.stats.station, 
+                                        msg),
 
         except pserrors.CannotPreprocess as err:
             # cannot preprocess if no instrument response was found,
@@ -563,7 +564,7 @@ now to: " + f.name
                      xcorr in zip(pairs, xcorrs)}
         print
         
-        #print 'xcorrdict', xcorrdict
+    #print 'xcorrdict', xcorrdict
     #print "Stacking cross-correlations"
     xc.add(tracedict=tracedict,
            stations=stations,
@@ -571,23 +572,29 @@ now to: " + f.name
            xcorrdict=xcorrdict,
            verbose=not MULTIPROCESSING['cross-corr'])
     
-    #pws = xc['AUDHS']['AUSSC'].pws
-    #lin = xc['AUDHS']['AUSSC'].dataarray
-    #phase = xc['AUDHS']['AUSSC'].phasearray
-
-    #timearray = xc['AUDHS']['AUSSC'].timearray
-
-    #counter += 1 
-    #outfile = 'tmp/{}_phase.svg'.format(str(counter).zfill(3))
-    #fig = plt.figure(1)
-    #plt.plot(timearray, pws)
-    #plt.xlim([timearray[0], timearray[-1]])
-    #plt.ylim([-1, 1])    
-    #fig.savefig(outfile, dpi=75, format='SVG')
-    #plt.clf()
     
-    
+#==============================================================================    
+# SNR of linear and phase-weighted stacks over time!
+#==============================================================================    
+
+    print "\nSNR of linear stack for {} minute cross-correlation with\
+ time-interval: {} and {}".format(date.date(), \
+    int(XCORR_INTERVAL)  , date.time(), \
+    (date + dt.timedelta(minutes=XCORR_INTERVAL)).time())
     delta = (dt.datetime.now() - t0).total_seconds()
+    
+    print xc['AUALB']['AUBUS'].SNR_lin
+    
+    print "\nSNR of phase-weighted stack for {} minute cross-correlation with\
+ time-interval: {} and {}".format(date.date(), \
+    int(XCORR_INTERVAL)  , date.time(), \
+    (date + dt.timedelta(minutes=XCORR_INTERVAL)).time())
+    delta = (dt.datetime.now() - t0).total_seconds()
+    
+    print xc['AUALB']['AUBUS'].SNR_pws
+
+#==============================================================================    
+
     print "Calculated and stacked cross-correlations in \
 {:.1f} seconds".format(delta)
            

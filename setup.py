@@ -6,7 +6,7 @@
 from distutils.core import setup
 
 setup(name='seissuite',
-	version='0.1.25',
+	version='0.1.26',
 	description='Python Tools for Ambient Noise Seismology',
 	author='Benjamin Boland',
 	author_email='bolandb@student.unimelb.edu.au',

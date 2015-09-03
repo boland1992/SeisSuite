@@ -1,4 +1,11 @@
-v<0.1.23>, <01.09.2015> -- Changes list: 
+v<0.1.26>, <01.09.2015> -- Changes list: 
 
+Major changes completed!
 
-
+1. 00_setup.py script functions to build the initial file structure correctly.
+2. Bugs with 01_database_init.py script have been worked out and for now it's creating the SQL 
+databases correctly. 
+3. Issues with psprepocess.py script have been resolved.
+4. XCORR calculations are no longer yielding incorrect results as a result of improper initialisation of self.dataarray, self.phase_stack and self.pws variables in the Crosscorrelation class in pscrosscorr.py in seissuite.ant
+5. Creation of SNR list with time. This will give the user the opportunity to see how quickly or slowly the processing methods they have chosen are coverging or 
+6. Other things that I've likely forgotten. This application is still incredibly new and I'm currently running through as many examples and tests that I can think of. Flailing about like a headless chicken! 
