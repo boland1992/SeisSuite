@@ -1,4 +1,10 @@
-v<0.1.26>, <01.09.2015> -- Changes list: 
+v<0.1.27>, <04.09.2015> -- Changes list: 
+
+1. Configuration files now have separate directory. 
+2. Configuration files now have options of which prepropcessing steps you wish to perform
+
+
+v<0.1.26>, <04.09.2015> -- Changes list: 
 
 Major changes completed!
 
@@ -7,5 +13,8 @@ Major changes completed!
 databases correctly. 
 3. Issues with psprepocess.py script have been resolved.
 4. XCORR calculations are no longer yielding incorrect results as a result of improper initialisation of self.dataarray, self.phase_stack and self.pws variables in the Crosscorrelation class in pscrosscorr.py in seissuite.ant
-5. Creation of SNR list with time. This will give the user the opportunity to see how quickly or slowly the processing methods they have chosen are coverging or 
+5. Creation of SNR list with time. This will give the user the opportunity to see how quickly or slowly the processing methods they have chosen are coverging on a desired signal!
 6. Other things that I've likely forgotten. This application is still incredibly new and I'm currently running through as many examples and tests that I can think of. Flailing about like a headless chicken! 
+
+
+

@@ -12,7 +12,7 @@ import datetime as dt
 import numpy as np
 
 
-def select_and_parse_config_file(basedir=os.getcwd(), 
+def select_and_parse_config_file(basedir=None, 
                                  ext='cnf', verbose=True):
     """
     Reads a configuration file and returns an instance of ConfigParser:
@@ -25,7 +25,7 @@ def select_and_parse_config_file(basedir=os.getcwd(),
     """
     config_files = glob.glob(os.path.join(basedir, u'*.{}'.format(ext)))
 
-    if not config_files:
+    if not config_files or basedir is None:
         raise Exception("No configuration file found!")
 
     if len(config_files) == 1:
@@ -62,9 +62,12 @@ def shift(xcorr_len):
 # parsing configuration file
 # ==========================
 
-config = select_and_parse_config_file(basedir='.', 
+config = select_and_parse_config_file(basedir='./configs/', 
                                       ext='cnf', 
                                       verbose=True)
+
+
+
 
 # -----
 # paths
@@ -106,9 +109,22 @@ else:
 # dir of the Computer Programs in Seismology (can be None)
 COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR = config.get('paths',
                                                  'COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR')
+#===========
+# processing
+#===========
 
-
-
+#set the individual preprocessing techniques that you want performed on your analysis. Each
+# must be set either True or False to work. Any other options with give an error
+TDD = config.getboolean('processing', 'TDD')	 
+RESP_REMOVE = config.getboolean('processing', 'EVENT_REMOVE')	 
+EVENT_REMOVE = config.getboolean('processing', 'EVENT_REMOVE')	    
+HIGHAMP_REMOVE = config.getboolean('processing', 'HIGHAMP_REMOVE')
+RESP_CHECK = config.getboolean('processing', 'RESP_CHECK')        
+BANDPASS = config.getboolean('processing', 'BANDPASS')           
+DOWNSAMPLE = config.getboolean('processing', 'DOWNSAMPLE')         
+COMPLETENESS = config.getboolean('processing', 'COMPLETENESS')       
+TIME_NOMALISATION = config.getboolean('processing', 'TIME_NOMALISATION')  
+SPEC_WHITENING = config.getboolean('processing', 'SPEC_WHITENING')   
 
 # ---------------
 # maps parameters

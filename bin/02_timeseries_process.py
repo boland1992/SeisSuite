@@ -89,41 +89,21 @@ NB_PROCESSES = None
 if any(MULTIPROCESSING.values()):
     import multiprocessing as mp
 
-
-SQL = True
-
-if SQL:
-    a=5
-    
 # ====================================================
 # parsing configuration file to import some parameters
 # ====================================================
 
-from seissuite.ant.psconfig import (MSEED_DIR,
-                                    DATABASE_DIR,
-                                    DATALESS_DIR, 
-                                    STATIONXML_DIR, 
-                                    CROSSCORR_DIR,
-                                    USE_DATALESSPAZ, 
-                                    USE_STATIONXML, 
+from seissuite.ant.psconfig import (MSEED_DIR, DATABASE_DIR, DATALESS_DIR, 
+                                    STATIONXML_DIR, CROSSCORR_DIR,
+                                    USE_DATALESSPAZ, USE_STATIONXML, 
                                     CROSSCORR_STATIONS_SUBSET, 
-                                    CROSSCORR_SKIPLOCS,
-                                    FIRSTDAY, 
-                                    LASTDAY, 
-                                    MINFILL, 
-                                    FREQMIN, 
-                                    FREQMAX, 
-                                    CORNERS, 
-                                    ZEROPHASE, 
-                                    PERIOD_RESAMPLE,
-                                    ONEBIT_NORM, 
-                                    FREQMIN_EARTHQUAKE, 
-                                    FREQMAX_EARTHQUAKE, 
-                                    WINDOW_TIME, 
-                                    WINDOW_FREQ,
-                                    XCORR_INTERVAL,
-                                    CROSSCORR_TMAX)
-
+                                    CROSSCORR_SKIPLOCS, FIRSTDAY, LASTDAY, 
+                                    MINFILL, FREQMIN, FREQMAX, CORNERS, 
+                                    ZEROPHASE, PERIOD_RESAMPLE, ONEBIT_NORM, 
+                                    FREQMIN_EARTHQUAKE, FREQMAX_EARTHQUAKE, 
+                                    WINDOW_TIME, WINDOW_FREQ,
+                                    XCORR_INTERVAL, CROSSCORR_TMAX)
+                                    
 print "\nProcessing parameters:"
 print "- dir of miniseed data: " + MSEED_DIR
 print "- dir of dataless seed data: " + DATALESS_DIR
@@ -374,7 +354,7 @@ now to: " + f.name
         except pserrors.CannotPreprocess as err:
             # cannot preprocess if no trace or daily fill < *minfill*
             trace = None
-            errmsg = '{}: skipping 1'.format(err)
+            errmsg = '{}: skipping'.format(err)
         except Exception as err:
             # unhandled exception!
             trace = None
@@ -471,7 +451,7 @@ now to: " + f.name
         except pserrors.CannotPreprocess as err:
             # response not found
             response = False
-            errmsg = '{}: skipping 5'.format(err)
+            errmsg = '{}: skipping'.format(err)
         except Exception as err:
             # unhandled exception!
             response = False
@@ -564,34 +544,15 @@ now to: " + f.name
                      xcorr in zip(pairs, xcorrs)}
         print
         
-    #print 'xcorrdict', xcorrdict
     #print "Stacking cross-correlations"
     xc.add(tracedict=tracedict,
            stations=stations,
            xcorr_tmax=CROSSCORR_TMAX,
            xcorrdict=xcorrdict,
+           date=date,
            verbose=not MULTIPROCESSING['cross-corr'])
     
-    
-#==============================================================================    
-# SNR of linear and phase-weighted stacks over time!
-#==============================================================================    
 
-    print "\nSNR of linear stack for {} minute cross-correlation with\
- time-interval: {} and {}".format(date.date(), \
-    int(XCORR_INTERVAL)  , date.time(), \
-    (date + dt.timedelta(minutes=XCORR_INTERVAL)).time())
-    delta = (dt.datetime.now() - t0).total_seconds()
-    
-    print xc['AUALB']['AUBUS'].SNR_lin
-    
-    print "\nSNR of phase-weighted stack for {} minute cross-correlation with\
- time-interval: {} and {}".format(date.date(), \
-    int(XCORR_INTERVAL)  , date.time(), \
-    (date + dt.timedelta(minutes=XCORR_INTERVAL)).time())
-    delta = (dt.datetime.now() - t0).total_seconds()
-    
-    print xc['AUALB']['AUBUS'].SNR_pws
 
 #==============================================================================    
 

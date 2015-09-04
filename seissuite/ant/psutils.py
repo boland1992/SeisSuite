@@ -18,6 +18,7 @@ from matplotlib.collections import PatchCollection
 import pyproj
 import itertools as it
 from pyPdf import PdfFileReader, PdfFileWriter
+from obspy.core import Stream
 
 # ====================================================
 # parsing configuration file to import some parameters
@@ -105,6 +106,30 @@ def get_fill(st, starttime=None, endtime=None):
         if endtime:
             gapstart = min(gapstart, endtime)
             gapend = min(gapend, endtime)
+        fill -= (gapend - gapstart) / dttot
+
+    return fill
+
+
+def get_fill_trace(tr):
+    """
+    Subroutine to get data fill for single trace!
+    @rtype: float
+    """
+
+    st = Stream(traces=[tr])
+    trstart = tr.stats.starttime
+    trend = tr.stats.endtime
+    dttot = (trend) - (trstart)
+    
+    gaps = st.getGaps()
+
+    fill = 1.0
+    
+    for g in gaps:
+        gapstart = g[4]
+        gapend = g[5]
+
         fill -= (gapend - gapstart) / dttot
 
     return fill

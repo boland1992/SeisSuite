@@ -452,7 +452,8 @@ class CrossCorrelation:
 
     def SNR_table(self, vmin=SIGNAL_WINDOW_VMIN, vmax=SIGNAL_WINDOW_VMAX,
                   signal2noise_trail=SIGNAL2NOISE_TRAIL,
-                  noise_window_size=NOISE_WINDOW_SIZE, verbose=False):
+                  noise_window_size=NOISE_WINDOW_SIZE, date=None,
+                  verbose=False):
         """
         This function provides a means to calculate the SNR of a given signal
         (either the linear or phase-weighted stack of an input station pair)
@@ -500,7 +501,7 @@ class CrossCorrelation:
             
             noise = np.std(noise_list)
             #SNR with each time-step for linear stack
-            self.SNR_lin.append(peak / noise) 
+            self.SNR_lin.append([peak / noise, date]) 
             
         except Exception as err:
             if verbose:
@@ -560,7 +561,7 @@ class CrossCorrelation:
             
             noise = np.std(noise_list)
             #SNR with each time-step for phase-weighted stack 
-            self.SNR_pws.append(peak / noise)
+            self.SNR_pws.append([peak / noise, date])
                         
         except Exception as err:
             if verbose:
@@ -1789,8 +1790,8 @@ class CrossCorrelationCollection(AttribDict):
 
         return SNRarraydict
 
-    def add(self, tracedict, stations, xcorr_tmax, 
-                  xcorrdict=None, verbose=False):
+    def add(self, tracedict, stations, xcorr_tmax,
+                  xcorrdict=None, date=None, verbose=False):
         """
         Stacks cross-correlations between pairs of stations
         from a dict of {station.name: Trace} (in *tracedict*).
@@ -1842,7 +1843,7 @@ class CrossCorrelationCollection(AttribDict):
                 self[s1name][s2name].add(tr1, tr2, xcorr=xcorr)
                 self[s1name][s2name].phase_stack(tr1, tr2, xcorr=xcorr)
                 self[s1name][s2name].phase_weighted_stack()
-                self[s1name][s2name].SNR_table()
+                self[s1name][s2name].SNR_table(date=date)
                 
                 
             except pserrors.NaNError:

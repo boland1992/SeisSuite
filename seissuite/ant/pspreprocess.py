@@ -22,8 +22,12 @@ import datetime as dt
 # ====================================================
 # parsing configuration file to import some parameters
 # ====================================================
-from seissuite.ant.psconfig import (CROSSCORR_SKIPLOCS, MINFILL)
-
+from seissuite.ant.psconfig import (CROSSCORR_SKIPLOCS, MINFILL,                                     
+                                    EVENT_REMOVE, HIGHAMP_REMOVE, RESP_CHECK,
+                                    BANDPASS, DOWNSAMPLE, COMPLETENESS,
+                                    TIME_NOMALISATION, SPEC_WHITENING,
+                                    RESP_REMOVE, TDD)
+                                    
 # ========================
 # Constants and parameters
 # ========================
@@ -235,72 +239,107 @@ class Preprocess:
                     (set None if response is directly attached to trace)
 
         """
-
-        # ============================================
-        # Removing instrument response, mean and trend
-        # ============================================
-        trace = self.remove_resp(trace, paz=paz)
-
-        t1 = dt.datetime.now()
         
-        # trimming, demeaning, detrending
-        midt = trace.stats.starttime + (trace.stats.endtime - trace.stats.starttime) / 2.0
-        t0 = UTCDateTime(midt.date)  # date of trace, at time 00h00m00s
-        trace.trim(starttime=t0, endtime=t0 + dt.timedelta(days=1))
-        trace.detrend(type='constant')
-        trace.detrend(type='linear')
-
+        # =======================================
+        # Check if any data to work with to begin
+        # =======================================
         if np.all(trace.data == 0.0):
             # no data -> skipping trace
             raise pserrors.CannotPreprocess("Only zeros")
-    
-        delta = (dt.datetime.now() - t1).total_seconds()
-        if verbose:
-            print "\nProcessed trim in {:.1f} seconds".format(delta)
+            
+        # ==========================
+        # Remove instrument response
+        # ==========================
+        if RESP_REMOVE:
+            t1 = dt.datetime.now()
+            trace = self.remove_resp(trace, paz=paz)
+            delta = (dt.datetime.now() - t1).total_seconds()
+            if verbose:
+                print "\nRemoved response in {:.1f} seconds".format(delta)
+        
+        
+        
+        # ==============================================
+        # Check trace data completeness is above MINFILL
+        # ==============================================        
+        if COMPLETENESS:
+            # Data fill for current TIME INTERVAL!
+            # CHECK THAT THE get_fill_trace function works! 
+            fill = psutils.get_fill_trace(trace)
+            
+            if fill < MINFILL:
+                # not enough data
+                raise pserrors.CannotPreprocess("{:.0f}% fill"\
+                .format(fill*100))
+                
+        # ========================
+        # Trim, demean and detrend
+        # ========================        
+        if TDD:
+            t1 = dt.datetime.now()
+            midt = trace.stats.starttime + (trace.stats.endtime -
+            trace.stats.starttime) / 2.0
+            
+            t0 = UTCDateTime(midt.date)# date of trace, at time 00h00m00s
+            trace.trim(starttime=t0, endtime=t0 + dt.timedelta(days=1))
+            trace.detrend(type='constant')
+            trace.detrend(type='linear')
+            delta = (dt.datetime.now() - t1).total_seconds()
+            if verbose:
+                print "\nProcessed trim in {:.1f} seconds".format(delta)
+
+        
         # =========
         # Band-pass
         # =========
-        
-        t0 = dt.datetime.now()
-        # keeping a copy of the trace to calculate weights of time-normalization
-        trcopy = trace.copy()
-    
-        #band-pass
-        trace.filter(type="bandpass",
-                     freqmin=self.freqmin,
-                     freqmax=self.freqmax,
-                     corners=self.corners,
-                     zerophase=self.zerophase)
+        if BANDPASS:
+            t0 = dt.datetime.now()
+            trace.filter(type="bandpass",
+                         freqmin=self.freqmin,
+                         freqmax=self.freqmax,
+                         corners=self.corners,
+                         zerophase=self.zerophase)
+            delta = (dt.datetime.now() - t0).total_seconds()
+            if verbose:
+                print "\nProcessed filters in {:.1f} seconds".format(delta)
+                
+        # ============
+        # Downsampling
+        # ============
+        if DOWNSAMPLE:
+            if abs(1.0 / trace.stats.sampling_rate - self.period_resample)>EPS:
+                psutils.resample(trace, dt_resample=self.period_resample)
 
-        # downsampling trace if not already done
-        if abs(1.0 / trace.stats.sampling_rate - self.period_resample) > EPS:
-            psutils.resample(trace, dt_resample=self.period_resample)
-    
-        delta = (dt.datetime.now() - t0).total_seconds()
-        if verbose:
-            print "\nProcessed filters in {:.1f} seconds".format(delta)
-            
         # ==================
         # Time normalization
         # ==================
-        t0 = dt.datetime.now()
-        trace = self.time_norm(trace, trcopy)        
-        delta = (dt.datetime.now() - t0).total_seconds()
-        if verbose:
-            print "\nProcessed time-normalisation in {:.1f} seconds".format(delta)
+        if TIME_NOMALISATION:
+            t0 = dt.datetime.now()
+            # keeping a copy of the trace for weights of time-normalization
+            trcopy = trace.copy()
+            trace = self.time_norm(trace, trcopy)        
+            delta = (dt.datetime.now() - t0).total_seconds()
+            if verbose:
+                print "\nProcessed time-normalisation in {:.1f} seconds"\
+                .format(delta)
 
         # ==================
         # Spectral whitening
         # ==================
-        t0 = dt.datetime.now()
-        trace = self.spectral_whitening(trace)
-        delta = (dt.datetime.now() - t0).total_seconds()
-        if verbose:
-            print "\nProcessed spectral whitening in {:.1f} seconds".format(delta)
+        if SPEC_WHITENING:
+            t0 = dt.datetime.now()
+            trace = self.spectral_whitening(trace)
+            delta = (dt.datetime.now() - t0).total_seconds()
+            if verbose:
+                print "\nProcessed spectral whitening in {:.1f} seconds".\
+                format(delta)
 
+        # ==============================================
         # Verifying that we don't have nan in trace data
+        # ==============================================
         if np.any(np.isnan(trace.data)):
             raise pserrors.CannotPreprocess("Got NaN in trace data")
+            
         
     def get_merged_trace(self, station, date, xcorr_interval, 
                          skiplocs=CROSSCORR_SKIPLOCS, 
@@ -371,9 +410,9 @@ class Preprocess:
             for tr in [tr for tr in st if tr.stats.location != select_loc]:
                 st.remove(tr)
 
-        # Data fill for current date
-        fill = psutils.get_fill(st, starttime=t0, endtime=t0 + dt.timedelta(minutes
-        =endminutes))
+        # Data fill for current TIME INTERVAL!
+        fill = psutils.get_fill(st, starttime=t0, 
+                                endtime=t0 + dt.timedelta(minutes=endminutes))
         if fill < minfill:
         # not enough data
             raise pserrors.CannotPreprocess("{:.0f}% fill".format(fill * 100))

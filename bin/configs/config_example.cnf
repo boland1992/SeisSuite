@@ -7,6 +7,7 @@
 # extension is 'cnf': e.g., 'tomo.cnf', 'myconfig.cnf', 'test.cnf'...
 #
 # The parameters are divided in several sections:
+# - [processing]        : 
 # - [paths]             : default paths to input/output folders
 # - [maps]              : parameters to plot maps
 # - [cross-correlation] : parameters to calculate cross-correlations
@@ -66,12 +67,33 @@
 # Ensure that the folder path does NOT have / at the end
 
 
-FOLDER = DEFAULT
-#FOLDER = /storage/ANT/PROGRAMS/ANT_OUTPUT
+#FOLDER = DEFAULT
+FOLDER = /storage/ANT/PROGRAMS/ANT_OUTPUT
 
 #set the folder where the computer programs in seismology have been installed if required. 
 # example CPIS dir:
 COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR = /home/seis_suite/CPIS/PROGRAMS.330/bin
+
+
+#======
+[processing]
+#======
+
+#set the individual preprocessing techniques that you want performed on your analysis. Each
+# must be set either True or False to work. Any other options with give an error
+
+TDD = True	          ; trim, demean and detrend the trace (True recommended)
+RESP_REMOVE = True        ; remove instrument response? (True recommended)
+EVENT_REMOVE = True	  ; automate event removal from catalogue (dist to event, window and avg V) uses IRIS and others and only removes regional events inside your networks range! (automated)
+HIGHAMP_REMOVE = True     ; automate removal of high amplitude noise from entire database (recommended to perform this in collaboration with EVENT_REMOVE)
+
+RESP_CHECK = True         ; perform an instrument response check on data and only use data with tolerance overlap range (PERIODMIN-PERIODMAX). SET THIS TOLERANCE!
+
+BANDPASS = True           ; apply a band-pass filter across the set spectrum
+DOWNSAMPLE = True         ; if set to False, data is downsampled to max of min sample rate in database
+COMPLETENESS = True       ; do initial completeness check, do not process the series below tolerance
+TIME_NOMALISATION = True  ; perform time normalisation OR one-bit normalisation, OR input own!
+SPEC_WHITENING = True     ; perform spectral whitening of data
 
 
 #=====
@@ -135,7 +157,7 @@ XCORR_INTERVAL = 45.0                ; number of minutes in xcorr time series
 USE_DATALESSPAZ = True               ; use dataless files to remove instrument response?
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
 FIRSTDAY = 01/01/2014                ; first day of cross-correlation (d/m/y)
-LASTDAY = 01/06/2014                 ; last day of cross-correlation (d/m/y)
+LASTDAY = 01/01/2014                 ; last day of cross-correlation (d/m/y)
 MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%
 CROSSCORR_STATIONS_SUBSET = null     ; subset of stations (null if all, else JSON list)
 CROSSCORR_SKIPLOCS = ["50"]          ; locations to skip (JSON list)

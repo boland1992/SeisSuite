@@ -12,11 +12,21 @@ The following is a list of things to-do to improve the SeisSuite package.
 10. Fix problems with False multiprocess option in 02_timeseries_process.py
 11. Fix problem with not being able to set either nothing or / at the end of the FOLDER path in .cnf
 12. Create SNR with time for all station pairs' signals and for each stack type e.g. SNR_lin stack or SNR_pws (phase-weighted Stack). 
-13. Save incremental time-steps in (2,N) shaped array for the SNR vs. time graphs. 
+13. Create tool for showing SNR calculation technique. Visualise the 'noise' vs. 'signal' sections of the waveform.
+14. Allow for multiple runs with varyious different config files!
+15. 
+16. Impliment total processing time.
+17. Automate a text output that states total processing time, number of stations, number of station pairs, input configuration file paremeters (including which preprocessing and post-processing methods were used) and the related SNR information.  
+18. Create functions for all normalisation types and options to use each of them
+19. Create functions for all SNR types, find a way to test which is best? and reference them all!
+20. Set alternative for downsampling to max as min sample rate for database! currently the application
+will NOT work if DOWNSAMPLE = False in config file.
+21. Allow preprocessing steps to be set in an individual order (i.e. function construction!)
 
 
-
-Fixed:
+Fixed or new:
 
 1. Fixed issues with pspreprocess not yielding correct results!
 2. Tidied up the SNR_table function in pscrosscorr, it is now working nominally. 
+3. Managed to save incremental time-steps in (2,N) shaped array for the SNR vs. time graphs. 
+4. Preprocessing steps can now be set True or False in config files!
