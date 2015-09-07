@@ -40,9 +40,6 @@ SPEC_WHITENING = CONFIG.SPEC_WHITENING
 RESP_REMOVE = CONFIG.RESP_REMOVE
 TDD = CONFIG.TDD
 
-
-
-
 # ========================
 # Constants and parameters
 # ========================

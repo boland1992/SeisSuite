@@ -8,6 +8,8 @@ with time.
 
 
 from seissuite.ant import pserrors, psstation, psutils
+from seissuite.response.resp import freq_check
+
 import obspy.signal
 import obspy.xseed
 import obspy.signal.cross_correlation
@@ -41,8 +43,10 @@ RESP_REMOVE = CONFIG.RESP_REMOVE
 TDD = CONFIG.TDD
 
 
-
-
+RESP_CHECK = CONFIG.RESP_CHECK
+RESP_FREQS = CONFIG.RESP_FREQS
+RESP_TOL = CONFIG.RESP_TOL
+RESP_EFFECT = CONFIG.RESP_EFFECT
 # ========================
 # Constants and parameters
 # ========================
@@ -261,7 +265,22 @@ class Preprocess:
         if np.all(trace.data == 0.0):
             # no data -> skipping trace
             raise pserrors.CannotPreprocess("Only zeros")
+        
+        
+        # =====================================================================
+        # Remove channels outside of the acceptible instrument freq. response
+        # =====================================================================
+        if RESP_CHECK:
+            t1 = dt.datetime.now()
             
+            # create code to check with function in seissuite.response.resp script
+                        
+            
+            delta = (dt.datetime.now() - t1).total_seconds()
+            if verbose:
+                print "\nRemoved unwanted instruments in {:.1f} seconds"\
+                .format(delta)
+        
         # ==========================
         # Remove instrument response
         # ==========================

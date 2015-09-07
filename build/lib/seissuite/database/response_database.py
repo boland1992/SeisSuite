@@ -37,7 +37,10 @@ DATABASE_DIR = CONFIG.DATABASE_DIR
 DATALESS_DIR = CONFIG.DATALESS_DIR
 STATIONXML_DIR = CONFIG.STATIONXML_DIR
 
-
+RESP_CHECK = CONFIG.RESP_CHECK
+RESP_FREQS = CONFIG.RESP_FREQS
+RESP_TOL = CONFIG.RESP_TOL
+RESP_EFFECT = CONFIG.RESP_EFFECT
 
 import itertools 
 from obspy.xseed import Parser
@@ -158,24 +161,16 @@ class Instrument:
         self.channels = None
         self.window = None
 
-
-
-            
     def output_SQL(self, code, gains, freqs):
         """
         Function to connect to and output response information to SQL database.
         """
+        
         #print 'creating SQL database ... '
         conn = lite.connect(self.SQL_path)
         c = conn.cursor()
         #print 'SQL database cursor initialised'
         
-        #try:
-            
-            # Create table called timeline for timeline database
-            # the table will contain the station ID which is net.stat_name
-            # the start time and end time for each trace and the absolute file path loc
-            # the goal is to have one line per trace!
         code = code.replace('.', '_')
 
         c.execute('CREATE TABLE IF NOT EXISTS {} (gain real, frequency real)'\
@@ -183,22 +178,18 @@ class Instrument:
         #c.execute("SELECT name FROM sqlite_master WHERE type='table';")
         #print 'Created frequency response table for {}'.format(code)
         
-        #for gain, freq in zip(gains, freqs):
-                # format syntax is VERY insecure, but should work for these purposes!
-        #    gain, freq =  float(np.real(gain)), float(freq)
-        #    c.execute('INSERT INTO {} VALUES (?,?)'.format(code), (gain, freq))
-                #print c.fetchone('{}'.format(code))
-        
+            
         response_rows = []
-        # response lists are too large to store in their entirety. Reduce 100 fold
+        # response lists are too large to store in their entirety. 
+        # Reduce 100 fold
         for gain, freq in zip(gains, freqs):
             response_rows.append((gain, freq))
 
         response_rows = tuple(response_rows)
-        
         c.executemany('INSERT INTO {} VALUES (?,?)'.format(code),response_rows)
-        #for row in c.execute('SELECT * FROM {}'.format(code)):
-        #    print row
+        
+#        for row in c.execute('SELECT * FROM {}'.format(code)):
+#            print row
 #        c.execute("SELECT name FROM sqlite_master WHERE type='table';")
 #        print c.fetchall()
  
@@ -207,6 +198,43 @@ class Instrument:
         # close database
         conn.close() 
         
+    def output_resp(self, code, gains, freqs):
+        """
+        Creates a table called resp_windows. This table
+        will contain three columns. The first will be the instrument
+        code e.g. AU_BENZ_BHZ. The second column will contain the
+        minimum effective frequency as calculated by taking the
+        response curve, and finding where the line of RESP_EFFECT*gain_max 
+        intersect. This will be two points, the min and max of the effective
+        frequency window. min_window will be the second column and max
+        window will be the third column. This table will be saved to the
+        response.db database. 
+        """
+        
+        #print 'creating SQL database ... '
+        conn = lite.connect(self.SQL_path)
+        c = conn.cursor()
+        #print 'SQL database cursor initialised'
+        
+        code = code.replace('.', '_')
+        
+        c.execute('''CREATE TABLE IF NOT EXISTS resp_windows (station text, 
+                  min_window real, max_window real)''')
+
+        # calculate the response window
+        window = self.response_window(gains, freqs, tolerance=RESP_EFFECT)
+        
+        window_tuple = (code, window[0][0], window[1][0])
+        #print window_tuple
+        
+        c.execute('INSERT INTO resp_windows VALUES (?,?,?)', window_tuple)
+        #for row in c.execute('SELECT * FROM resp_windows'):
+        #    print row
+
+       # commit changes
+        conn.commit()
+        # close database
+        conn.close() 
         
     def find_sample(self, response):
         """
@@ -237,25 +265,44 @@ class Instrument:
     
         return np.real(gain)[0::100], freq[0::100]
 
-    def response_window(self, cpx_response, freq, tolerance=0.7):
+    def response_window(self, cpx_response, freq, tolerance=RESP_EFFECT):
         """
         Function that can evaluate the response of a given seismic instrument 
         and return a frequency "window" for which the instrument is most 
         effective. The lower the tolerance value (must be float between 0 
         and 1), the larger but less accurate the frequency window will be.
         """
+
+        #print "cpx_resp in window: ", cpx_response
+        #print "freqs in window: ", freq        
+
         #make sure that the gain response array is a numpy array
         cpx_response = np.asarray(cpx_response)
+        
+        #print "cpx_resp as array: ", cpx_response
+
         # first find maximum gain response in cpx_reponse
-        max_gain = np.max(cpx_response)
+        max_gain = np.max(cpx_response)        
+        #print "max gain: ", max_gain        
+
         gain_tol = max_gain * tolerance
+        #print "gain_tol: ", gain_tol        
+
         arr2 = np.column_stack((freq, abs(cpx_response)))   
+        #print "arr2: ", arr2        
+
         # find indices of cpx_reponse where the grain is above the tolerance
         gain_above = np.argwhere(cpx_response >= gain_tol)
-        lower_index, upper_index = gain_above[0], gain_above[-1]    
+        #print "gain_above: ", gain_above        
+
+        lower_index, upper_index = gain_above[0], gain_above[-1]   
+        #print "lower_index: ", lower_index        
+        #print "upper_index: ", upper_index        
+        
         arr3 = arr2[lower_index:upper_index]
+        #print "arr3: ", arr3        
         self.window = np.vstack((arr3[0], arr3[-1]))
-        print self.window
+
         return  self.window
         
     def import_xml(self):
@@ -294,18 +341,26 @@ class Instrument:
             for station in network:
                 for channel in station:
                     try:
-                        out_code = '{}_{}_{}'.format(network.code, 
+                        code = '{}_{}_{}'.format(network.code, 
                                                      station.code, 
                                                      channel.code)
-                        print out_code,
+                        print code,
                         resp = channel.response
                         #calculate frequency response window
                         sample_rate = self.find_sample(resp)
                         cpx_resp, freqs = self.get_response(min_freq, resp, 
                                                          sample_rate)
-                        self.output_SQL(out_code, cpx_resp, freqs)
+                                                         
+                        # reduce the number of values saved to database
+                        cpx_resp, freqs  = cpx_resp[::100], freqs[::100]  
+                        # make sure no gains or frequencies are negative                          
+                        cpx_resp, freqs = (np.abs(cpx_resp), np.abs(freqs))
+                        self.output_SQL(code, cpx_resp, freqs)
+                        self.output_resp(code, np.real(cpx_resp), 
+                                         np.real(freqs))
 
-                    except:
+                    except Exception as error:
+                        print error
                         continue
         
     def dataless_resp(self):
@@ -330,23 +385,37 @@ class Instrument:
                 data = sp.getPAZ(code)
                 poles = data['poles']
                 zeros = data['zeros']
-                
+
+                condition = True
+            except Exception as error:
+                print error
+                condition = False
+                continue
+             
+            if condition:
                 t_samp = 1.0 / sample_rate
                 #nyquist = sampling_rate / 2.0
                 nfft = sample_rate / min_freq
-            
+                
                 cpx_resp, freqs = pazToFreqResp(poles, zeros, 1,
                                                 t_samp, nfft, freq=True)
                                                 
-                cpx_resp, freqs  = cpx_resp[::100], freqs[::100]                            
+                #print "cpx_resp before: ", cpx_resp
+                #print "freqs before: ", freqs
+                
+                # reduce the number of values saved to database; factor of 100
+                cpx_resp, freqs  =(np.real(cpx_resp[::100]), 
+                                   np.real(freqs[::100]))
+                cpx_resp, freqs  =(np.abs(cpx_resp), 
+                                   np.abs(freqs))
+                #print "cpx_resp after: ", cpx_resp
+                #print "freqs after: ", freqs                       
                 out_code = '{}_{}_{}'.format(net,stat,chan)
                 print out_code,
-                self.output_SQL(out_code, cpx_resp, freqs)
-                                
-            except:
-                continue
 
-                                          
+                self.output_SQL(out_code, cpx_resp, freqs)
+                self.output_resp(code, cpx_resp, freqs)
+                
     def dataless_or_xml(self):
         """
         Function to determine whether or not this class should run either
@@ -358,9 +427,9 @@ class Instrument:
         elif self.extension in ['dataless', 'DATALESS', 'Dataless']:
             # run dataless functions    
             self.dataless_resp()
-
+                    
+                    
 # create database if it doesn't exist already, if it does, stop the programme.
-
 database_name = os.path.join(DATABASE_DIR, 'response.db')
 
 if not AUTOMATE:
@@ -391,7 +460,6 @@ else:
     os.remove(database_name)
     
     
-    
 xml_paths = paths(folder_path=STATIONXML_DIR, extension='xml')
 dataless_paths = paths(folder_path=DATALESS_DIR, extension='dataless')
 # combine both xml and dataless paths
@@ -399,6 +467,6 @@ abs_paths = list(itertools.chain(*[xml_paths, dataless_paths]))
 # sort by size
 abs_paths = paths_sortsize(abs_paths)
 for abs_path in abs_paths:
-    print '\nScanning file: ', abs_path
+    print '\nScanning file: ', os.path.basename(abs_path)
     INVENTORY = Instrument(abs_path, database_name)
     INVENTORY.dataless_or_xml()

@@ -3,6 +3,7 @@ README.txt
 setup.py
 seissuite/__init__.py
 seissuite/ant/__init__.py
+seissuite/ant/psconfig (copy).py
 seissuite/ant/psconfig.py
 seissuite/ant/pscrosscorr (copy).py
 seissuite/ant/pscrosscorr.py
@@ -26,6 +27,7 @@ seissuite/database/__init__.py
 seissuite/database/create_database.py
 seissuite/database/response_database.py
 seissuite/misc/__init__.py
+seissuite/misc/config_class.py
 seissuite/misc/convex.py
 seissuite/misc/dataless.py
 seissuite/misc/event_mag.py

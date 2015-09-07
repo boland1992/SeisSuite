@@ -17,6 +17,33 @@ import os
 import sys
 from xml.etree.ElementTree import parse
 import matplotlib.pyplot as plt
+import sqlite3 as lite
+try:
+    import cPickle as pickle
+except:
+    import pickle
+    print "Caution, database code may run slow due to cPickle failed import"
+
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+    
+# import variables from initialised CONFIG class.
+AUTOMATE = CONFIG.AUTOMATE
+MSEED_DIR = CONFIG.MSEED_DIR
+DATABASE_DIR = CONFIG.DATABASE_DIR
+DATALESS_DIR = CONFIG.DATALESS_DIR
+STATIONXML_DIR = CONFIG.STATIONXML_DIR
+
+RESP_CHECK = CONFIG.RESP_CHECK
+RESP_FREQS = CONFIG.RESP_FREQS
+RESP_TOL = CONFIG.RESP_TOL
+RESP_EFFECT = CONFIG.RESP_EFFECT
+
+
+
 
 def find_sample(reponse):
     """

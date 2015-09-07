@@ -148,7 +148,16 @@ class Config:
         self.HIGHAMP_REMOVE = self.config.getboolean('processing', 
                                                      'HIGHAMP_REMOVE')
         self.RESP_CHECK = self.config.getboolean('processing', 
-                                                 'RESP_CHECK')        
+                                                 'RESP_CHECK')
+                                                 
+        self.RESP_RANGE = json.loads(self.config.get('processing', 
+                                                     'RESP_RANGE'))  
+                                                     
+        self.RESP_FREQS = [1./max(self.RESP_RANGE), 1./min(self.RESP_RANGE)]       
+        
+        self.RESP_TOL =  self.config.getfloat('processing', 'RESP_TOL')
+        self.RESP_EFFECT = self.config.getfloat('processing', 'RESP_EFFECT')
+        
         self.BANDPASS = self.config.getboolean('processing', 'BANDPASS')           
         self.DOWNSAMPLE = self.config.getboolean('processing', 'DOWNSAMPLE')         
         self.COMPLETENESS = self.config.getboolean('processing', 

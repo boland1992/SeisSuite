@@ -140,16 +140,17 @@ for config_file in config_list:
     TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
     RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
     
+    if not os.path.exists(RESP_DB):
+        # initialise response database for use with automated data selection!
+        lite.connect(RESP_DB)
+        from seissuite.database import response_database
+    
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!
         lite.connect(TIMELINE_DB)
         from seissuite.database import create_database
 
-    if not os.path.exists(RESP_DB):
-        # initialise response database for use with automated data selection!
-        lite.connect(RESP_DB)
-        from seissuite.database import response_database
-                                        
+
                                         
                                         
     print "\nProcessing parameters:"
