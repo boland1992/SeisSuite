@@ -20,11 +20,18 @@ import itertools as it
 from pyPdf import PdfFileReader, PdfFileWriter
 from obspy.core import Stream
 
-# ====================================================
-# parsing configuration file to import some parameters
-# ====================================================
-from seissuite.ant.psconfig import (CROSSCORR_SKIPLOCS, COAST_SHP, TECTO_SHP, 
-                                    TECTO_LABELS, TECTO_COLORS)
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+
+# import variables from initialised CONFIG class.
+CROSSCORR_SKIPLOCS = CONFIG.CROSSCORR_SKIPLOCS
+COAST_SHP = CONFIG.COAST_SHP
+TECTO_SHP = CONFIG.TECTO_SHP
+TECTO_LABELS = CONFIG.TECTO_LABELS
+TECTO_COLORS = CONFIG.TECTO_COLORS
 
 # reference elipsoid to calculate distance
 wgs84 = pyproj.Geod(ellps='WGS84')

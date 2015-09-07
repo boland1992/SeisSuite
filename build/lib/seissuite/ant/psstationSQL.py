@@ -18,13 +18,19 @@ import itertools as it
 import numpy as np
 import sqlite3 as lite
 from obspy.core import UTCDateTime
-# ====================================================
-# parsing configuration file to import some parameters
-# ====================================================
-from seissuite.ant.psconfig import (STATIONXML_DIR, 
-                                    DATALESS_DIR,
-                                    DATABASE_DIR)
 
+
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+    
+# import variables from initialised CONFIG class.
+MSEED_DIR = CONFIG.MSEED_DIR
+STATIONXML_DIR = CONFIG.STATIONXML_DIR
+DATALESS_DIR = CONFIG.DATALESS_DIR
+DATABASE_DIR = CONFIG.DATABASE_DIR
 
 class StationSQL:
     """

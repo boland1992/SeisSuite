@@ -22,6 +22,13 @@ The following is a list of things to-do to improve the SeisSuite package.
 20. Set alternative for downsampling to max as min sample rate for database! currently the application
 will NOT work if DOWNSAMPLE = False in config file.
 21. Allow preprocessing steps to be set in an individual order (i.e. function construction!)
+22. rename config check function to something a little more appropriate and allow for user input of both lists and individual settings.
+23. Try creating a NEW config text/ anything file to save current parsed configuration global information in!
+24. have a way of accessing the current configuration file location! or something like that. 
+25. allow for automatic SQL database file structuring OR alternatives e.g. BUDS
+26. Change output print for when xcorr sets are saving. Give option for individual savings 
+27. Change re-start pickle to output to xcorr
+
 
 
 Fixed or new:

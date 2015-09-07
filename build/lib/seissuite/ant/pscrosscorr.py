@@ -6,13 +6,13 @@ dispersion curves.
 """
 
 
-from seissuite.ant import pserrors, psstation, psstationSQL, psutils, pstomo
+from seissuite.ant import pserrors, psutils, pstomo
 
 import obspy.signal
 import obspy.xseed
 import obspy.signal.cross_correlation
 import obspy.signal.filter
-from obspy.core import AttribDict, read, UTCDateTime, Stream
+from obspy.core import AttribDict#, read, UTCDateTime, Stream
 from obspy.signal.invsim import cosTaper
 import numpy as np
 from numpy.fft import rfft, irfft, fft, ifft, fftfreq
@@ -28,7 +28,6 @@ import copy
 from collections import OrderedDict
 import datetime as dt
 from calendar import monthrange
-import scipy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.backends.backend_pdf import PdfPages
@@ -39,21 +38,60 @@ plt.ioff()  # turning off interactive mode
 # ====================================================
 # parsing configuration file to import some parameters
 # ====================================================
-from seissuite.ant.psconfig import (CROSSCORR_DIR, FTAN_DIR, PERIOD_BANDS, 
-                                    CROSSCORR_TMAX, PERIOD_RESAMPLE,
-                                    CROSSCORR_SKIPLOCS, MINFILL, FREQMIN, 
-                                    FREQMAX, CORNERS, ZEROPHASE,ONEBIT_NORM, 
-                                    FREQMIN_EARTHQUAKE, FREQMAX_EARTHQUAKE, 
-                                    WINDOW_TIME, WINDOW_FREQ, 
-                                    SIGNAL_WINDOW_VMIN, SIGNAL_WINDOW_VMAX, 
-                                    SIGNAL2NOISE_TRAIL, NOISE_WINDOW_SIZE,
-                                    RAWFTAN_PERIODS, CLEANFTAN_PERIODS, 
-                                    FTAN_VELOCITIES, FTAN_ALPHA, 
-                                    STRENGTH_SMOOTHING, USE_INSTANTANEOUS_FREQ, 
-                                    MAX_RELDIFF_INST_NOMINAL_PERIOD, 
-                                    MIN_INST_PERIOD, HALFWINDOW_MEDIAN_PERIOD, 
-                                    MAX_RELDIFF_INST_MEDIAN_PERIOD, BBOX_LARGE, 
-                                    BBOX_SMALL)
+
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+    
+# import variables from initialised CONFIG class.
+MSEED_DIR = CONFIG.MSEED_DIR
+DATABASE_DIR = CONFIG.DATABASE_DIR
+DATALESS_DIR = CONFIG.DATALESS_DIR
+STATIONXML_DIR = CONFIG.STATIONXML_DIR
+CROSSCORR_DIR = CONFIG.CROSSCORR_DIR
+USE_DATALESSPAZ = CONFIG.USE_DATALESSPAZ
+USE_STATIONXML = CONFIG.USE_STATIONXML
+CROSSCORR_STATIONS_SUBSET = CONFIG.CROSSCORR_STATIONS_SUBSET
+CROSSCORR_SKIPLOCS = CONFIG.CROSSCORR_SKIPLOCS
+FIRSTDAY = CONFIG.FIRSTDAY
+LASTDAY = CONFIG.LASTDAY
+MINFILL = CONFIG.MINFILL
+FREQMIN = CONFIG.FREQMIN
+FREQMAX = CONFIG.FREQMAX
+CORNERS = CONFIG.CORNERS
+ZEROPHASE = CONFIG.ZEROPHASE
+PERIOD_RESAMPLE = CONFIG.PERIOD_RESAMPLE
+ONEBIT_NORM = CONFIG.ONEBIT_NORM
+FREQMIN_EARTHQUAKE = CONFIG.FREQMIN_EARTHQUAKE
+FREQMAX_EARTHQUAKE = CONFIG.FREQMAX_EARTHQUAKE
+WINDOW_TIME = CONFIG.WINDOW_TIME
+WINDOW_FREQ = CONFIG.WINDOW_FREQ
+XCORR_INTERVAL = CONFIG.XCORR_INTERVAL
+CROSSCORR_TMAX = CONFIG.CROSSCORR_TMAX
+CROSSCORR_DIR = CONFIG.CROSSCORR_DIR
+FTAN_DIR = CONFIG.FTAN_DIR
+PERIOD_BANDS = CONFIG.PERIOD_BANDS
+CROSSCORR_TMAX = CONFIG.CROSSCORR_TMAX
+PERIOD_RESAMPLE = CONFIG.PERIOD_RESAMPLE
+SIGNAL_WINDOW_VMIN = CONFIG.SIGNAL_WINDOW_VMIN
+SIGNAL_WINDOW_VMAX = CONFIG.SIGNAL_WINDOW_VMAX
+SIGNAL2NOISE_TRAIL = CONFIG.SIGNAL2NOISE_TRAIL
+NOISE_WINDOW_SIZE = CONFIG.NOISE_WINDOW_SIZE
+RAWFTAN_PERIODS = CONFIG.RAWFTAN_PERIODS
+CLEANFTAN_PERIODS = CONFIG.CLEANFTAN_PERIODS
+FTAN_VELOCITIES = CONFIG.FTAN_VELOCITIES
+FTAN_ALPHA = CONFIG.FTAN_ALPHA
+STRENGTH_SMOOTHING = CONFIG.STRENGTH_SMOOTHING
+USE_INSTANTANEOUS_FREQ = CONFIG.USE_INSTANTANEOUS_FREQ
+MAX_RELDIFF_INST_NOMINAL_PERIOD = CONFIG.MAX_RELDIFF_INST_NOMINAL_PERIOD
+MIN_INST_PERIOD = CONFIG.MIN_INST_PERIOD
+HALFWINDOW_MEDIAN_PERIOD = CONFIG.HALFWINDOW_MEDIAN_PERIOD
+MAX_RELDIFF_INST_MEDIAN_PERIOD = CONFIG.MAX_RELDIFF_INST_MEDIAN_PERIOD
+BBOX_LARGE = CONFIG.BBOX_LARGE
+BBOX_SMALL = CONFIG.BBOX_SMALL
+
 
 # ========================
 # Constants and parameters
@@ -1954,7 +1992,7 @@ class CrossCorrelationCollection(AttribDict):
 
             # sorting pairs alphabetically
             pairs.sort()
-
+            print 'Now saving cross-correlation plots for all station pairs ...'
             for iplot, (s1, s2) in enumerate(pairs):
                 plt.figure(iplot)
                 # symmetrizing cross-corr if necessary
@@ -2002,7 +2040,8 @@ class CrossCorrelationCollection(AttribDict):
                     outfile_individual + '~')
                 fig = plt.gcf()
                 fig.set_size_inches(figsize)
-                print(outfile_individual)
+                #print(outfile_individual)
+                print '{s1}-{s2}'.format(s1=s1, s2=s2),
                 fig.savefig(outfile_individual, dpi=dpi)
 
         #enter number of cross-correlations to be plotted as to not crowd the image

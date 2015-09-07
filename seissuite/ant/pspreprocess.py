@@ -17,17 +17,32 @@ import numpy as np
 from numpy.fft import rfft, irfft
 from obspy import UTCDateTime
 import datetime as dt
+import pickle
+          
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+    
+# import variables from initialised CONFIG class.
+CROSSCORR_SKIPLOCS = CONFIG.CROSSCORR_SKIPLOCS
+DATABASE_DIR = CONFIG.DATABASE_DIR
+MINFILL = CONFIG.MINFILL                              
+EVENT_REMOVE = CONFIG.EVENT_REMOVE
+HIGHAMP_REMOVE = CONFIG.HIGHAMP_REMOVE
+RESP_CHECK = CONFIG.RESP_CHECK
+BANDPASS = CONFIG.BANDPASS
+DOWNSAMPLE = CONFIG.DOWNSAMPLE
+COMPLETENESS = CONFIG.COMPLETENESS
+TIME_NOMALISATION = CONFIG.TIME_NOMALISATION
+SPEC_WHITENING = CONFIG.SPEC_WHITENING
+RESP_REMOVE = CONFIG.RESP_REMOVE
+TDD = CONFIG.TDD
 
 
-# ====================================================
-# parsing configuration file to import some parameters
-# ====================================================
-from seissuite.ant.psconfig import (CROSSCORR_SKIPLOCS, MINFILL,                                     
-                                    EVENT_REMOVE, HIGHAMP_REMOVE, RESP_CHECK,
-                                    BANDPASS, DOWNSAMPLE, COMPLETENESS,
-                                    TIME_NOMALISATION, SPEC_WHITENING,
-                                    RESP_REMOVE, TDD)
-                                    
+
+
 # ========================
 # Constants and parameters
 # ========================

@@ -60,8 +60,11 @@
 [automate]
 #=========
 
-# Set application to run all configuration files that are present. If all have #False, then a user input command will ask which one you would like to process!
-AUTOMATE = False  
+# If ANY of the AUTOMATE varibales in the ./configs/ folder are set to True, then the application will loop over all of them.
+# Otherwise, if all of them are set to False you can only choose one. Option to choose more than one, but not all is coming soon! 
+
+AUTOMATE = True  
+
 
 #======
 [paths]
@@ -81,9 +84,9 @@ FOLDER = /storage/ANT/PROGRAMS/ANT_OUTPUT
 COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR = /home/seis_suite/CPIS/PROGRAMS.330/bin
 
 
-#======
+#===========
 [processing]
-#======
+#===========
 
 #set the individual preprocessing techniques that you want performed on your analysis. Each
 # must be set either True or False to work. Any other options with give an error
@@ -177,6 +180,9 @@ PERIODMIN_EARTHQUAKE = 25.0          ; estimated earthquake period minimum for f
 PERIODMAX_EARTHQUAKE = 75.0          ; estimated earthquake period maximum for filtering 
 WINDOW_FREQ = 0.0002                 ; freq window (Hz) to smooth ampl spectrum
 CROSSCORR_TMAX = 300                 ; number of seconds for xcorr window both positive and negative
+
+PLOT_CLASSIC = False                 ; Plot all xcorr station pairs. Be warned this takes a LONG time for large networks!
+PLOT_DISTANCE = True                 ; Plot only time-series offset of all xcorr pairs with distance
 
 #=====
 [FTAN]

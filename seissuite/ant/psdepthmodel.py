@@ -12,10 +12,18 @@ import shutil
 import itertools as it
 from easyprocess import EasyProcess
 import tempfile
+import pickle
 
 # getting the dir of the binaries of the Computer Programs in Seismology
-from seissuite.ant.psconfig import COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR
 
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+    
+# import variables from initialised CONFIG class.
+COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR=CONFIG.COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR
 
 # default header of the model file:
 # isotropic, 1D, flat Earth with layers of constant velocity

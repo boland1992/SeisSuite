@@ -13,14 +13,28 @@ import os
 import datetime
 import sqlite3 as lite
 from seissuite.misc.path_search import paths
+import pickle
 
 try:
     import cPickle as pickle
 except:
     import pickle
     print "Caution, database code may run slow due to cPickle failed import"
+    
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+    
+# import variables from initialised CONFIG class.
+AUTOMATE = CONFIG.AUTOMATE
+MSEED_DIR = CONFIG.MSEED_DIR
+DATABASE_DIR = CONFIG.DATABASE_DIR
+DATALESS_DIR = CONFIG.DATALESS_DIR
+STATIONXML_DIR = CONFIG.STATIONXML_DIR
 
-from seissuite.ant.psconfig import (MSEED_DIR, DATABASE_DIR)
+
 
 multiprocess = False
 
@@ -58,28 +72,32 @@ if not os.path.exists('tmp'): os.mkdir('tmp')
 # create database if it doesn't exist already, if it does, stop the programme.
 database_name = os.path.join(DATABASE_DIR, 'timeline.db')
 
-if os.path.exists(database_name):
-    yeses = ['y','Y','yes','Yes','YES']    
-    nos = ['n','N','no','No','NO']    
+if not AUTOMATE:
+    if os.path.exists(database_name):
+        yeses = ['y','Y','yes','Yes','YES']    
+        nos = ['n','N','no','No','NO']    
     
-    condition = False
-    while condition is False:
-        
-        answer = raw_input('Would you like to remove the existing database \
-and start afresh? (y/n): ')
+        condition = False
+        while condition is False:
     
-        if answer in yeses:
-            os.remove(database_name)
-            condition = True
+            answer = raw_input('Would you like to remove the existing database\
+ and start afresh? (y/n): ')
+    
+            if answer in yeses:
+                os.remove(database_name)
+                condition = True
             
-        elif answer in nos:
-            raise Exception("The SQL database {} already exists, \
+            elif answer in nos:
+                raise Exception("The SQL database {} already exists, \
 quitting programme.".format(database_name))
-            condition = True
+                condition = True
 
-        else:
-            print "The input answer must be of yes or no format."
-            condition = False
+            else:
+                print "The input answer must be of yes or no format."
+                condition = False
+                
+else:
+    os.remove(database_name)
 
 # =============================================================================
 # =============================================================================

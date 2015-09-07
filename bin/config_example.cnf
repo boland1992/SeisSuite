@@ -61,7 +61,7 @@
 #=========
 
 # Set application to run all configuration files that are present. If all have #False, then a user input command will ask which one you would like to process!
-AUTOMATE = False  
+AUTOMATE = True  
 
 #======
 [paths]

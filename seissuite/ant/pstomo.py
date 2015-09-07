@@ -18,19 +18,34 @@ from matplotlib.colors import ColorConverter
 import shutil
 from inspect import getargspec
 
-
 # todo: discard measurments if too different from trimester velocities (see BB15B-SPB)
 
-# ====================================================
-# parsing configuration file to import some parameters
-# ====================================================
-from seissuite.ant.psconfig import (SIGNAL_WINDOW_VMIN, SIGNAL_WINDOW_VMAX, 
-                                    SIGNAL2NOISE_TRAIL, NOISE_WINDOW_SIZE,
-                                    MINSPECTSNR, MINSPECTSNR_NOSDEV, MAXSDEV, 
-                                    MINNBTRIMESTER, MAXPERIOD_FACTOR, LONSTEP, 
-                                    LATSTEP, CORRELATION_LENGTH, ALPHA, BETA, 
-                                    LAMBDA, FTAN_ALPHA, FTAN_VELOCITIES_STEP, 
-                                    PERIOD_RESAMPLE)
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+    
+# import variables from initialised CONFIG class.
+MSEED_DIR = CONFIG.MSEED_DIR
+SIGNAL_WINDOW_VMIN = CONFIG.SIGNAL_WINDOW_VMIN
+SIGNAL_WINDOW_VMAX = CONFIG.SIGNAL_WINDOW_VMAX
+SIGNAL2NOISE_TRAIL = CONFIG.SIGNAL2NOISE_TRAIL
+NOISE_WINDOW_SIZE = CONFIG.NOISE_WINDOW_SIZE
+MINSPECTSNR = CONFIG.MINSPECTSNR
+MINSPECTSNR_NOSDEV = CONFIG.MINSPECTSNR_NOSDEV
+MAXSDEV = CONFIG.MAXSDEV
+MINNBTRIMESTER = CONFIG.MINNBTRIMESTER
+MAXPERIOD_FACTOR = CONFIG.MAXPERIOD_FACTOR
+LONSTEP = CONFIG.LONSTEP
+LATSTEP = CONFIG.LATSTEP
+CORRELATION_LENGTH = CONFIG.CORRELATION_LENGTH
+ALPHA = CONFIG.ALPHA
+BETA = CONFIG.BETA
+LAMBDA = CONFIG.LAMBDA
+FTAN_ALPHA = CONFIG.FTAN_ALPHA
+FTAN_VELOCITIES_STEP  = CONFIG.FTAN_VELOCITIES_STEP
+PERIOD_RESAMPLE = CONFIG.PERIOD_RESAMPLE
 
 # ========================
 # Constants and parameters
