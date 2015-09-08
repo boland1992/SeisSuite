@@ -13,6 +13,7 @@ should use for a  given period, or frequency range.
 import numpy as np
 from obspy import read_inventory
 import os
+import itertools as it
 #from obspy.station.response import Response
 #import sys
 #from xml.etree.ElementTree import parse
@@ -221,20 +222,30 @@ class Instrument:
         c.execute('''CREATE TABLE IF NOT EXISTS resp_windows (station text, 
                   min_window real, max_window real)''')
 
-        # calculate the response window
-        window = self.response_window(gains, freqs, tolerance=RESP_EFFECT)
-        
-        window_tuple = (code, window[0][0], window[1][0])
-        #print window_tuple
-        
-        c.execute('INSERT INTO resp_windows VALUES (?,?,?)', window_tuple)
-        #for row in c.execute('SELECT * FROM resp_windows'):
-        #    print row
+        # check if the net_stat_chan code already exists in the table!
+        c.execute('SELECT station FROM resp_windows')
+        # create list of codes already in the database
+        stations_list = list(it.chain(*list(c.fetchall())))
 
-       # commit changes
+        # insert information for codes that do not already exist in the table!
+        if unicode(code) not in stations_list:
+            print code,
+        
+            # calculate the response window
+            window = self.response_window(gains, freqs, tolerance=RESP_EFFECT)
+        
+            window_tuple = (code, window[0][0], window[1][0])
+            #print window_tuple
+        
+            c.execute('INSERT INTO resp_windows VALUES (?,?,?)', window_tuple)
+            #for row in c.execute('SELECT * FROM resp_windows'):
+            #    print row
+            
+           # commit changes
         conn.commit()
         # close database
         conn.close() 
+        
         
     def find_sample(self, response):
         """
@@ -344,7 +355,6 @@ class Instrument:
                         code = '{}_{}_{}'.format(network.code, 
                                                      station.code, 
                                                      channel.code)
-                        print code,
                         resp = channel.response
                         #calculate frequency response window
                         sample_rate = self.find_sample(resp)
@@ -411,10 +421,10 @@ class Instrument:
                 #print "cpx_resp after: ", cpx_resp
                 #print "freqs after: ", freqs                       
                 out_code = '{}_{}_{}'.format(net,stat,chan)
-                print out_code,
+                #print out_code,
 
                 self.output_SQL(out_code, cpx_resp, freqs)
-                self.output_resp(code, cpx_resp, freqs)
+                self.output_resp(out_code, cpx_resp, freqs)
                 
     def dataless_or_xml(self):
         """

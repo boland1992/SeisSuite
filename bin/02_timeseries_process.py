@@ -73,6 +73,8 @@ import time
 import glob
 import sqlite3 as lite
 
+
+
 #import matplotlib.pyplot as plt
 #import numpy as np
 # turn on multiprocessing to get one merged trace per station?
@@ -148,10 +150,7 @@ for config_file in config_list:
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!
         lite.connect(TIMELINE_DB)
-        from seissuite.database import create_database
-
-
-                                        
+        from seissuite.database import create_database                                        
                                         
     print "\nProcessing parameters:"
     print "- dir of miniseed data: " + MSEED_DIR
@@ -315,12 +314,11 @@ for config_file in config_list:
     SQL_db = os.path.join(DATABASE_DIR, 'timeline.db')
     
     stations, subdir_len = psstationSQL.get_stationsSQL(SQL_db, 
-                                      xml_inventories=xml_inventories,
-                                      dataless_inventories=dataless_inventories,
-                                      startday=FIRSTDAY,
-                                      endday=LASTDAY,
-                                      verbose=False)
-    
+                           xml_inventories=xml_inventories,
+                           dataless_inventories=dataless_inventories,
+                           startday=FIRSTDAY,
+                           endday=LASTDAY,
+                           verbose=False)
     
     # Loop on time interval
      #number of time steps
@@ -385,7 +383,10 @@ now."
         # preparing functions that get one merged trace per station
         # and pre-process trace, ready to be parallelized (if required)
         # =============================================================
-    
+    #RESP_CHECK = CONFIG.RESP_CHECK
+    #RESP_FREQS = CONFIG.RESP_FREQS
+    #RESP_TOL = CONFIG.RESP_TOL
+    #RESP_EFFECT = CONFIG.RESP_EFFECT
         def get_merged_trace(station):
             """
             Preparing func that returns one trace from selected station,
@@ -398,8 +399,9 @@ now."
                                                      xcorr_interval=XCORR_INTERVAL,
                                                      skiplocs=CROSSCORR_SKIPLOCS,
                                                      minfill=MINFILL)
-        
+                
                 errmsg = None
+                    
             except pserrors.CannotPreprocess as err:
                 # cannot preprocess if no trace or daily fill < *minfill*
                 trace = None

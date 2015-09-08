@@ -5,7 +5,8 @@ on a seismic station taken from the SQL databases initialised by the
 """
 
 from seissuite.ant import (pserrors, psutils)
-
+from seissuite.response.resp import (freq_check, process_response, 
+                                     window_overlap)
 import obspy
 import obspy.core
 from obspy import read_inventory
@@ -18,7 +19,7 @@ import itertools as it
 import numpy as np
 import sqlite3 as lite
 from obspy.core import UTCDateTime
-
+import datetime as dt
 
 # import CONFIG class initalised in ./configs/tmp_config.pickle
 config_pickle = 'configs/tmp_config.pickle'
@@ -31,6 +32,11 @@ MSEED_DIR = CONFIG.MSEED_DIR
 STATIONXML_DIR = CONFIG.STATIONXML_DIR
 DATALESS_DIR = CONFIG.DATALESS_DIR
 DATABASE_DIR = CONFIG.DATABASE_DIR
+# import response check variables from CONFIG class
+RESP_CHECK = CONFIG.RESP_CHECK
+RESP_FREQS = CONFIG.RESP_FREQS
+RESP_TOL = CONFIG.RESP_TOL
+RESP_EFFECT = CONFIG.RESP_EFFECT
 
 class StationSQL:
     """
@@ -119,9 +125,12 @@ class StationSQL:
         output_path = []
         for file_path in file_paths: output_path.append(file_path)
         if len(output_path) > 0:
-#            print str(output_path[0][0])
             return str(output_path[0][0])
 
+
+        # close database
+        conn.close() 
+        
     def dist(self, other):
         """
         Geodesic distance (in km) between stations, using the
@@ -237,7 +246,7 @@ def get_coords(dataless_inventories, xml_inventories, USE_STATIONXML):
     if USE_STATIONXML:
         coordinates = coordinates.union((s.longitude, s.latitude) \
                                         for inv in xml_inventories)
-    
+                                            
     return coordinates
     
     
@@ -285,9 +294,21 @@ re-run create_database in seissuite.database")
     database = c.execute('''SELECT * FROM file_extrema''')
     # quickly extract and flatten SQL query output into a python list object
     database = list(database.fetchall())
-                           
-    #files = list(itertools.chain(*files.fetchall()))
-    #print files
+
+    # close timeline.db database
+    conn.close() 
+    
+    # open the response database if it exists
+    resp_SQL = os.path.join(DATABASE_DIR, 'response.db')
+    
+    if RESP_CHECK and not os.path.exists(resp_SQL):
+        raise Exception('There is no response databse but RESP_CHECK = True')
+        
+    # connect the response database
+    conn = lite.connect(resp_SQL)
+    # create cursor object
+    c = conn.cursor()
+    
     subdir_len = len(database)
 
     for row in database:
@@ -301,6 +322,10 @@ re-run create_database in seissuite.database")
         subdir = os.path.basename(file_path)
         
         network, name, channel = code.split('.')[0:3]
+        
+        # search response instrument database if RESP_CHECK is True
+        resp_code = code.replace('.', '_')
+
         if networks and network not in networks:
             continue
 
@@ -311,13 +336,25 @@ re-run create_database in seissuite.database")
             station = next(s for s in stations if match(s))
             
         except StopIteration:
-            
-            # appending new station, with current subdir
-            station = StationSQL(name=name, network=network, 
-                                 channel=channel,
-                                 filename=file_path)
-                
-            stations.append(station)
+        # =====================================================================
+        # Remove channels outside of the acceptible instrument freq. response
+        # ===================================================================== 
+            if RESP_CHECK:
+                overlap = process_response(resp_code)
+                if overlap >= RESP_TOL:
+                    # appending new station, with current subdir
+                    station = StationSQL(name=name, network=network, 
+                                         channel=channel,
+                                         filename=file_path)                
+                    stations.append(station)
+                else:
+                    continue
+            else:
+                # appending new station, with current subdir
+                station = StationSQL(name=name, network=network, 
+                                     channel=channel,
+                                     filename=file_path)                
+                stations.append(station)
 
         else:
             # appending subdir to list of subdirs of station
@@ -376,6 +413,9 @@ re-run create_database in seissuite.database")
                     print s.format(repr(sta), maxdiff_lon, maxdiff_lat)
                 stations.remove(sta)
 
+    # close response.db database
+    conn.close() 
+    
     return stations, subdir_len
 
 

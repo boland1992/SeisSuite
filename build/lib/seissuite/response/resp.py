@@ -17,6 +17,33 @@ import os
 import sys
 from xml.etree.ElementTree import parse
 import matplotlib.pyplot as plt
+import sqlite3 as lite
+import itertools as it
+
+try:
+    import cPickle as pickle
+except:
+    import pickle
+    print "Caution, database code may run slow due to cPickle failed import"
+
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+    
+# import variables from initialised CONFIG class.
+AUTOMATE = CONFIG.AUTOMATE
+MSEED_DIR = CONFIG.MSEED_DIR
+DATABASE_DIR = CONFIG.DATABASE_DIR
+DATALESS_DIR = CONFIG.DATALESS_DIR
+STATIONXML_DIR = CONFIG.STATIONXML_DIR
+
+RESP_CHECK = CONFIG.RESP_CHECK
+RESP_FREQS = CONFIG.RESP_FREQS
+RESP_TOL = CONFIG.RESP_TOL
+RESP_EFFECT = CONFIG.RESP_EFFECT
+
 
 def find_sample(reponse):
     """
@@ -78,13 +105,13 @@ def freq_check(freq_range, freq_window):
     found using the response_window function are contained within the
     freq_range set in the initial variables of this programme. 
     """
-    boolean = False    
+    condition = False    
     
     if any(np.min(freq_range) < freq < np.max(freq_range) \
                                  for freq in freq_window):
-        boolean = True
+        condition = True
 
-    return boolean
+    return condition
 
 def windows_in_inv(inventory):
     min_freq = 1e-4
@@ -99,15 +126,6 @@ def windows_in_inv(inventory):
                 window = response_window(cpx_response, freq)                    
                 return window[:,0]
                 
-
-
-def call_response(inventory, inv_dict):
-    """
-    Function that allows the user to call the response of a given station
-    in a given network for a given channel.
-    """
-    a=5
-
 
 def paths_sortsize(paths):
     """
@@ -124,7 +142,7 @@ def paths_sortsize(paths):
         path_list.append(inst_list)
 
     return np.asarray(sorted(path_list,key=lambda x: x[1]))[:,0]
-    
+
     
     
 def paths(folder_path=None, extension='xml'):
@@ -144,7 +162,71 @@ def paths(folder_path=None, extension='xml'):
                 abs_paths.append(fullpath)       
     return abs_paths
 
+def window_overlap(freq_range, freq_window):
+    """
+    Function to return the percentage of overlap between two windows 
+    containing the min and max of a frequency range. 
+    Example input and output:
+    freq_range = [1, 10]
+    freq_window = [1, 8]
+    the output would be 0.8 for this case
+    """
+    min_window, max_window = np.min(freq_window), np.max(freq_window)
+    min_range, max_range = np.min(freq_range), np.max(freq_range)
+    range_diff = abs(max_range - min_range)
+    
+    #try:
+        #case one: both min and max freq_window in freq_range
+    if all(min_range <= freq <= max_range for freq in freq_window):
+        overlap = abs(max_window - min_window) / range_diff
+        return overlap
 
+        #case two: only max freq_window in freq_range
+    elif min_range <= max_window <= max_range:
+        overlap = abs(max_window - min_range) / range_diff
+        return overlap
+
+        #case three: only min freq_window in freq_range
+    elif min_range <= min_window <= max_range:
+        overlap = abs(max_range - min_window) / range_diff
+        return overlap
+
+def process_response(code):
+    """
+    This function takes a trace in the format of: net_stat_chan and
+    feeds that into the response.db SQL database table called 'resp_windows'
+    and either sets to remove or keep said trace. The default is to keep
+    the trace if no code is found. This is the 'benefit of the doubt' 
+    protocol. 
+    """
+    #stats = trace.stats
+    # create code to check with SQL database
+    #code = '{}_{}_{}'.format(stats.network, stats.station, 
+    #                         stats.channel)
+                             
+    SQL_path = os.path.join(DATABASE_DIR, 'response.db')
+
+    conn = lite.connect(SQL_path)
+    c = conn.cursor()            
+    overlap = None
+    # test all stations 
+    c.execute('SELECT station FROM resp_windows')
+    station_list = list(it.chain(*list(c.fetchall())))
+    for code in station_list:
+       c.execute('SELECT min_window, max_window FROM resp_windows WHERE station=(?)', (code,))
+       # ensure that if there are multiple entries for the same station code
+       # then only choose the first one as all should be the same.     
+       window = c.fetchall()[0]
+
+       if freq_check(RESP_FREQS, window):
+           overlap = window_overlap(RESP_FREQS, window),
+    
+    # commit changes
+    conn.commit()
+    # close database
+    conn.close()     
+
+    return overlap
 
 class Instrument:
     """

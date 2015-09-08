@@ -8,6 +8,9 @@ with time.
 
 
 from seissuite.ant import pserrors, psstation, psutils
+from seissuite.response.resp import (freq_check, process_response, 
+                                     window_overlap)
+
 import obspy.signal
 import obspy.xseed
 import obspy.signal.cross_correlation
@@ -40,6 +43,11 @@ SPEC_WHITENING = CONFIG.SPEC_WHITENING
 RESP_REMOVE = CONFIG.RESP_REMOVE
 TDD = CONFIG.TDD
 
+
+RESP_CHECK = CONFIG.RESP_CHECK
+RESP_FREQS = CONFIG.RESP_FREQS
+RESP_TOL = CONFIG.RESP_TOL
+RESP_EFFECT = CONFIG.RESP_EFFECT
 # ========================
 # Constants and parameters
 # ========================
@@ -258,7 +266,7 @@ class Preprocess:
         if np.all(trace.data == 0.0):
             # no data -> skipping trace
             raise pserrors.CannotPreprocess("Only zeros")
-            
+        
         # ==========================
         # Remove instrument response
         # ==========================
@@ -355,7 +363,7 @@ class Preprocess:
         
     def get_merged_trace(self, station, date, xcorr_interval, 
                          skiplocs=CROSSCORR_SKIPLOCS, 
-                         minfill=MINFILL):
+                         minfill=MINFILL, verbose=False):
         """
         Returns one trace extracted from selected station, at selected date
         (+/- 1 hour on each side to avoid edge effects during subsequent
@@ -432,5 +440,5 @@ class Preprocess:
         # Merging traces, FILLING GAPS WITH LINEAR INTERP
         st.merge(fill_value='interpolate')
         trace = st[0]
-
+        
         return trace

@@ -101,7 +101,7 @@ HIGHAMP_REMOVE = True     ; automate removal of high amplitude noise from entire
 
 RESP_CHECK = True         ; perform an instrument response check on data and only use data with tolerance overlap
 RESP_RANGE = [1,40]       ; period range for current project. Default is 1-40s period for ambient noise methods. 
-RESP_TOL = 0.80		  ; minimum overlap between instrument response 95% effectiveness frequency range and RESP_RANGE
+RESP_TOL = 0.50		  ; minimum overlap between instrument response range and the range set in RESP_RANGE
 RESP_EFFECT = 0.80	  ; default is  80% effectiveness frequency range. So the point at which the instrument response gain is above 95% of the maximum gain for that given instrument!
 
 

@@ -8,7 +8,8 @@ with time.
 
 
 from seissuite.ant import pserrors, psstation, psutils
-from seissuite.response.resp import freq_check
+from seissuite.response.resp import (freq_check, process_response, 
+                                     window_overlap)
 
 import obspy.signal
 import obspy.xseed
@@ -266,21 +267,6 @@ class Preprocess:
             # no data -> skipping trace
             raise pserrors.CannotPreprocess("Only zeros")
         
-        
-        # =====================================================================
-        # Remove channels outside of the acceptible instrument freq. response
-        # =====================================================================
-        if RESP_CHECK:
-            t1 = dt.datetime.now()
-            
-            # create code to check with function in seissuite.response.resp script
-                        
-            
-            delta = (dt.datetime.now() - t1).total_seconds()
-            if verbose:
-                print "\nRemoved unwanted instruments in {:.1f} seconds"\
-                .format(delta)
-        
         # ==========================
         # Remove instrument response
         # ==========================
@@ -377,7 +363,7 @@ class Preprocess:
         
     def get_merged_trace(self, station, date, xcorr_interval, 
                          skiplocs=CROSSCORR_SKIPLOCS, 
-                         minfill=MINFILL):
+                         minfill=MINFILL, verbose=False):
         """
         Returns one trace extracted from selected station, at selected date
         (+/- 1 hour on each side to avoid edge effects during subsequent
@@ -454,5 +440,5 @@ class Preprocess:
         # Merging traces, FILLING GAPS WITH LINEAR INTERP
         st.merge(fill_value='interpolate')
         trace = st[0]
-
+        
         return trace
