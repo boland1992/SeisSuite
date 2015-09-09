@@ -1,4 +1,14 @@
-v<0.1.27>, <04.09.2015> -- Changes list: 
+v<0.1.3>, <07.09.2015> -- Changes list: 
+
+1. plot_SNR gives all SNR vs. time plots correctly in same figure. Now built-in to pscrosscorr, plot_SNR.py is no longer in use. 
+2. REMOVE_HIGHAMP works correctly. Word of caution, it make the code run about 10x slower due to heavy processing requirements. 
+v<0.1.29>, <07.09.2015> -- Changes list: 
+
+1. RESP_CHECK correctly removes instruments from each station that do not meet the RESP_CHECK requirements as set in the .cnf files.
+2. The response database now correctly saves gain vs. frequency curve information correctly into the response.db SQL database.
+3. The response.db SQL database now has a resp_window table which contains information required for the RESP_CHECK operations.
+
+v<0.1.28>, <07.09.2015> -- Changes list: 
 
 1. Application can now successfully automate multiple configurations in one run.
 

@@ -15,13 +15,19 @@ from obspy.core import Stream
 import pickle
 import glob
 
-class Auto_trigger: 
+
+
+
+class AutoTrigger: 
     
-    def __init__(self, tr, paths=None, diff_thres=90.0, eq_len=10.0):
+    def __init__(self, tr, paths=None, diff_thres=90.0, 
+                 eq_len=10.0, freqmin=1.0, freqmax=10.0):
         self.tr = tr
         self.diff_thres = diff_thres
         self.eq_len = eq_len
         self.paths = paths
+        self.freqmin = freqmin
+        self.freqmax = freqmax
         
     def area_cond(self, tr=None):
         """
@@ -86,7 +92,6 @@ class Auto_trigger:
         if check:
             above_mean = 0.9
         
-        # take 4th kurtosis gradient!
         ctf = abs(np.gradient(ctf))
         #ctf = abs(np.gradient(ctf))
         #ctf = abs(np.gradient(ctf))
@@ -165,7 +170,7 @@ class Auto_trigger:
         #TRACE RELATED
         ##############
 
-        tr = tr.filter('bandpass', freqmin=1.0, freqmax=10.0, 
+        tr = tr.filter('bandpass', freqmin=self.freqmin, freqmax=self.freqmax, 
                        corners=2, zerophase=True)
         
         # normalise the data between zero and one. 

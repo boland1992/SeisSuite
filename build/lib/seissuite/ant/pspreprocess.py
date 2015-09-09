@@ -8,6 +8,7 @@ with time.
 
 
 from seissuite.ant import pserrors, psstation, psutils
+from seissuite.trigger.auto_trig import AutoTrigger
 from seissuite.response.resp import (freq_check, process_response, 
                                      window_overlap)
 
@@ -21,7 +22,11 @@ from numpy.fft import rfft, irfft
 from obspy import UTCDateTime
 import datetime as dt
 import pickle
-          
+from obspy.signal.trigger import carlSTATrig, recSTALTA
+from obspy.core import Stream
+import matplotlib.pyplot as plt
+
+
 # import CONFIG class initalised in ./configs/tmp_config.pickle
 config_pickle = 'configs/tmp_config.pickle'
 f = open(name=config_pickle, mode='rb')
@@ -48,6 +53,13 @@ RESP_CHECK = CONFIG.RESP_CHECK
 RESP_FREQS = CONFIG.RESP_FREQS
 RESP_TOL = CONFIG.RESP_TOL
 RESP_EFFECT = CONFIG.RESP_EFFECT
+
+
+FREQMIN = CONFIG.FREQMIN
+FREQMAX = CONFIG.FREQMAX
+
+
+
 # ========================
 # Constants and parameters
 # ========================
@@ -278,7 +290,31 @@ class Preprocess:
                 print "\nRemoved response in {:.1f} seconds".format(delta)
         
         
-        
+        #Initialise the AutoTrigger class for the current trace
+        if HIGHAMP_REMOVE:
+            # this check finds high amplitude noise creates a list of where it is located in the signal
+            TRIGGER = AutoTrigger(trace, freqmin=FREQMIN, freqmax=FREQMAX)
+            UTC_events = TRIGGER.trigger_times(check=True)
+            if UTC_events is not None:
+                # set the application to remove these parts from the trace!
+                trace_new = None
+                for event in UTC_events:
+                    # event is a list of length 2, start and end times
+                    # use trace.trim(starttime=x, endtime=y)
+                    # trace 1 is from trace start until the event starttime                        
+                    trace1 = trace.trim(starttime=trace.stats.starttime,
+                                        endtime=event[0])
+                    trace2 = trace.trim(starttime=event[1],
+                                        endtime=trace.stats.endtime)
+                    if trace_new is None:
+                        trace_new = trace1 + trace2
+                    else:
+                        trace_new += (trace1 + trace2)
+                
+                # trace_new has removed all high amp. noise from trace original
+                trace = trace_new
+                print trace.data
+                
         # ==============================================
         # Check trace data completeness is above MINFILL
         # ==============================================        

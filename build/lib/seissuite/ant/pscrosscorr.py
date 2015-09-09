@@ -33,6 +33,9 @@ import matplotlib as mpl
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import gridspec
 
+
+
+
 plt.ioff()  # turning off interactive mode
 
 # ====================================================
@@ -91,7 +94,8 @@ HALFWINDOW_MEDIAN_PERIOD = CONFIG.HALFWINDOW_MEDIAN_PERIOD
 MAX_RELDIFF_INST_MEDIAN_PERIOD = CONFIG.MAX_RELDIFF_INST_MEDIAN_PERIOD
 BBOX_LARGE = CONFIG.BBOX_LARGE
 BBOX_SMALL = CONFIG.BBOX_SMALL
-
+FIRSTDAY = CONFIG.FIRSTDAY
+LASTDAY = CONFIG.LASTDAY
 
 # ========================
 # Constants and parameters
@@ -1937,7 +1941,7 @@ class CrossCorrelationCollection(AttribDict):
 
             # title
    
-            s = '{s1}-{s2}: {nday} stacks from {t1} to {t2}.png'
+            s = '{s1}-{s2}: {nday} stacks from {t1} to {t2} {cnf}.png'
             #remove microseconds in time string
             title = s.format(s1=s1, s2=s2, 
                              nday=xcplot.nday, 
@@ -1960,7 +1964,90 @@ class CrossCorrelationCollection(AttribDict):
             print(outfile_individual)
             fig.savefig(outfile_individual, dpi=dpi)
 
-                     
+
+    def plot_SNR(self, plot_type='all', figsize=(21.0, 12.0), 
+                 outfile=None, dpi=300, showplot=True, config='config_1'):
+        
+        # preparing pairs
+        pairs = self.pairs()
+        
+        npair = len(pairs)
+        if not npair:
+            raise Exception("So SNR pairs to plot!")
+            return
+                    
+        if plot_type == 'individual':
+            # plot all individual SNR vs. time curves on seperate figures 
+            for item in self.items():
+                s1 = item[0]
+                for s2 in item[1].keys():
+                    #print '{}-{}'.format(s1, s2)
+                    #try:
+                    fig = plt.figure()
+                    info_array = np.asarray(self[s1][s2].SNR_lin)
+                    if len(info_array) > 0:
+                        SNRarray, timearray = info_array[:,0], info_array[:,1]                
+                        plt.plot(timearray, SNRarray, c='k')
+                        s = '{s1}-{s2}: SNR vs. time for {nstacks}\n \
+stacks from {t1} to {t2} {}'
+                        title = s.format(s1=s1, s2=s2, 
+                                         nstacks=len(SNRarray), 
+                                         t1=timearray[0],
+                                         t2=timearray[-1],
+                                         cnf=config)
+            
+                        plt.title(title)
+                        plt.ylabel('SNR (Max. Signal Amp. / Noise Std')
+                        plt.xlabel('Time (UTC)')
+                
+                        file_name = '{}-{}-{}-SNR.png'.format(s1, s2, config)
+                        outfile_individual = os.path.join(outfile, file_name)
+                
+                        if os.path.exists(outfile_individual):
+                                # backup
+                            shutil.copyfile(outfile_individual, \
+                            outfile_individual + '~')
+                        fig = plt.gcf()
+                        fig.set_size_inches(figsize)
+
+                        print '{s1}-{s2}'.format(s1=s1, s2=s2),
+                        fig.savefig(outfile_individual, dpi=dpi)
+                        fig.clf()
+
+                    #except Exception as err:
+                    #    continue
+                
+                
+        elif plot_type == 'all':
+            # plot all individual SNR vs. time curves on single figure
+            fig = plt.figure()
+            title = 'Total Database Pairs SNR vs. time \n \
+stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
+            plt.title(title)
+            plt.xlabel('Time (UTC)')
+            plt.ylabel('SNR (Max. Signal Amp. / Noise Std')
+         
+            for item in self.items():
+                s1 = item[0]
+                for s2 in item[1].keys():
+                    #print '{}-{}'.format(s1, s2)
+                    try:
+                        info_array = np.asarray(self[s1][s2].SNR_lin)
+                        SNRarray, timearray = info_array[:,0], info_array[:,1]                
+                        plt.plot(timearray, SNRarray, alpha=0.3, c='k')
+                    
+                    except Exception as err:
+                        print err
+                        
+            file_name = 'SNR_total.png'
+            outfile_individual = os.path.join(outfile, file_name)
+            if os.path.exists(outfile_individual):
+                # backup
+                shutil.copyfile(outfile_individual, \
+                outfile_individual + '~')            
+            fig.savefig(outfile_individual, dpi=dpi)
+            
+    
     def plot(self, plot_type='distance', xlim=None, norm=True, whiten=False,
              sym=False, minSNR=None, minday=1, withnets=None, onlywithnets=None,
              figsize=(21.0, 12.0), outfile=None, dpi=300, showplot=True,

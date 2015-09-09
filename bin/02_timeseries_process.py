@@ -254,9 +254,15 @@ for config_file in config_list:
                                   time_string,  
                                   'XCORR_PLOTS')
                                   
+        OUT_SNR = os.path.join(CROSSCORR_DIR, time_string,  'SNR_PLOTS')
+                                  
         #create unique folder in CROSS output folder named by the present time.
         if not os.path.exists(OUTFOLDERS):\
         os.makedirs(OUTFOLDERS)
+        
+        if not os.path.exists(OUT_SNR):\
+        os.makedirs(OUT_SNR)
+            
         
         METADATA_PATH = '{}metadata.pickle'.format(OUTFILESPATH.\
                   replace(os.path.basename(OUTFILESPATH), ""))
@@ -383,10 +389,7 @@ now."
         # preparing functions that get one merged trace per station
         # and pre-process trace, ready to be parallelized (if required)
         # =============================================================
-    #RESP_CHECK = CONFIG.RESP_CHECK
-    #RESP_FREQS = CONFIG.RESP_FREQS
-    #RESP_TOL = CONFIG.RESP_TOL
-    #RESP_EFFECT = CONFIG.RESP_EFFECT
+
         def get_merged_trace(station):
             """
             Preparing func that returns one trace from selected station,
@@ -635,7 +638,12 @@ now."
             xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
                     outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
                     + '.png', showplot=False)
-    
+                    
+        xc.plot_SNR(plot_type='all', outfile=OUT_SNR, 
+                    config=os.path.basename(config_file))
+        
+        #xc.plot_SNR(plot_type='individual', outfile=OUT_SNR)
+
     # removing file containing periodical exports of cross-corrs
     try:
         os.remove(u'{}.part.pickle'.format(OUTFILESPATH))

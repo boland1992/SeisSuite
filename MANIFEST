@@ -3,9 +3,7 @@ README.txt
 setup.py
 seissuite/__init__.py
 seissuite/ant/__init__.py
-seissuite/ant/psconfig (copy).py
 seissuite/ant/psconfig.py
-seissuite/ant/pscrosscorr (copy).py
 seissuite/ant/pscrosscorr.py
 seissuite/ant/psdepthmodel.py
 seissuite/ant/pserrors.py
@@ -55,3 +53,4 @@ seissuite/spectrum/station_month_spectrum.py
 seissuite/spectrum/total_spectrum.py
 seissuite/trigger/__init__.py
 seissuite/trigger/auto_trig.py
+seissuite/trigger/event_detect.py
