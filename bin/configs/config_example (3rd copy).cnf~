@@ -75,7 +75,7 @@ AUTOMATE = True
 
 
 #FOLDER = DEFAULT
-FOLDER = /storage/MASTERS/CONFIGURATIONS/
+FOLDER = /storage/MASTERS/CONFIGURATIONS/TEST
 
 #set the folder where the computer programs in seismology have been installed if required. 
 # example CPIS dir:
@@ -97,7 +97,7 @@ HIGHAMP_REMOVE = False    ; automate removal of high amplitude noise from entire
 
 # in the future do I want to set effectiveness limit for RESP_CHECK
 
-RESP_CHECK = fALSE         ; perform an instrument response check on data and only use data with tolerance overlap
+RESP_CHECK = False         ; perform an instrument response check on data and only use data with tolerance overlap
 RESP_RANGE = [1,40]       ; period range for current project. Default is 1-40s period for ambient noise methods. 
 RESP_TOL = 0.50	          ; minimum overlap between instrument response 95% effectiveness frequency range and RESP_RANGE
 RESP_EFFECT = 0.80	  ; default is  80% effectiveness frequency range. So the point at which the instrument response gain is above 95% of the maximum gain for that given instrument!
@@ -172,7 +172,7 @@ XCORR_INTERVAL = 45.0                ; number of minutes in xcorr time series
 USE_DATALESSPAZ = True               ; use dataless files to remove instrument response?
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
 FIRSTDAY = 01/01/2014                ; first day of cross-correlation (d/m/y)
-LASTDAY = 01/06/2014                 ; last day of cross-correlation (d/m/y)
+LASTDAY = 01/12/2014                 ; last day of cross-correlation (d/m/y)
 MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%
 CROSSCORR_STATIONS_SUBSET = null     ; subset of stations (null if all, else JSON list)
 CROSSCORR_SKIPLOCS = ["50"]          ; locations to skip (JSON list)

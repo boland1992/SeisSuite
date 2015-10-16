@@ -55,16 +55,14 @@
 # values can be affected, parameters used as is in the code will be affected).
 #
 ###############################################################################
-
-#=========
+#======
 [automate]
-#=========
+#======
 
 # If ANY of the AUTOMATE varibales in the ./configs/ folder are set to True, then the application will loop over all of them.
 # Otherwise, if all of them are set to False you can only choose one. Option to choose more than one, but not all is coming soon! 
 
-AUTOMATE = True  
-
+AUTOMATE = True
 
 #======
 [paths]
@@ -77,16 +75,16 @@ AUTOMATE = True
 
 
 #FOLDER = DEFAULT
-FOLDER = /storage/ANT/PROGRAMS/ANT_OUTPUT
+FOLDER = /storage/MASTERS/CONFIGURATIONS/
 
 #set the folder where the computer programs in seismology have been installed if required. 
 # example CPIS dir:
 COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR = /home/seis_suite/CPIS/PROGRAMS.330/bin
 
 
-#===========
+#======
 [processing]
-#===========
+#======
 
 #set the individual preprocessing techniques that you want performed on your analysis. Each
 # must be set either True or False to work. Any other options with give an error
@@ -99,9 +97,9 @@ HIGHAMP_REMOVE = False    ; automate removal of high amplitude noise from entire
 
 # in the future do I want to set effectiveness limit for RESP_CHECK
 
-RESP_CHECK = True         ; perform an instrument response check on data and only use data with tolerance overlap
+RESP_CHECK = False         ; perform an instrument response check on data and only use data with tolerance overlap
 RESP_RANGE = [1,40]       ; period range for current project. Default is 1-40s period for ambient noise methods. 
-RESP_TOL = 0.50		  ; minimum overlap between instrument response range and the range set in RESP_RANGE
+RESP_TOL = 0.50	          ; minimum overlap between instrument response 95% effectiveness frequency range and RESP_RANGE
 RESP_EFFECT = 0.80	  ; default is  80% effectiveness frequency range. So the point at which the instrument response gain is above 95% of the maximum gain for that given instrument!
 
 
@@ -110,6 +108,7 @@ DOWNSAMPLE = True         ; if set to False, data is downsampled to max of min s
 COMPLETENESS = True       ; do initial completeness check, do not process the series below tolerance
 TIME_NOMALISATION = True  ; perform time normalisation OR one-bit normalisation, OR input own!
 SPEC_WHITENING = True     ; perform spectral whitening of data
+
 
 
 #=====
@@ -173,7 +172,7 @@ XCORR_INTERVAL = 45.0                ; number of minutes in xcorr time series
 USE_DATALESSPAZ = True               ; use dataless files to remove instrument response?
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
 FIRSTDAY = 01/01/2014                ; first day of cross-correlation (d/m/y)
-LASTDAY = 01/01/2014                 ; last day of cross-correlation (d/m/y)
+LASTDAY = 01/06/2014                 ; last day of cross-correlation (d/m/y)
 MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%
 CROSSCORR_STATIONS_SUBSET = null     ; subset of stations (null if all, else JSON list)
 CROSSCORR_SKIPLOCS = ["50"]          ; locations to skip (JSON list)
