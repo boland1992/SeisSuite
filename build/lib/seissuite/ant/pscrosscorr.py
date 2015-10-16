@@ -1966,7 +1966,8 @@ class CrossCorrelationCollection(AttribDict):
 
 
     def plot_SNR(self, plot_type='all', figsize=(21.0, 12.0), 
-                 outfile=None, dpi=300, showplot=True, config='config_1'):
+                 outfile=None, dpi=300, showplot=True, config='config_1', 
+                 verbose=False):
         
         # preparing pairs
         pairs = self.pairs()
@@ -2030,14 +2031,19 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             for item in self.items():
                 s1 = item[0]
                 for s2 in item[1].keys():
-                    #print '{}-{}'.format(s1, s2)
-                    try:
+
+                    if s1 != s2:
                         info_array = np.asarray(self[s1][s2].SNR_lin)
-                        SNRarray, timearray = info_array[:,0], info_array[:,1]                
-                        plt.plot(timearray, SNRarray, alpha=0.3, c='k')
+                        if len(info_array) > 1:
+                            if verbose:
+                                print '{}-{}'.format(s1, s2)
+                                print "info_array", info_array
+                            
+                            SNRarray, timearray = info_array[:,0], info_array[:,1]                
+                            plt.plot(timearray, SNRarray, alpha=0.3, c='k')
                     
-                    except Exception as err:
-                        print err
+                    #except Exception as err:
+                    #    print err
                         
             file_name = 'SNR_total.png'
             outfile_individual = os.path.join(outfile, file_name)

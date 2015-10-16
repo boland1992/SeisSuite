@@ -75,7 +75,7 @@ AUTOMATE = True
 
 
 #FOLDER = DEFAULT
-FOLDER = /run/media/boland/My Book/ANT/CONFIGURATIONS/APOLLO
+FOLDER = /storage/MASTERS/CONFIGURATIONS/APOLLO
 
 
 #set the folder where the computer programs in seismology have been installed if required. 
