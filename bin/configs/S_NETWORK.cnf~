@@ -75,7 +75,7 @@ AUTOMATE = True
 
 
 #FOLDER = DEFAULT
-FOLDER = /storage/MASTERS/CONFIGURATIONS/S_NETWORK
+FOLDER = /storage/MASTERS/CONFIGURATIONS
 
 #set the folder where the computer programs in seismology have been installed if required. 
 # example CPIS dir:

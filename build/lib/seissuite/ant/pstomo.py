@@ -238,17 +238,20 @@ class DispersionCurve:
                       months=months, vmin=vmin, vmax=vmax,
                       signal2noise_trail=signal2noise_trail,
                       noise_window_size=noise_window_size)
-
+        print "SNRs 1: ", SNRs
+        
         if self.nom2inst_periods:
             # if a list of (nominal period, inst period) is provided
             # we use it to re-interpolate SNRs
             inst_period_func = interp1d(*zip(*self.nom2inst_periods))
+            print "SNRs 2: ", SNRs
             SNRs = np.interp(x=self.periods,
                              xp=inst_period_func(self.periods),
                              fp=SNRs,
                              left=np.nan,
                              right=np.nan)
-
+        
+        print "SNRs 2: ", SNRs
         self._SNRs = SNRs
 
     def get_SNRs(self, **kwargs):

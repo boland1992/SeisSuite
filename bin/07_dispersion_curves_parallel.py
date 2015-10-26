@@ -48,17 +48,72 @@ import glob
 import os
 import pickle
 import datetime as dt
+
+multiprocess = True
+#import multiprocessing as mp
+if multiprocess:
+    try:
+        import pathos.multiprocessing as mp
+    except:
+        import multiprocessing as mp
+    
 # parsing configuration file to import dir of cross-corr results
-from seissuite.ant import pscrosscorr
+from seissuite.ant import (pscrosscorr, psutils)
 
 # import CONFIG class initalised in ./configs/tmp_config.pickle
 config_pickle = 'configs/tmp_config.pickle'
 f = open(name=config_pickle, mode='rb')
 CONFIG = pickle.load(f)
 f.close()
-
+    
 # import variables from initialised CONFIG class.
+MSEED_DIR = CONFIG.MSEED_DIR
+DATABASE_DIR = CONFIG.DATABASE_DIR
+DATALESS_DIR = CONFIG.DATALESS_DIR
+STATIONXML_DIR = CONFIG.STATIONXML_DIR
 CROSSCORR_DIR = CONFIG.CROSSCORR_DIR
+USE_DATALESSPAZ = CONFIG.USE_DATALESSPAZ
+USE_STATIONXML = CONFIG.USE_STATIONXML
+CROSSCORR_STATIONS_SUBSET = CONFIG.CROSSCORR_STATIONS_SUBSET
+CROSSCORR_SKIPLOCS = CONFIG.CROSSCORR_SKIPLOCS
+FIRSTDAY = CONFIG.FIRSTDAY
+LASTDAY = CONFIG.LASTDAY
+MINFILL = CONFIG.MINFILL
+FREQMIN = CONFIG.FREQMIN
+FREQMAX = CONFIG.FREQMAX
+CORNERS = CONFIG.CORNERS
+ZEROPHASE = CONFIG.ZEROPHASE
+PERIOD_RESAMPLE = CONFIG.PERIOD_RESAMPLE
+ONEBIT_NORM = CONFIG.ONEBIT_NORM
+FREQMIN_EARTHQUAKE = CONFIG.FREQMIN_EARTHQUAKE
+FREQMAX_EARTHQUAKE = CONFIG.FREQMAX_EARTHQUAKE
+WINDOW_TIME = CONFIG.WINDOW_TIME
+WINDOW_FREQ = CONFIG.WINDOW_FREQ
+XCORR_INTERVAL = CONFIG.XCORR_INTERVAL
+CROSSCORR_TMAX = CONFIG.CROSSCORR_TMAX
+CROSSCORR_DIR = CONFIG.CROSSCORR_DIR
+FTAN_DIR = CONFIG.FTAN_DIR
+PERIOD_BANDS = CONFIG.PERIOD_BANDS
+CROSSCORR_TMAX = CONFIG.CROSSCORR_TMAX
+PERIOD_RESAMPLE = CONFIG.PERIOD_RESAMPLE
+SIGNAL_WINDOW_VMIN = CONFIG.SIGNAL_WINDOW_VMIN
+SIGNAL_WINDOW_VMAX = CONFIG.SIGNAL_WINDOW_VMAX
+SIGNAL2NOISE_TRAIL = CONFIG.SIGNAL2NOISE_TRAIL
+NOISE_WINDOW_SIZE = CONFIG.NOISE_WINDOW_SIZE
+RAWFTAN_PERIODS = CONFIG.RAWFTAN_PERIODS
+CLEANFTAN_PERIODS = CONFIG.CLEANFTAN_PERIODS
+FTAN_VELOCITIES = CONFIG.FTAN_VELOCITIES
+FTAN_ALPHA = CONFIG.FTAN_ALPHA
+STRENGTH_SMOOTHING = CONFIG.STRENGTH_SMOOTHING
+USE_INSTANTANEOUS_FREQ = CONFIG.USE_INSTANTANEOUS_FREQ
+MAX_RELDIFF_INST_NOMINAL_PERIOD = CONFIG.MAX_RELDIFF_INST_NOMINAL_PERIOD
+MIN_INST_PERIOD = CONFIG.MIN_INST_PERIOD
+HALFWINDOW_MEDIAN_PERIOD = CONFIG.HALFWINDOW_MEDIAN_PERIOD
+MAX_RELDIFF_INST_MEDIAN_PERIOD = CONFIG.MAX_RELDIFF_INST_MEDIAN_PERIOD
+BBOX_LARGE = CONFIG.BBOX_LARGE
+BBOX_SMALL = CONFIG.BBOX_SMALL
+FIRSTDAY = CONFIG.FIRSTDAY
+LASTDAY = CONFIG.LASTDAY
 
 # loading cross-correlations (looking for *.pickle files in dir *CROSSCORR_DIR*)
 folder_list = sorted(glob.glob(os.path.join(CROSSCORR_DIR, '*')))
@@ -138,5 +193,37 @@ for pickle_file in pickle_files:
     # freq (default is given by parameter *USE_INSTANTANEOUS_FREQ*)
     #
     # See other options in the docstring of the function.
-
-    xc.FTANs(suffix=suffix, whiten=False, normalize_ampl=True, logscale=True)
+    
+    print "Creating FTAN pairs ... " 
+    pairs, outputpath = xc.FTAN_pairs()
+    
+    print "Processing FTANs ... "
+    
+    def FTAN_pool(pair):
+        cleanvg = xc.FTAN_parallel(pair, prefix=None, suffix='', whiten=False,
+              normalize_ampl=True, logscale=True, mindist=None,
+              minSNR=None, minspectSNR=None, monthyears=None,
+              vmin=SIGNAL_WINDOW_VMIN, vmax=SIGNAL_WINDOW_VMAX,
+              signal2noise_trail=SIGNAL2NOISE_TRAIL,
+              noise_window_size=NOISE_WINDOW_SIZE,)
+        return cleanvg
+    
+    if multiprocess:
+        # multiprocessing turned on: one process per station
+        pool = mp.Pool(None)
+        cleanvgcurves = pool.map(FTAN_pool, pairs)
+        pool.close()
+        pool.join()
+    
+    else:
+        cleanvgcurves = []
+        for pair in pairs:
+            cleanvg = FTAN_pool(pair)
+            cleanvgcurves.append(cleanvg)        
+        
+    
+    FTAN_PATH = os.path.join(CROSSCORR_DIR[:-5], 'FTAN') 
+    # exporting vg curves to pickle file
+    f = psutils.openandbackup(outputpath + '.pickle', mode='wb')
+    pickle.dump(cleanvgcurves, f, protocol=2)
+    f.close()

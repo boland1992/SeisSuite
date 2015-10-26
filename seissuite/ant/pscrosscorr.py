@@ -220,6 +220,7 @@ class CrossCorrelation:
         self.startday = None
         self.endday = None
         self.nday = 0
+        self.restart_time = None
 
         # initializing time and data arrays of cross-correlation
         nmax = int(xcorr_tmax / xcorr_dt)
@@ -356,11 +357,11 @@ class CrossCorrelation:
         #self.dataarray = self.dataarray / np.max(self.dataarray)
         
         
-        
         # updating stats: 1st day, last day, nb of days of cross-corr
         startday = (tr1.stats.starttime + ONESEC)
         self.startday = min(self.startday, startday) if self.startday else startday
         endday = (tr1.stats.endtime - ONESEC)
+        self.restart_time = endday
         self.endday = max(self.endday, endday) if self.endday else endday
         self.nday += 1
 
@@ -475,20 +476,24 @@ class CrossCorrelation:
 
         @rtype: (float, float), (float, float)
         """
+        #print "distance is {} km.".format(self.dist())
         # signal window
         tmin_signal = self.dist() / vmax
         tmax_signal = self.dist() / vmin
-
+        
         # noise window
         tmin_noise = tmax_signal + signal2noise_trail
         tmax_noise = tmin_noise + noise_window_size
-        if tmax_noise > self.timearray.max():
+        if tmax_noise > self.timearray.max() or tmin_noise > self.timearray.max():
             # the noise window hits the rightmost limit:
             # let's shift it to the left without crossing
             # the signal window
-            delta = min(tmax_noise-self.timearray.max(),tmin_noise-tmax_signal)
-            tmin_noise -= delta
-            tmax_noise -= delta
+        
+            #delta = min(tmax_noise-self.timearray.max(),tmin_noise-tmax_signal)
+            #tmin_noise -= delta
+            #tmax_noise -= delta
+            tmin_noise = tmax_signal
+            tmax_noise = self.timearray.max()
 
         return (tmin_signal, tmax_signal), (tmin_noise, tmax_noise)
 
@@ -658,14 +663,18 @@ class CrossCorrelation:
         """
         # symmetric part of cross-corr
         xcout = self.symmetrize(inplace=False)
-
+        #print "vmin: ", vmin
+        #print "vmax: ", vmax
+        #print "xcout: ", xcout
+        #print "xcout time array: ", xcout.timearray
         # spectral whitening
         if whiten:
             xcout = xcout.whiten(inplace=False)
 
         # cross-corr of desired months
         xcdata = xcout._get_monthyears_xcdataarray(months=None)
-
+        #print "xcdata: ", xcdata
+        
         # filter type and associated arguments
         if periodbands:
             filtertype = 'Butterworth'
@@ -679,40 +688,114 @@ class CrossCorrelation:
             filtertype = None
             kwargslist = [{}]
         
+        #print "kwargslist: ", kwargslist
         SNR = []
-        try:
-            for filterkwargs in kwargslist:
-                if not filtertype:
-                    dataarray = xcdata
-                else:
-                    # bandpass filtering data before calculating SNR
-                    dataarray = psutils.bandpass(data=xcdata,
+        
+        #try:
+        for filterkwargs in kwargslist:
+            if not filtertype:
+                dataarray = xcdata
+            else:
+                # bandpass filtering data before calculating SNR
+                dataarray = psutils.bandpass(data=xcdata,
                                                  dt=xcout._get_xcorr_dt(),
                                                  filtertype=filtertype,
                                                  **filterkwargs)
+                
+                timearray = xcout.timearray
+                #print "timearray: ", timearray
+            # check to see that values can exist in the data!
+            #if self.dist() < 1.2 * vmax * max(timearray):
+            
 
                 # signal and noise windows
-                tsignal, tnoise = xcout.signal_noise_windows(
+                # issues with signal_noise_windows
+                #tsignal, tnoise = xcout.signal_noise_windows(
+                #vmin, vmax, signal2noise_trail, noise_window_size)
+                
+                #print "tsignal: ", tsignal
+                #print "tnoise: ", tnoise
+                
+                #signal_window_plus = (timearray >= tsignal[0]) & \
+                #(timearray <= tsignal[1])
+                #print "signal window plus: ", signal_window_plus
+                #signal_window_minus = (timearray <= -tsignal[0]) & \
+                #                      (timearray >= -tsignal[1])
+                #print "signal_window_minus: ", signal_window_minus
+                #peak1 = np.abs(dataarray[signal_window_plus]).max()
+                #peak2 = np.abs(dataarray[signal_window_minus]).max()
+                #print "peak1: ", peak1
+                #print "peak2: ", peak2
+                #peak = max([peak1, peak2])                      
+                #print "peak: ", peak
+
+                #noise_window1 = (timearray > tsignal[1]) & \
+                #                (timearray <= timearray[-1])
+                                
+                #noise_window2 = (timearray > -tsignal[0]) & \
+                #                (timearray < tsignal[0])
+            
+                #noise_window3 = (timearray >= timearray[0]) & \
+                #                (timearray < -tsignal[1])
+                        
+                #print "noise_window1: ", noise_window1
+                #print "noise_window2: ", noise_window2
+                #print "noise_window3: ", noise_window3
+
+
+            
+                #noise1 = dataarray[noise_window1]
+                #noise2 = dataarray[noise_window2]
+                #noise3 = dataarray[noise_window3]
+                #print "noise1: ", noise1
+                #print "noise2: ", noise2
+                #print "noise3: ", noise3
+                
+                #noise_list = list(it.chain(*[noise1, noise2, noise3]))
+                #print "noise_list: ", noise_list
+
+                #noise = np.std(noise_list)
+                #print "noise: ", noise
+
+                #SNR.append(peak / noise)
+                #print "SNR: ", SNR
+            
+            
+            # signal and noise windows
+            tsignal, tnoise = xcout.signal_noise_windows(
                     vmin, vmax, signal2noise_trail, noise_window_size)
             
-                signal_window = (xcout.timearray >= tsignal[0]) & \
+            signal_window = (xcout.timearray >= tsignal[0]) & \
                                 (xcout.timearray <= tsignal[1])
 
-                noise_window = (xcout.timearray >= tnoise[0]) & \
+            noise_window = (xcout.timearray >= tnoise[0]) & \
                                (xcout.timearray <= tnoise[1])
 
+            #print "t signal, t noise: ", tsignal, tnoise
+            #print "signal_window: ", signal_window
+            #print "noise_window: ", noise_window
 
-                peak = np.abs(dataarray[signal_window]).max()
-                noise = dataarray[noise_window].std()
-
-                # appending SNR
-                SNR.append(peak / noise)
-
+            peak = np.abs(dataarray[signal_window]).max()
+            noise = dataarray[noise_window].std()
+            #print "peak: ", peak
+            #print "noise: ", noise
+            # appending SNR
+            SNR.append(peak / noise)
+            #print "SNR: ", SNR
+                
             # returning 1d array if spectral SNR, 0d array if normal SNR
+            #try: 
+            #    print "SNR array: ", np.array(SNR)
+            #except:                
+            #    print " SNR array 2: ", np.array(SNR[0])
+            
             return np.array(SNR) if len(SNR) > 1 else np.array(SNR[0])
             
-        except Exception as err:
-            print 'There was an unexpected error: ', err
+            #else:
+            #    return None
+            
+        #except Exception as err:
+        #    print 'There was an unexpected error: ', err
 
     def plot(self, whiten=False, sym=False, vmin=SIGNAL_WINDOW_VMIN,
              vmax=SIGNAL_WINDOW_VMAX, months=None):
@@ -1687,7 +1770,7 @@ class CrossCorrelation:
         @rtype: int
         """
         nt = len(self.timearray)
-        return (nt - 1) * 0.5 if not self.symmetrized else nt - 1
+        return int((nt - 1) * 0.5) if not self.symmetrized else int(nt - 1)
 
     def _get_monthyears_xcdataarray(self, months=None):
         """
@@ -2140,15 +2223,30 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
         #enter number of cross-correlations to be plotted as to not crowd the image
         # distance plot = one plot for all pairs, y-shifted according to pair distance
         elif plot_type == 'distance':
-
+            # set max dist. to 2500km
             maxdist = max(self[x][y].dist() for (x, y) in pairs)
+            if maxdist > 2500.0:
+                maxdist = 2500.0
             corr2km = maxdist / 30.0
             cc = mpl.rcParams['axes.color_cycle']  # color cycle
             
-            #maybe only plot every 10th station pair?
+            #filter out every station pair with more than 2500km distance
+            print "pair length 1: ", len(pairs)
             
+            #for (s1, s2) in pairs:
+            #    if self[s1][s2].dist() >= 2500.0:
+
+            dist_filter = (self[s1][s2].dist() > 2500.0 for (s1, s2) in pairs)
+            print "dist_filter: ", dist_filter
+            
+            pairs = np.asarray(pairs)
+            pairs = pairs[dist_filter]
+            print "pairs: ", pairs
+            print "pair length 2: ", len(pairs)
+
             # sorting pairs by distance
             pairs.sort(key=lambda (s1, s2): self[s1][s2].dist())
+            pairs 
             pairs.reverse()
             pairs_copy = pairs #create a pairs list of equi-distant station pairs no longer than plot_number
             pairs_list = []
@@ -2434,6 +2532,107 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
         self._pairsinfo_to_ascii(outprefix, verbose=verbose)
         self._stationsinfo_to_ascii(outprefix, stations=stations, verbose=verbose)
 
+    def FTAN_pairs(self, prefix=None, suffix='', whiten=False,
+              normalize_ampl=True, logscale=True, mindist=None,
+              minSNR=None, minspectSNR=None, monthyears=None,
+              vmin=SIGNAL_WINDOW_VMIN, vmax=SIGNAL_WINDOW_VMAX,
+              signal2noise_trail=SIGNAL2NOISE_TRAIL,
+              noise_window_size=NOISE_WINDOW_SIZE,
+              **kwargs):
+        
+        # setting default prefix if not given
+        if not prefix:
+            parts = [os.path.join(FTAN_DIR, 'FTAN')]
+            if whiten:
+                parts.append('whitenedxc')
+            if mindist:
+                parts.append('mindist={}'.format(mindist))
+            if minSNR:
+                parts.append('minSNR={}'.format(minSNR))
+            if minspectSNR:
+                parts.append('minspectSNR={}'.format(minspectSNR))
+            if monthyears:
+                parts.extend('{:02d}-{}'.format(m, y) for m, y in monthyears)
+        else:
+            parts = [prefix]
+        if suffix:
+            parts.append(suffix)
+
+        # path of output files (without extension)
+        outputpath = u'_'.join(parts)
+
+        pdfpath = u'{}.pdf'.format(outputpath)
+        if os.path.exists(pdfpath):
+            # backup
+            shutil.copyfile(pdfpath, pdfpath + '~')
+        # opening pdf file
+        pdf = PdfPages(pdfpath)
+
+        # filtering pairs
+        pairs = self.pairs(sort=True, minSNR=minSNR, mindist=mindist,
+                           vmin=vmin, vmax=vmax,
+                           signal2noise_trail=signal2noise_trail,
+                           noise_window_size=noise_window_size)
+        
+        # pairs filtered by max. pair distance
+        dist_pairs = []                   
+        for pair in pairs:
+            if self[pair[0]][pair[1]].dist() < 1.2*max(self[pair[0]][pair[1]].timearray)*vmax:
+                dist_pairs.append(pair)
+        
+        pairs = dist_pairs
+            
+        if minspectSNR:
+            # plotting only pairs with all spect SNR >= minspectSNR
+            SNRarraydict = self.pairs_and_SNRarrays(
+                pairs_subset=pairs, minspectSNR=minspectSNR,
+                whiten=whiten, verbose=True,
+                vmin=vmin, vmax=vmax,
+                signal2noise_trail=signal2noise_trail,
+                noise_window_size=noise_window_size)
+            pairs = sorted(SNRarraydict.keys())
+
+        s = ("Exporting FTANs of {0} pairs to file {1}.pdf\n"
+             "and dispersion curves to file {1}.pickle\n")
+        print s.format(len(pairs), outputpath)
+
+        
+        return pairs, outputpath
+        
+    def FTAN_parallel(self, pair, prefix=None, suffix='', whiten=False,
+              normalize_ampl=True, logscale=True, mindist=None,
+              minSNR=None, minspectSNR=None, monthyears=None,
+              vmin=SIGNAL_WINDOW_VMIN, vmax=SIGNAL_WINDOW_VMAX,
+              signal2noise_trail=SIGNAL2NOISE_TRAIL,
+              noise_window_size=NOISE_WINDOW_SIZE,
+              **kwargs):
+            
+        s1, s2 = pair
+            
+        # appending FTAN plot of pair s1-s2 to pdf
+        print "{}-{}".format(s1, s2),
+        xc = self[s1][s2]
+        assert isinstance(xc, CrossCorrelation)
+
+        try:
+            # complete FTAN analysis
+            rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
+            whiten=whiten, months=monthyears,
+            vmin=vmin, vmax=vmax,
+            signal2noise_trail=signal2noise_trail,
+            noise_window_size=noise_window_size,
+            **kwargs)
+            return cleanvg
+
+
+
+        except Exception as err:
+            # something went wrong with this FTAN
+            err = err
+    
+
+      
+        
     def FTANs(self, prefix=None, suffix='', whiten=False,
               normalize_ampl=True, logscale=True, mindist=None,
               minSNR=None, minspectSNR=None, monthyears=None,
@@ -2500,11 +2699,11 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
         # path of output files (without extension)
         outputpath = u'_'.join(parts)
 
-        # opening pdf file
         pdfpath = u'{}.pdf'.format(outputpath)
         if os.path.exists(pdfpath):
             # backup
             shutil.copyfile(pdfpath, pdfpath + '~')
+        # opening pdf file
         pdf = PdfPages(pdfpath)
 
         # filtering pairs
@@ -2512,6 +2711,15 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                            vmin=vmin, vmax=vmax,
                            signal2noise_trail=signal2noise_trail,
                            noise_window_size=noise_window_size)
+        
+        # pairs filtered by max. pair distance
+        dist_pairs = []                   
+        for pair in pairs:
+            if self[pair[0]][pair[1]].dist() < 1.2*max(self[pair[0]][pair[1]].timearray)*vmax:
+                dist_pairs.append(pair)
+        
+        pairs = dist_pairs
+            
         if minspectSNR:
             # plotting only pairs with all spect SNR >= minspectSNR
             SNRarraydict = self.pairs_and_SNRarrays(
@@ -2534,9 +2742,9 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             xc = self[s1][s2]
             assert isinstance(xc, CrossCorrelation)
 
-           # try:
+            try:
                 # complete FTAN analysis
-            rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
+                rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
                     whiten=whiten, months=monthyears,
                     vmin=vmin, vmax=vmax,
                     signal2noise_trail=signal2noise_trail,
@@ -2544,24 +2752,24 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                     **kwargs)
 
                 # plotting raw-clean FTAN
-            fig = xc.plot_FTAN(rawampl, rawvg, cleanampl, cleanvg,
-                                   whiten=whiten,
-                                   normalize_ampl=normalize_ampl,
-                                   logscale=logscale,
-                                   showplot=False,
-                                   vmin=vmin, vmax=vmax,
-                                   signal2noise_trail=signal2noise_trail,
-                                   noise_window_size=noise_window_size,
-                                   **kwargs)
-            pdf.savefig(fig)
-            plt.close()
+                fig = xc.plot_FTAN(rawampl, rawvg, cleanampl, cleanvg,
+                                       whiten=whiten,
+                                       normalize_ampl=normalize_ampl,
+                                       logscale=logscale,
+                                       showplot=False,
+                                       vmin=vmin, vmax=vmax,
+                                       signal2noise_trail=signal2noise_trail,
+                                       noise_window_size=noise_window_size,
+                                       **kwargs)
+                pdf.savefig(fig)
+                plt.close()
 
                 # appending clean vg curve
-            cleanvgcurves.append(cleanvg)
+                cleanvgcurves.append(cleanvg)
 
-            #except Exception as err:
-                # something went wrong with this FTAN
-               # print "\nGot unexpected error:\n\n{}\n\nSKIPPING PAIR!".format(err)
+            except Exception as err:
+            # something went wrong with this FTAN
+                print "\nGot unexpected error:\n\n{}\n\nSKIPPING PAIR!".format(err)
 
         print "\nSaving files..."
 
