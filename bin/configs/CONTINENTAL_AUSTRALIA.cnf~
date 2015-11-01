@@ -159,9 +159,9 @@ TECTO_COLORS = {
 
 # bounding box of (large) global maps and (small) inset maps
 # (min lon, max lon, min lat, max lat in JSON lists)
-
-BBOX_LARGE = [135, 155, -40, -25]
-BBOX_SMALL = [135, 155, -40, -25]
+# this is the bounding box for the stations that will be processed for tomo map
+BBOX_LARGE = [110, 155, -45, -10]
+BBOX_SMALL = [110, 155, -45, -10]
 
 
 #==================
@@ -177,7 +177,7 @@ XCORR_INTERVAL = 45.0                ; number of minutes in xcorr time series
 USE_DATALESSPAZ = True               ; use dataless files to remove instrument response?
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
 FIRSTDAY = 01/01/2014                ; first day of cross-correlation (d/m/y)
-LASTDAY = 31/12/2014                 ; last day of cross-correlation (d/m/y)
+LASTDAY = 31/03/2014                 ; last day of cross-correlation (d/m/y)
 MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%
 CROSSCORR_STATIONS_SUBSET = null     ; subset of stations (null if all, else JSON list)
 CROSSCORR_SKIPLOCS = ["50"]          ; locations to skip (JSON list)
@@ -269,16 +269,16 @@ MAX_RELDIFF_INST_MEDIAN_PERIOD = 0.5
 
 # Default parameters related to the velocity selection criteria
 
-MINSPECTSNR = 7             ; min spectral SNR to retain velocity
-MINSPECTSNR_NOSDEV = 15     ; min spectral SNR to retain velocity if no std dev
+MINSPECTSNR = 4             ; min spectral SNR to retain velocity
+MINSPECTSNR_NOSDEV = 4     ; min spectral SNR to retain velocity if no std dev
 MAXSDEV = 0.1               ; max sdt dev (km/s) to retain velocity
 MINNBTRIMESTER = 4          ; min nb of trimesters to estimate std dev
 MAXPERIOD_FACTOR = 0.08333  ; max period = *MAXPERIOD_FACTOR* * pair distance
 
 # Default internode spacing of grid
 
-LONSTEP = 1
-LATSTEP = 1
+LONSTEP = 0.1
+LATSTEP = 0.1
 
 # Default correlation length of the smoothing kernel:
 # S(r,r') = exp[-|r-r'|**2 / (2 * correlation_length**2)]

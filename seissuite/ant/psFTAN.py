@@ -456,45 +456,46 @@ class CrossCorrelation:
         xcout.whitened = True
         return xcout
 
-    def signal_noise_windows2(self, vmin, vmax, signal2noise_trail, 
-                             noise_window_size):
-        """
-        Returns the signal window and the noise window.
-        The signal window is defined by *vmin* and *vmax*:
-          dist/*vmax* < t < dist/*vmin*
+    #def signal_noise_windows(self, vmin, vmax, signal2noise_trail, 
+    #                         noise_window_size):
+    #    """
+    #    Returns the signal window and the noise window.
+    #    The signal window is defined by *vmin* and *vmax*:
 
-        The noise window starts *signal2noise_trail* after the
-        signal window and has a size of *noise_window_size*:
+    #      dist/*vmax* < t < dist/*vmin*
 
-          t > dist/*vmin* + *signal2noise_trail*
-          t < dist/*vmin* + *signal2noise_trail* + *noise_window_size*
+    #    The noise window starts *signal2noise_trail* after the
+    #    signal window and has a size of *noise_window_size*:
 
-        If the noise window hits the time limit of the cross-correlation,
-        we try to extend it to the left until it hits the signal
-        window.
+    #      t > dist/*vmin* + *signal2noise_trail*
+    #      t < dist/*vmin* + *signal2noise_trail* + *noise_window_size*
 
-        @rtype: (float, float), (float, float)
-        """
+    #    If the noise window hits the time limit of the cross-correlation,
+    #    we try to extend it to the left until it hits the signal
+    #    window.
+
+    #    @rtype: (float, float), (float, float)
+    #    """
         #print "distance is {} km.".format(self.dist())
         # signal window
-        tmin_signal = self.dist() / vmax
-        tmax_signal = self.dist() / vmin
+    #    tmin_signal = self.dist() / vmax
+    #    tmax_signal = self.dist() / vmin
         
         # noise window
-        tmin_noise = tmax_signal + signal2noise_trail
-        tmax_noise = tmin_noise + noise_window_size
-        if tmax_noise > self.timearray.max() or tmin_noise > self.timearray.max():
+    #    tmin_noise = tmax_signal + signal2noise_trail
+    #    tmax_noise = tmin_noise + noise_window_size
+    #    if tmax_noise > self.timearray.max() or tmin_noise > self.timearray.max():
             # the noise window hits the rightmost limit:
             # let's shift it to the left without crossing
             # the signal window
         
-            delta = min(tmax_noise-self.timearray.max(),tmin_noise-tmax_signal)
-            tmin_noise -= delta
-            tmax_noise -= delta
-            tmin_noise = tmax_signal
-            tmax_noise = self.timearray.max()
+            #delta = min(tmax_noise-self.timearray.max(),tmin_noise-tmax_signal)
+            #tmin_noise -= delta
+            #tmax_noise -= delta
+    #        tmin_noise = tmax_signal
+    #        tmax_noise = self.timearray.max()
 
-        return (tmin_signal, tmax_signal), (tmin_noise, tmax_noise)
+    #    return (tmin_signal, tmax_signal), (tmin_noise, tmax_noise)
     
     def signal_noise_windows(self, vmin, vmax, signal2noise_trail, 
                              noise_window_size):
@@ -507,6 +508,7 @@ class CrossCorrelation:
         timearray = list(self.timearray)
         
         index_max = dataarray.index(max(dataarray))
+
         tmin_signal = timearray[index_max] - 10
         tmax_signal = timearray[index_max] + 10
         
@@ -524,131 +526,7 @@ class CrossCorrelation:
 
         
         return (tmin_signal, tmax_signal), (tmin_noise, tmax_noise)
-                                 
-    def SNR_table(self, vmin=SIGNAL_WINDOW_VMIN, vmax=SIGNAL_WINDOW_VMAX,
-                  signal2noise_trail=SIGNAL2NOISE_TRAIL,
-                  noise_window_size=NOISE_WINDOW_SIZE, date=None,
-                  verbose=False):
-        """
-        This function provides a means to calculate the SNR of a given signal
-        (either the linear or phase-weighted stack of an input station pair)
-        and returns is as a signal float value which is then appended to the
-        lists: SNR_lin and SNR_pws.
-        """
-        #======================================================================
-        # RUN FOR LINEAR STACK PROCESSES 
-        #======================================================================
-
-        # linear stack at current time step of the xcorrs for station pair 
-        dataarray = self.dataarray
-        timearray = self.timearray
-        try:
-            # signal and noise windows
-            tsignal, tnoise = self.signal_noise_windows(
-            vmin, vmax, signal2noise_trail, noise_window_size)
-            
-            signal_window_plus = (timearray >= tsignal[0]) & \
-                                 (timearray <= tsignal[1])
-                                 
-            signal_window_minus = (timearray <= -tsignal[0]) & \
-                                  (timearray >= -tsignal[1])
-            
-            peak1 = np.abs(dataarray[signal_window_plus]).max()
-            peak2 = np.abs(dataarray[signal_window_minus]).max()
-            peak = max([peak1, peak2])                      
-
-            noise_window1 = (timearray > tsignal[1]) & \
-                            (timearray <= self.timearray[-1])
-            
-            noise_window2 = (timearray > -tsignal[0]) & \
-                           (timearray < tsignal[0])
-            
-            noise_window3 = (timearray >= self.timearray[0]) & \
-                            (timearray < -tsignal[1])
-        
-
-            
-            noise1 = dataarray[noise_window1]
-            noise2 = dataarray[noise_window2]
-            noise3 = dataarray[noise_window3]
-            
-            noise_list = list(it.chain(*[noise1, noise2, noise3]))
-            
-            noise = np.nanstd(noise_list)
-            #SNR with each time-step for linear stack
-            self.SNR_lin.append([peak / noise, date]) 
-            
-        except Exception as err:
-            if verbose:
-                print 'There was an unexpected error: ', err
-            else:
-                a=5
-        
-        #======================================================================
-        # RUN FOR PHASE-WEIGHTED STACK PROCESSES 
-        #======================================================================
-        # pws at current time step of the xcorrs for station pair 
-        pws = self.pws
-        
-        try:
-            # signal and noise windows
-            tsignal, tnoise = self.signal_noise_windows(
-            vmin, vmax, signal2noise_trail, noise_window_size)
-            
-            signal_window_plus = (timearray >= tsignal[0]) & \
-                                 (timearray <= tsignal[1])
-                                 
-            signal_window_minus = (timearray <= -tsignal[0]) & \
-                                  (timearray >= -tsignal[1])
-            
-            peak1 = np.abs(pws[signal_window_plus]).max()
-            peak2 = np.abs(pws[signal_window_minus]).max()
-            peak = max([peak1, peak2])                      
-
-            noise_window1 = (timearray > tsignal[1]) & \
-                            (timearray <= self.timearray[-1])
-            
-            noise_window2 = (timearray > -tsignal[0]) & \
-                           (timearray < tsignal[0])
-            
-            noise_window3 = (timearray >= self.timearray[0]) & \
-                            (timearray < -tsignal[1])
-            
-            noise1 = pws[noise_window1]
-            noise2 = pws[noise_window2]
-            noise3 = pws[noise_window3]
-            
-            noise_list = list(it.chain(*[noise1, noise2, noise3]))
-            
-            #plt.figure()
-            #plt.plot(self.timearray[noise_window1], 
-            #         pws[noise_window1], color='green')
-            #plt.plot(self.timearray[noise_window2], 
-            #         pws[noise_window2], color='green')
-            #plt.plot(self.timearray[noise_window3],
-            #         pws[noise_window3], color='green')
-            #plt.plot(self.timearray[signal_window_plus], 
-            #         pws[signal_window_plus], color='blue')
-            #plt.plot(self.timearray[signal_window_minus], 
-            #         pws[signal_window_minus], color='blue')
-            
-            #plt.show()
-            noise = np.nanstd(noise_list)
-            if peak or noise: 
-                SNR_rat = peak/noise
-            #SNR with each time-step for phase-weighted stack 
-            if SNR_rat:
-                self.SNR_pws.append([SNR_rat, date])
-            else:
-                raise Exception("\nSNR division by zero, None or Nan error, \
-skipping ...")
-
-                        
-        except Exception as err:
-            if verbose:
-                print 'There was an unexpected error: ', err
-
-
+              
     def SNR(self, periodbands=None,
             centerperiods_and_alpha=None,
             whiten=False, months=None,
@@ -724,55 +602,57 @@ skipping ...")
         #print "kwargslist: ", kwargslist
         SNR = []
         
-        try:
-            for filterkwargs in kwargslist:
-                if not filtertype:
-                    dataarray = xcdata
-                else:
-                    # bandpass filtering data before calculating SNR
-                    dataarray = psutils.bandpass(data=xcdata,
+        #try:
+        for filterkwargs in kwargslist:
+            if not filtertype:
+                dataarray = xcdata
+            else:
+                # bandpass filtering data before calculating SNR
+                dataarray = psutils.bandpass(data=xcdata,
                                                  dt=xcout._get_xcorr_dt(),
                                                  filtertype=filtertype,
                                                  **filterkwargs)
- 
+                
+                timearray = xcout.timearray
+            
                 # signal and noise windows
-                    tsignal, tnoise = xcout.signal_noise_windows(
-                            vmin, vmax, signal2noise_trail, noise_window_size)
+                tsignal, tnoise = xcout.signal_noise_windows(
+                        vmin, vmax, signal2noise_trail, noise_window_size)
                         
-                    signal_window = (xcout.timearray >= tsignal[0]) & \
-                                    (xcout.timearray <= tsignal[1])
+                signal_window = (xcout.timearray >= tsignal[0]) & \
+                                (xcout.timearray <= tsignal[1])
 
-                    noise_window = (xcout.timearray >= tnoise[0]) & \
-                                   (xcout.timearray <= tnoise[1])
+                noise_window = (xcout.timearray >= tnoise[0]) & \
+                               (xcout.timearray <= tnoise[1])
 
                 #print "t signal, t noise: ", tsignal, tnoise
                 #print "signal_window: ", signal_window
                 #print "noise_window: ", noise_window
 
-                    peak = np.abs(dataarray[signal_window]).max()
-                    noise = np.nanstd(dataarray[noise_window])
+                peak = np.abs(dataarray[signal_window]).max()
+                noise = dataarray[noise_window].std()
                 #print "peak: ", peak
                 #print "noise: ", noise
                 # appending SNR
                 # check for division by zero, None or Nan
-                    if peak or noise: 
-                        SNR.append(peak / noise)
-                    else:
-                        raise Exception("\nDivision by zero, None or Nan error, \
+                if peak or noise: 
+                    SNR.append(peak / noise)
+                else:
+                    raise Exception("\nDivision by zero, None or Nan error, \
 skipping ...")
 
         #print "SNR: ", SNR
         
-            self._SNRs = np.array(SNR) if len(SNR) > 1 else np.array(SNR)
-            self.filterkwargs = filterkwargs
-                
-            return np.array(SNR) if len(SNR) > 1 else np.array(SNR)
+        self._SNRs = np.array(SNR) if len(SNR) > 1 else np.array(SNR)
+        self.filterkwargs = filterkwargs
+            
+        return np.array(SNR) if len(SNR) > 1 else np.array(SNR)
             
             #else:
             #    return None
             
-        except Exception as err:
-            print 'There was an unexpected error: ', err
+        #except Exception as err:
+        #    print 'There was an unexpected error: ', err
 
     def plot(self, whiten=False, sym=False, vmin=SIGNAL_WINDOW_VMIN,
              vmax=SIGNAL_WINDOW_VMAX, months=None):
@@ -925,7 +805,7 @@ skipping ...")
                         
         axlist[0].text(x=xlim[1],
                        y=ylim[0] + 0.85 * (ylim[1] - ylim[0]),
-                       s="Original data, SNR ",
+                       s="Original data, SNR = {:.1f}".format(float(SNR)),
                        fontsize=9,
                        horizontalalignment='right',
                        bbox={'color': 'k', 'facecolor': 'white'})
@@ -1350,11 +1230,11 @@ skipping ...")
 
         # adding spectral SNRs associated with the periods of the
         # clean vg curve
-        if add_SNRs:
-            cleanvg.add_SNRs(xc, months=months,
-                             vmin=vmin, vmax=vmax,
-                             signal2noise_trail=signal2noise_trail,
-                             noise_window_size=noise_window_size)
+        #if add_SNRs:
+        #    cleanvg.add_SNRs(xc, months=months,
+        #                     vmin=vmin, vmax=vmax,
+        #                     signal2noise_trail=signal2noise_trail,
+        #                     noise_window_size=noise_window_size)
 
         if months is None:
             # set of available months (without year)
@@ -2378,7 +2258,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                            signal2noise_trail=signal2noise_trail,
                            noise_window_size=noise_window_size)
 
-        #SNRarrays = dict{(station1,station2): SNR array}
+        # SNRarrays = dict {(station1,station2): SNR array}
         SNRarrays = self.pairs_and_SNRarrays(
             pairs_subset=pairs, minspectSNR=minspectSNR,
             whiten=whiten, verbose=True,
@@ -2604,16 +2484,15 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
         s1, s2 = pair
             
         # appending FTAN plot of pair s1-s2 to pdf
-        #print "\nProcessing ...",
+        print "\nProcessing ...",
+        print "{}-{}".format(s1, s2),
 
         xc = self[s1][s2]
         assert isinstance(xc, CrossCorrelation)
 
-        #try:
-        print "{}-{} ".format(s1, s2),
-
+        try:
             # complete FTAN analysis
-        rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
+            rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
             whiten=whiten, months=monthyears,
             vmin=vmin, vmax=vmax,
             signal2noise_trail=signal2noise_trail,
@@ -2649,12 +2528,12 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             #    pdf = PdfPages(FTAN_figure)
             #    pdf.savefig(fig)
             #    plt.close()            
-        #print "Complete."
-        return cleanvg
+            #print "cleanvg: ", cleanvg
+            return cleanvg
             
-        #except Exception as err:
+        except Exception as err:
             # something went wrong with this FTAN
-        #    err = err
+            err = err
         
         # save individual FTAN output files
         #if savefigs and fig:
@@ -3114,10 +2993,8 @@ def FTAN(x, dt, periods, alpha, phase_corr=None):
         phase[iperiod, :] = np.angle(xa_f0)
 
     return amplitude, phase
-    
-    
 
-    
+
 def extract_dispcurve(amplmatrix, velocities, periodmask=None, varray_init=None,
                       optimizecurve=True, strength_smoothing=STRENGTH_SMOOTHING):
     """
@@ -3160,60 +3037,6 @@ def extract_dispcurve(amplmatrix, velocities, periodmask=None, varray_init=None,
 
     # building list of possible (v, ampl) curves at all periods
     v_ampl_arrays = None
-    
-    def extract_periods(iperiod, amplmatrix=amplmatrix, velocities=velocities,
-                    v_ampl_arrays=v_ampl_arrays, nperiods=nperiods):
-    
-        # local maxima of amplitude at period nb *iperiod*
-        argsmax = psutils.local_maxima_indices(amplmatrix[iperiod, :])
-
-        
-        if not v_ampl_arrays:
-            # initialzing the list of possible (v, ampl) curves with local maxima
-            # at current period, and nan elsewhere
-            v_ampl_arrays = [(np.zeros(nperiods) * np.nan, np.zeros(nperiods) * np.nan)
-            for _ in range(len(argsmax))]
-            for argmax, (varray, amplarray) in zip(argsmax, v_ampl_arrays):
-                varray[iperiod] = velocities[argmax]
-                amplarray[iperiod] = amplmatrix[iperiod, argmax]
-                continue
-
-        # inserting the velocities that locally maximizes amplitude
-        # to the correct curves
-
-        for argmax in argsmax:
-            # velocity that locally maximizes amplitude
-            v = velocities[argmax]
-            # we select the (v, ampl) curve for which the jump wrt previous
-            # v (not nan) is minimum
-            
-            lastv = lambda varray: varray[:iperiod][~np.isnan(varray[:iperiod])][-1]
-            vjump = lambda (varray, amplarray): np.abs(lastv(varray) - v)
-                
-            varray, amplarray = min(v_ampl_arrays, key=vjump)
-
-            # if the curve already has a vel attributed at this period, we
-            # duplicate it
-            if not np.isnan(varray[iperiod]):
-                varray, amplarray = copy.copy(varray), copy.copy(amplarray)
-                v_ampl_arrays.append((varray, amplarray))
-                # inserting (vg, ampl) at current period to the selected curve
-            varray[iperiod] = v
-            amplarray[iperiod] = amplmatrix[iperiod, argmax]
-        # filling curves without (vg, ampl) data at the current period
-        unfilledcurves = [(varray, amplarray) for varray, amplarray in v_ampl_arrays
-        if np.isnan(varray[iperiod])]
-        for varray, amplarray in unfilledcurves:
-            # inserting vel (which locally maximizes amplitude) for which
-            # the jump wrt the previous (not nan) v of the curve is minimum
-            lastv = varray[:iperiod][~np.isnan(varray[:iperiod])][-1]
-            vjump = lambda arg: np.abs(lastv - velocities[arg])
-            argmax = min(argsmax, key=vjump)
-            varray[iperiod] = velocities[argmax]
-            amplarray[iperiod] = amplmatrix[iperiod, argmax]
-    
-        return varray
-        
     for iperiod in range(nperiods):
         # local maxima of amplitude at period nb *iperiod*
         argsmax = psutils.local_maxima_indices(amplmatrix[iperiod, :])
@@ -3234,46 +3057,16 @@ def extract_dispcurve(amplmatrix, velocities, periodmask=None, varray_init=None,
 
         # inserting the velocities that locally maximizes amplitude
         # to the correct curves
-
         for argmax in argsmax:
             # velocity that locally maximizes amplitude
             v = velocities[argmax]
 
             # we select the (v, ampl) curve for which the jump wrt previous
             # v (not nan) is minimum
-        
             lastv = lambda varray: varray[:iperiod][~np.isnan(varray[:iperiod])][-1]
-            vjump = lambda (varray, amplarray): np.abs(lastv(varray) - v)
-            
-            # method 1            
-            #t0 = dt.datetime.now()
-            #vjumps = np.array(map(vjump, v_ampl_arrays))
-            #varray1, amplarray1 = v_ampl_arrays[np.argmin(vjumps)]
-            #delta = (dt.datetime.now() - t0).total_seconds()
-            #print "\n{} seconds.".format(delta)
-            
-            # method 2            
-            #t0 = dt.datetime.now()
+            vjump = lambda (varray, amplarray): abs(lastv(varray) - v)
             varray, amplarray = min(v_ampl_arrays, key=vjump)
-            #delta = (dt.datetime.now() - t0).total_seconds()
-            #print "{} seconds.".format(delta)
-            #print varray2 is varray1, amplarray2 is amplarray1
-            
-            # method 3  
-            #t0 = dt.datetime.now()
-            #for varray, ampl_array in v_ampl_arrays:
-            #    v1 = lastv(varray) - v
-            #    print v1
-                
-            #v_ampl_arrays = np.array(v_ampl_arrays)      
-            #varray3 = v_ampl_arrays[:,0][:iperiod][~np.isnan(v_ampl_arrays[:,0][:iperiod])][-1]
-            #print varray3
-            #delta = (dt.datetime.now() - t0).total_seconds()
-            #print "{} seconds.".format(delta)
-            #quit()            
-            #print varray2 is varray3, amplarray2 is amplarray3
-            
-            #v_ampl_arrays = list(v_ampl_arrays)
+
             # if the curve already has a vel attributed at this period, we
             # duplicate it
             if not np.isnan(varray[iperiod]):
@@ -3291,15 +3084,11 @@ def extract_dispcurve(amplmatrix, velocities, periodmask=None, varray_init=None,
             # inserting vel (which locally maximizes amplitude) for which
             # the jump wrt the previous (not nan) v of the curve is minimum
             lastv = varray[:iperiod][~np.isnan(varray[:iperiod])][-1]
-            vjump = lambda arg: np.abs(lastv - velocities[arg])
+            vjump = lambda arg: abs(lastv - velocities[arg])
             argmax = min(argsmax, key=vjump)
             varray[iperiod] = velocities[argmax]
             amplarray[iperiod] = amplmatrix[iperiod, argmax]
 
-#    print "varray 1: ", varray
-    
-#    varrays = map(extract_periods, range(nperiods))
-#    print "varrays: ", varrays
     # amongst possible vg curves, we select the one that maximizes amplitude,
     # while preserving some smoothness
     def funcmin((varray, amplarray)):
@@ -3336,6 +3125,7 @@ def extract_dispcurve(amplmatrix, velocities, periodmask=None, varray_init=None,
         varray = varray1 if funcmin1 <= funcmin2 else varray2
 
     return varray
+
 
 def optimize_dispcurve(amplmatrix, velocities, vg0, periodmask=None,
                        strength_smoothing=STRENGTH_SMOOTHING):
@@ -3374,7 +3164,7 @@ def optimize_dispcurve(amplmatrix, velocities, vg0, periodmask=None,
                                          amplcurvefunc(varray),
                                          strength_smoothing=strength_smoothing)
             
-    bounds = nperiods * [(np.min(velocities) + 0.1, np.max(velocities) - 0.1)]
+    bounds = nperiods * [(min(velocities) + 0.1, max(velocities) - 0.1)]
     method = 'SLSQP'  # methods with bounds: L-BFGS-B, TNC, SLSQP
     resmin = minimize(fun=funcmin, x0=vg0, method=method, bounds=bounds)
     vgcurve = resmin['x']

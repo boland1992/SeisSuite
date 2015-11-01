@@ -79,5 +79,9 @@ else:
     maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
     
     #plot distance plot of cross-correlations
-    xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-    outfile="/home/boland/Desktop/something1342.png", showplot=False)
+    #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+    #outfile="/home/boland/Desktop/something1342.png", showplot=False)
+    
+    #plot individual cross-correlations
+    xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+            outfile="/home/boland/Desktop/something1342.png", showplot=False)

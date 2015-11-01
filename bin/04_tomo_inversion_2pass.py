@@ -79,34 +79,79 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 # periods
-PERIODS = [9.0]
-# PERIODS = range(10, 31)
+#PERIODS = [1.0, 2.09.0]
+PERIODS = range(3, 30)
 
 # parameters for the 1st and 2nd pass, respectively
-GRID_STEPS = (1.0, 1.0)
-MINPECTSNRS = (10.0, 10.0)
-CORR_LENGTHS = (20, 20)
+GRID_STEPS = (0.5, 0.5)
+MINPECTSNRS = (2.0, 2.0)
+CORR_LENGTHS = (50, 50)
 ALPHAS = (3000, 400)
 BETAS = (200, 200)
 LAMBDAS = (0.3, 0.3)
 
-# parsing configuration file to import dirs
-from seissuite.ant.psconfig import (FTAN_DIR, TOMO_DIR)
+
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+    
+# import variables from initialised CONFIG class.
+FTAN_DIR = CONFIG.FTAN_DIR
+TOMO_DIR = CONFIG.TOMO_DIR
+
 
 # selecting dispersion curves
-flist = sorted(glob.glob(os.path.join(FTAN_DIR, 'FTAN*.pickle*')))
+pickle_files = sorted(glob.glob(os.path.join(FTAN_DIR, 'FTAN.pickle')))
+#print folder_list
+#pickle_list = []
+#if len(folder_list) < 1: 
+#    print("There are no files or folders in the data input folder \
+#please re-run 03_dispersion_curves.py to process some results")
+
+#else: 
+#    for folder in folder_list:
+    #check to see if there are any pickle files in the xcorr time folder 
+#        if len(glob.glob(os.path.join(folder, '*.pickle'))) < 1:
+            #print("There are no .pickle files in this folder. Skipping ...")
+#            continue
+#        else:
+#            for file_ in glob.glob(os.path.join(folder, '*.pickle')):
+#                if 'metadata' not in file_ and '.part' not in file_:            
+#                    pickle_list.append(file_)
+                
+#if len(pickle_list) < 1: 
+#    print("\nThere are no pickle files to begin from.")
+#    raise Exception("No pickle files to process, first run the programme.")
+#    res = ""
+        
+#else:
+#    print "\nPlease choose a file to process." 
+    #print combinations of partial pickle files available
+#    print '\n'.join('{} - {}'.format(i + 1, f.split('/')[-2])
+#        for i, f in enumerate(pickle_list))
+        
+    #change folder_list to pickle_list if this gives problems
+#    res = raw_input('\n')
+    
+#del f
+#create list of pickle files to process FTAN for
+#if not res or res == "0":
+#    pickle_files = [f for f in pickle_list if f[-1] != '~']
+#else:
+#    pickle_files = [pickle_list[int(i)-1] for i in res.split()]
+
+#usersuffix = raw_input("\nEnter suffix to append: [none]\n").strip()
+
 print 'Select file(s) containing dispersion curves to process: [All except backups]'
 print '0 - All except backups (*~)'
 print '\n'.join('{} - {}'.format(i + 1, os.path.basename(f))
-                for i, f in enumerate(flist))
+                for i, f in enumerate(pickle_files))
 
-res = raw_input('\n')
-if not res:
-    pickle_files = [f for f in flist if f[-1] != '~']
-else:
-    pickle_files = [flist[int(i)-1] for i in res.split()]
 
-usersuffix = raw_input("\nEnter suffix to append: [none]\n").strip()
+
+usersuffix = ""#raw_input("\nEnter suffix to append: [none]\n").strip()
 
 # loop on pickled curves
 for pickle_file in pickle_files:
@@ -115,15 +160,25 @@ for pickle_file in pickle_files:
     f = open(pickle_file, 'rb')
     curves = pickle.load(f)
     f.close()
+    
+    
+    # perform dispersion curves filter!     
+    curves = list(curves)
+    for i, curve in enumerate(curves):
+        if curve._SNRs is None:
+            del curves[i]
 
+            
     # if the name of the file containing the dispersion curves is:
     # FTAN_<suffix>.pickle,
     # then the name of the output files (without extension) is defined as:
+    
     # 2-pass-tomography_<suffix>
     try:
         os.makedirs(TOMO_DIR)
     except:
         pass
+    
     basename = os.path.basename(pickle_file).replace('FTAN', '2-pass-tomography')
     outprefix = os.path.join(TOMO_DIR, os.path.splitext(basename)[0])
     if usersuffix:
@@ -140,6 +195,7 @@ for pickle_file in pickle_files:
 
     # performing tomographic inversions at given periods
     vmaps = {}  # initializing dict of final maps
+
     for period in PERIODS:
         print "\nDoing period = {} s".format(period)
 
@@ -169,7 +225,7 @@ for pickle_file in pickle_files:
             #
             # (See doc of VelocityMap for a complete description of the input
             # arguments.)
-
+            
             try:
                 v = pstomo.VelocityMap(dispersion_curves=curves,
                                        period=period,
@@ -280,9 +336,9 @@ for pickle_file in pickle_files:
     # merging pages of pdf with similar period
     key = lambda pagenb: int(pagenb / 3)  # grouping pages 0-1-2, then 3-4-5 etc.
 
-    pagesgroups = psutils.groupbykey(pagenbs, key=key)
-    print "\nMerging pages of pdf..."
-    psutils.combine_pdf_pages(pdfname, pagesgroups, verbose=True)
+    #pagesgroups = psutils.groupbykey(pagenbs, key=key)
+    #print "\nMerging pages of pdf..."
+    #psutils.combine_pdf_pages(pdfname, pagesgroups, verbose=True)
 
     # exporting final maps (using pickle) as a dict:
     # {period: instance of pstomo.VelocityMap}

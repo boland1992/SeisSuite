@@ -351,14 +351,15 @@ for config_file in config_list:
                            endday=LASTDAY,
                            verbose=False)
     
-
+    DECLUSTER = False
     
-    stat_coords = np.asarray([station.coord for station in stations])
-    COORDS = Coordinates(input_list=stat_coords)
-    declustered_coords = COORDS.decluster(degree_dist=0.1)
+    if DECLUSTER: 
+        stat_coords = np.asarray([station.coord for station in stations])
+        COORDS = Coordinates(input_list=stat_coords)
+        declustered_coords = COORDS.decluster(degree_dist=0.1)
     
-    stations = [station for station in stations if 
-                station.coord in declustered_coords]      
+        stations = [station for station in stations if 
+                    station.coord in declustered_coords]      
 
     # Loop on time interval
      #number of time steps
@@ -755,7 +756,7 @@ now."
     #    pass
 
 
-    remove_config(config_file)
+    #remove_config(config_file)
     
 
 total_delta = (dt.datetime.now() - total_time0).total_seconds()

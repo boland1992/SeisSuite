@@ -47,6 +47,13 @@ FTAN_ALPHA = CONFIG.FTAN_ALPHA
 FTAN_VELOCITIES_STEP  = CONFIG.FTAN_VELOCITIES_STEP
 PERIOD_RESAMPLE = CONFIG.PERIOD_RESAMPLE
 
+# this is the bounding box for the stations that will be processed for tomo map
+global filter_box
+filter_box = False
+#import tomographic map bounding box
+BBOX_LARGE = CONFIG.BBOX_LARGE
+
+
 # ========================
 # Constants and parameters
 # ========================
@@ -174,6 +181,7 @@ class DispersionCurve:
         iperiod = np.abs(self.periods - period).argmin()
         if np.abs(self.periods[iperiod] - period) > EPS:
             raise Exception('Cannot find period in dispersion curve')
+            
         return iperiod
 
     def update_parameters(self, minspectSNR=None, minspectSNR_nosdev=None,
@@ -233,27 +241,31 @@ class DispersionCurve:
 
         @type xc: L{CrossCorrelation}
         """
-        centerperiods_and_alpha = zip(self.periods, [filter_alpha] * len(self.periods))
-        SNRs = xc.SNR(centerperiods_and_alpha=centerperiods_and_alpha,
-                      months=months, vmin=vmin, vmax=vmax,
-                      signal2noise_trail=signal2noise_trail,
-                      noise_window_size=noise_window_size)
-        print "SNRs 1: ", SNRs
+        try:
+            centerperiods_and_alpha = zip(self.periods, [filter_alpha] * len(self.periods))
+            SNRs = xc.SNR(centerperiods_and_alpha=centerperiods_and_alpha,
+                          months=months, vmin=vmin, vmax=vmax,
+                          signal2noise_trail=signal2noise_trail,
+                          noise_window_size=noise_window_size)
         
-        if self.nom2inst_periods:
-            # if a list of (nominal period, inst period) is provided
-            # we use it to re-interpolate SNRs
-            inst_period_func = interp1d(*zip(*self.nom2inst_periods))
-            print "SNRs 2: ", SNRs
-            SNRs = np.interp(x=self.periods,
-                             xp=inst_period_func(self.periods),
-                             fp=SNRs,
-                             left=np.nan,
-                             right=np.nan)
+            if self.nom2inst_periods:
+                # if a list of (nominal period, inst period) is provided
+                # we use it to re-interpolate SNRs
+                inst_period_func = interp1d(*zip(*self.nom2inst_periods))
+                
+                SNRs = np.interp(x=self.periods,
+                                 xp=inst_period_func(self.periods),
+                                 fp=SNRs,
+                                 left=np.nan,
+                                 right=np.nan)
         
-        print "SNRs 2: ", SNRs
-        self._SNRs = SNRs
-
+            self._SNRs = SNRs
+        
+        except Exception as err:
+            print "Something has gone wrong with the SNR calculations: {}"\
+            .format(err)
+            self.SNRs = None
+            
     def get_SNRs(self, **kwargs):
         if self._SNRs is None:
             self.add_SNRs(**kwargs)
@@ -305,11 +317,13 @@ class DispersionCurve:
 
         @rtype: L{numpy.ndarray}, L{numpy.ndarray}
         """
+        #print "self._SNRs in filtered_vels_sdevs: ", self._SNRs
         if self._SNRs is None:
             raise Exception("Spectral SNRs not defined")
 
         # estimating std devs, WHERE POSSIBLE (returning NaNs where not possible)
         sdevs = self.filtered_sdevs()
+
         has_sdev = ~np.isnan(sdevs)  # where are std devs defined?
 
         # Selection criteria:
@@ -332,6 +346,7 @@ class DispersionCurve:
             np.nan_to_num(self._SNRs[~has_sdev]) >= self.minspectSNR_nosdev
 
         # replacing velocities not passing the selection criteria with NaNs
+        #print np.where(mask, self.v, np.nan), sdevs
         return np.where(mask, self.v, np.nan), sdevs
 
     def filtered_vel_sdev_SNR(self, period):
@@ -444,8 +459,8 @@ class Grid:
         """
         index_ = np.array(index_)
 
-        if np.any((index_ < 0) | (index_ > self.n_nodes() - 1)):
-            raise Exception('Index out of bounds')
+        #if np.any((index_ < 0) | (index_ > self.n_nodes() - 1)):
+        #    raise Exception('Index out of bounds')
 
         ix, iy = self.ix_iy(index_)
         return self._x(ix), self._y(iy)
@@ -475,10 +490,10 @@ class Grid:
         ix = np.array(ix)
         iy = np.array(iy)
 
-        if np.any((ix < 0) | (ix > self.nx - 1)):
-            raise Exception('ix out of bounds')
-        if np.any((iy < 0) | (iy > self.ny - 1)):
-            raise Exception('iy out of bounds')
+        #if np.any((ix < 0) | (ix > self.nx - 1)):
+        #    raise Exception('ix out of bounds')
+        #if np.any((iy < 0) | (iy > self.ny - 1)):
+        #    raise Exception('iy out of bounds')
 
         return ix * self.ny + iy
 
@@ -683,6 +698,19 @@ class VelocityMap:
         beta = kwargs.get('beta', BETA)
         lambda_ = kwargs.get('lambda_', LAMBDA)
 
+
+        # reading inversion parameters
+        minspectSNR = 5.0
+        minspectSNR_nosdev = 1.0
+        minnbtrimester = 1.0
+        maxsdev = 0.1
+        lonstep = 1.0
+        latstep = 1.0
+        correlation_length = 100.0
+        alpha = 400.0
+        beta = 200.0
+        lambda_ = 0.3
+        
         if verbose:
             print "Velocities selection criteria:"
             print "- rejecting velocities if SNR < {}".format(minspectSNR)
@@ -712,12 +740,40 @@ class VelocityMap:
                                 minspectSNR_nosdev=minspectSNR_nosdev,
                                 minnbtrimester=minnbtrimester,
                                 maxsdev=maxsdev)
-
+        
         # valid dispersion curves (velocity != nan at period) and
         # associated interstation distances
+    
         self.disp_curves = [c for c in dispersion_curves
-                            if not np.isnan(c.filtered_vel_sdev_SNR(self.period)[0])]
+                            if not np.isnan(
+                            c.filtered_vel_sdev_SNR(self.period)[0])]
+            
 
+
+        if filter_box:
+            if verbose:
+                print "Number of dispersion curves before bounding box filter:\
+ ", len(self.disp_curves)   
+            filter_disp_curves = []
+            lonmin, lonmax, latmin, latmax = BBOX_LARGE
+            print "\nBoundary box coordinates: ", lonmin, lonmax, latmin, latmax            
+            for c in self.disp_curves:
+                lon1, lat1 = c.station1.coord
+                lon2, lat2 = c.station2.coord                
+                # check that both stations are in the bounding box!
+                if lonmin <= lon1 <= lonmax and lonmin <= lon2 <= lonmax and\
+                   latmin <= lat1 <= latmax and latmin <= lat2 <= latmax:                       
+                       filter_disp_curves.append(c)            
+            self.disp_curves = filter_disp_curves            
+            if verbose:
+                print "Number of dispersion curves after bounding box filter:\
+ ", len(self.disp_curves)   
+                    
+                       
+                       
+                    
+                    
+            
         if not self.disp_curves:
             s = "No valid velocity at selected period ({} sec)"
             raise pserrors.CannotPerformTomoInversion(s.format(period))
@@ -727,6 +783,7 @@ class VelocityMap:
         # getting (non nan) velocities and std devs at period
         vels, sigmav, _ = zip(*[c.filtered_vel_sdev_SNR(self.period)
                                 for c in self.disp_curves])
+                                    
         vels = np.array(vels)
         sigmav = np.array(sigmav)
         sigmav_isnan = np.isnan(sigmav)
@@ -780,16 +837,26 @@ class VelocityMap:
         self.Cinv = np.matrix(np.zeros((len(sigmav), len(sigmav))))
         np.fill_diagonal(self.Cinv, 1.0 / sigmad**2)
 
+
         # spatial grid for tomographic inversion (slightly enlarged to be
         # sure that no path will fall outside)
         lons1, lats1 = zip(*[c.station1.coord for c in self.disp_curves])
         lons2, lats2 = zip(*[c.station2.coord for c in self.disp_curves])
-        tol = 0.5
+        tol = 1.0
         lonmin = np.floor(min(lons1 + lons2) - tol)
         nlon = np.ceil((max(lons1 + lons2) + tol - lonmin) / lonstep) + 1
         latmin = np.floor(min(lats1 + lats2) - tol)
         nlat = np.ceil((max(lats1 + lats2) + tol - latmin) / latstep) + 1
+        
         self.grid = Grid(lonmin, lonstep, nlon, latmin, latstep, nlat)
+        
+        
+        #if verbose:
+            #boundary_coords = ((latmin, lonmin), (lonmin + lonstep * nlon, 
+            #                   latmin + latstep * nlat))
+                               
+            #print "((lonmin, latmin), (lonmax, latmax)): ", boundary_coords
+
 
         # geodesic paths associated with pairs of stations of dispersion curves
         if verbose:
@@ -839,8 +906,12 @@ class VelocityMap:
 
             # attributing weights to grid nodes along path:
             # w[j, :] = w_j(r) = weights of node j along path
+
+            #try and write in a condition here that eliminates issues
+
             nM = path.shape[0]
             w = np.zeros((self.grid.n_nodes(), nM))
+            
             w[iA, range(nM)] = wA
             w[iB, range(nM)] = wB
             w[iC, range(nM)] = wC
