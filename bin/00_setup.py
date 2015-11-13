@@ -12,10 +12,11 @@ import sqlite3 as lite
 # ====================================================
 
 
-FOLDER = ""
+FOLDER = '/home/iese/Documents/Ben/UNAM'
+DATABASE_DIR = '/home/iese/Documents/Ben/UNAM/DATABASES'
 
 #try:
-from seissuite.ant.psconfig import FOLDER, DATABASE_DIR
+#from seissuite.ant.psconfig import FOLDER, DATABASE_DIR
 
 #except Exception as error:
 #    print error

@@ -49,7 +49,9 @@ t_total0 = datetime.datetime.now()
 folder_path = MSEED_DIR
 
 # set file extension
-extensions = ['m', 'mseed', 'miniseed', 'MSEED']
+#extensions = ['m', 'mseed', 'miniseed', 'MSEED']
+extensions = ['msd']
+
  
 abs_paths = []
 for extension in extensions:
@@ -108,28 +110,61 @@ def extract_info(info):
     stats = trace.stats
     code ='{}.{}.{}'.format(stats.network, stats.station, stats.channel)
     starttime = trace.stats.starttime.timestamp
-    endtime = (trace.stats.starttime + trace.stats.npts * \
-              (1/trace.stats.sampling_rate)).timestamp
+    try:
+        endtime = trace.stats.endtime.timestamp
+    except:
+        
+        endtime = (trace.stats.starttime + trace.stats.npts * \
+                  (1.0/trace.stats.sampling_rate)).timestamp
 
-    return (code, starttime, endtime, path)
+    information = (code, starttime, endtime, path)
+    print information
+    return information
 
 def info_from_headers(path):
- 
-    #t0 = datetime.datetime.now()
-    headers = read(path, headonly=True)
-    headers.select(component='Z')
-    info = []
-    for trace in headers:
-        info.append([trace, path])
+
+    #print os.path.basename(path)
+    try:
+        #t0 = datetime.datetime.now()
+        headers = read(path, headonly=True)
+        #print headers[0].stats
+        headers.select(component='Z')
+        info = []
         
-    timeline_header = map(extract_info, info)
+        for trace in headers:
+            # double check that we are only dealing with the Z channel 
+            if 'Z' in trace.stats.channel:
+                info.append([trace, path])
+        
+        timeline_header = map(extract_info, info)
     
-    return timeline_header
+        return timeline_header
+        
+        
+    except Exception as error:
+        #t0 = datetime.datetime.now()
+        try:
+            headers = read(path)
+
+            headers.select(component='Z')
+            info = []
+            for trace in headers:
+                info.append([trace, path])
+        
+            timeline_header = map(extract_info, info)
+    
+            return timeline_header
+
+        except Exception as error:
+            print error
+
     #t1 = datetime.datetime.now()
     #print 'time taken to process previous loop: ', t1-t0
     #print "time for previous loop was: ", t1-t0
     
 t0 = datetime.datetime.now()
+
+print "Initialising timeline database. Please be patient ... " 
 
 if multiprocess:
     pool = mp.Pool(None)
@@ -176,6 +211,12 @@ try:
     
 except Exception as error:
     print error             
+
+
+# do an error check on the timeline list
+print len(timeline)
+
+
 
 t0 = datetime.datetime.now()
 # commit many rows of information! 

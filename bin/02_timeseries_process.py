@@ -80,15 +80,15 @@ epoch = dt.datetime(1970, 1, 1)
 total_verbose = False
 # DECLUSTER STATIONS!
 # remove stations that are too close to one another (set by degree radius!)
-from seissuite.spacing.search_station import Coordinates
+#from seissuite.spacing.search_station import Coordinates
 
 #import matplotlib.pyplot as plt
 #import numpy as np
 # turn on multiprocessing to get one merged trace per station?
 # to preprocess trace? to stack cross-correlations?
-MULTIPROCESSING = {'merge trace': True,
-                   'process trace': True,
-                   'cross-corr': True}
+MULTIPROCESSING = {'merge trace': False,
+                   'process trace': False,
+                   'cross-corr': False}
 # how many concurrent processes? (set None to let multiprocessing module decide)
 NB_PROCESSES = None
 if any(MULTIPROCESSING.values()):
@@ -149,18 +149,19 @@ for config_file in config_list:
     # initialise the required databases if they haven't already been.
     #if no two SQL databases exist, then create them! 
     TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
-    RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
+   # RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
     
-    if not os.path.exists(RESP_DB):
+   # if not os.path.exists(RESP_DB):
         # initialise response database for use with automated data selection!
-        lite.connect(RESP_DB)
-        from seissuite.database import response_database
-    
+  #      lite.connect(RESP_DB)
+  #      from seissuite.database import response_database
+    print TIMELINE_DB
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!
         lite.connect(TIMELINE_DB)
         from seissuite.database import create_database                                        
-                                        
+                    
+
     print "\nProcessing parameters:"
     print "- dir of miniseed data: " + MSEED_DIR
     print "- dir of dataless seed data: " + DATALESS_DIR
@@ -350,16 +351,20 @@ for config_file in config_list:
                            startday=FIRSTDAY,
                            endday=LASTDAY,
                            verbose=False)
+                           
+    print stations
+    quit()
+    
     
     DECLUSTER = False
     
-    if DECLUSTER: 
-        stat_coords = np.asarray([station.coord for station in stations])
-        COORDS = Coordinates(input_list=stat_coords)
-        declustered_coords = COORDS.decluster(degree_dist=0.1)
+    #if DECLUSTER: 
+    #    stat_coords = np.asarray([station.coord for station in stations])
+    #    COORDS = Coordinates(input_list=stat_coords)
+    #    declustered_coords = COORDS.decluster(degree_dist=0.1)
     
-        stations = [station for station in stations if 
-                    station.coord in declustered_coords]      
+    #    stations = [station for station in stations if 
+    #                station.coord in declustered_coords]      
 
     # Loop on time interval
      #number of time steps

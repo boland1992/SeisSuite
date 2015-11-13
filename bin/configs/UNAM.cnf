@@ -75,7 +75,7 @@ AUTOMATE = True
 
 
 #FOLDER = DEFAULT
-FOLDER = /storage/MASTERS/CONFIGURATIONS/CONTINENTAL_AUSTRALIA
+FOLDER = /home/iese/Documents/Ben/UNAM
 
 #set the folder where the computer programs in seismology have been installed if required. 
 # example CPIS dir:
@@ -92,11 +92,11 @@ COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR = /home/seis_suite/CPIS/PROGRAMS.330/bin
 
 
 MAX_DISTANCE = 2000.0 ; set max distance before signal is likel to be fully attenuated!
-DECLUSTER = True
+DECLUSTER = False
 DECLUSTER_MIN = 10.0 ; set minimum decluster distance (km)
 
 TDD = True	          ; trim, demean and detrend the trace (True recommended)
-RESP_REMOVE = True        ; remove instrument response? (True recommended)
+RESP_REMOVE = False        ; remove instrument response? (True recommended)
 EVENT_REMOVE = False	  ; automate event removal from catalogue (dist to event, window and avg V) uses IRIS and others and only removes regional events inside your networks range! (automated)
 HIGHAMP_REMOVE = False    ; automate removal of high amplitude noise from entire database (recommended to perform this in collaboration with EVENT_REMOVE)
 
@@ -175,10 +175,14 @@ BBOX_SMALL = [110, 155, -45, -10]
 # test the first 3 months of 2014 for cross-correlation!
 
 XCORR_INTERVAL = 45.0                ; number of minutes in xcorr time series
-USE_DATALESSPAZ = True               ; use dataless files to remove instrument response?
-USE_STATIONXML = False               ; use stationXML files to remove instrument response?
-FIRSTDAY = 01/01/2014                ; first day of cross-correlation (d/m/y)
-LASTDAY = 31/03/2014                 ; last day of cross-correlation (d/m/y)
+USE_DATALESSPAZ = False               ; use dataless files to remove instrument response?
+USE_STATIONXML = True               ; use stationXML files to remove instrument response?
+
+
+FIRSTDAY = 23/04/2015                ; first day of cross-correlation (d/m/y)
+LASTDAY = 28/08/2015                 ; last day of cross-correlation (d/m/y)
+
+
 MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%
 CROSSCORR_STATIONS_SUBSET = null     ; subset of stations (null if all, else JSON list)
 CROSSCORR_SKIPLOCS = ["50"]          ; locations to skip (JSON list)

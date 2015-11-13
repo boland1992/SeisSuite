@@ -360,12 +360,14 @@ re-run create_database in seissuite.database")
             # appending subdir to list of subdirs of station
             station.subdirs.append(subdir)
 
+   
     if verbose:
-        print 'Found {0} stations'.format(len(stations))
+         print 'Found {0} stations'.format(len(stations))
 
-    # adding lon/lat of stations from inventories
+     # adding lon/lat of stations from inventories
     if verbose:
-        print "Inserting coordinates to stations from inventories"
+         print "Inserting coordinates to stations from inventories"
+    
 
     for sta in copy(stations):
         # coordinates of station in dataless inventories
@@ -386,7 +388,7 @@ re-run create_database in seissuite.database")
                 print "WARNING: skipping {}. No coords found".format(repr(sta))
             stations.remove(sta)
         elif len(coords_set) == 1:
-            # one set of coords found
+           # one set of coords found
             sta.coord = list(coords_set)[0]
         else:
             # several sets of coordinates: calculating max diff
