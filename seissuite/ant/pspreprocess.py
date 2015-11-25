@@ -344,8 +344,12 @@ class Preprocess:
             delta = (dt.datetime.now() - t1).total_seconds()
             if verbose:
                 print "\nProcessed trim in {:.1f} seconds".format(delta)
-
         
+        #plt.figure()
+        #plt.title("TDD")
+        #plt.plot(trace.data)
+        #plt.show()
+        #plt.clf()
         # =========
         # Band-pass
         # =========
@@ -357,16 +361,28 @@ class Preprocess:
                          corners=self.corners,
                          zerophase=self.zerophase)
             delta = (dt.datetime.now() - t0).total_seconds()
+            
+            
             if verbose:
                 print "\nProcessed filters in {:.1f} seconds".format(delta)
-                
+        
+        
+        #plt.figure()
+        #plt.title("Bandpass")
+        #plt.plot(trace.data)
+        #plt.show()
+        #plt.clf()
         # ============
         # Downsampling
         # ============
         if DOWNSAMPLE:
             if abs(1.0 / trace.stats.sampling_rate - self.period_resample)>EPS:
                 psutils.resample(trace, dt_resample=self.period_resample)
-
+        #plt.figure()
+        #plt.title("DOWNSAMPLE")
+        #plt.plot(trace.data)
+        #plt.show()
+        #plt.clf()
         # ==================
         # Time normalization
         # ==================
@@ -379,7 +395,11 @@ class Preprocess:
             if verbose:
                 print "\nProcessed time-normalisation in {:.1f} seconds"\
                 .format(delta)
-
+        #plt.figure()
+        #plt.title("NORMALISATION")
+        #plt.plot(trace.data)
+        #plt.show()
+        #plt.clf()
         # ==================
         # Spectral whitening
         # ==================
@@ -390,7 +410,11 @@ class Preprocess:
             if verbose:
                 print "\nProcessed spectral whitening in {:.1f} seconds".\
                 format(delta)
-
+        #plt.figure()
+        #plt.title("SPECTRAL WHITENING")
+        #plt.plot(trace.data)
+        #plt.show()
+        #plt.clf()
         # ==============================================
         # Verifying that we don't have nan in trace data
         # ==============================================
@@ -445,10 +469,15 @@ class Preprocess:
         #print "station old path: ", station_path_old
         #print "station SQl path: ", station_path_SQL
         
+        #print "SQL path: ", station_path_SQL
+        
         st = read(pathname_or_url=station_path_SQL,
                   starttime=path_start, endtime=path_end)
-                  
-              
+
+        # MAKE THIS AN OPTION IN THE CONFIGURATION FILES!        
+        st = st.select(component='Z')
+        #print "st: ", st
+        
         #st = read(pathname_or_url=station.getpath(date),
         #          starttime=t0 - dt.timedelta(hours=1),
         #          endtime=t0 + dt.timedelta(days=1, hours=1))

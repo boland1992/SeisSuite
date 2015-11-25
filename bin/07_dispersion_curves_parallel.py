@@ -294,10 +294,17 @@ for pickle_file in pickle_files:
     # convert FTAN_outputs into numpy array
     cleanvgcurves = np.asarray(cleanvgcurves)
     
+    # remove None types from cleanvgcurves
+    
+    cleanvgcurves = cleanvgcurves[cleanvgcurves != np.array(None)]
+    
+    print cleanvgcurves
+
     FTAN_delta = (dt.datetime.now() - FTAN_t0).total_seconds()
     
     print "\nIt took {:.1f} seconds to process {} station pairs' FTANS in {}"\
     .format(FTAN_delta, len(pairs), process_type)
+    
     
     print "\nFTAN outputs: ", np.asarray(cleanvgcurves)
     #print "FTAN outputs type: ", type(cleanvgcurves)

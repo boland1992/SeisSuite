@@ -12,7 +12,7 @@ import obspy.signal
 import obspy.xseed
 import obspy.signal.cross_correlation
 import obspy.signal.filter
-from obspy.core import AttribDict#, read, UTCDateTime, Stream
+from obspy.core import AttribDict, Trace#, read, UTCDateTime, Stream
 from obspy.signal.invsim import cosTaper
 import numpy as np
 from numpy.fft import rfft, irfft, fft, ifft, fftfreq
@@ -285,7 +285,8 @@ class CrossCorrelation:
             # calculating cross-corr using obspy, if not already provided
             xcorr = obspy.signal.cross_correlation.xcorr(
                 tr1, tr2, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
-                        
+
+        
         # verifying that we don't have NaN
         if np.any(np.isnan(xcorr)):
             s = u"Got NaN in cross-correlation between traces:\n{tr1}\n{tr2}"
@@ -339,7 +340,7 @@ class CrossCorrelation:
             # calculating cross-corr using obspy, if not already provided
             xcorr = obspy.signal.cross_correlation.xcorr(
                 tr1, tr2, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
-                
+        
 
             
 
@@ -356,6 +357,15 @@ class CrossCorrelation:
         # normalise about 0, max amplitude 1
         #self.dataarray = self.dataarray / np.max(self.dataarray)
         
+
+        self.phase_stack(tr1, tr2, xcorr=xcorr)
+        self.phase_weighted_stack()
+        
+        #plt.figure()
+        #plt.title('pws')
+        #plt.plot(self.timearray, self.pws)
+        #plt.show()
+        #plt.clf()
         
         # updating stats: 1st day, last day, nb of days of cross-corr
         startday = (tr1.stats.starttime + ONESEC)
@@ -367,6 +377,9 @@ class CrossCorrelation:
 
         # stacking cross-corr over single month
         month = MonthYear((tr1.stats.starttime + ONESEC).date)
+        
+        
+        
         try:
             monthxc = next(monthxc for monthxc in self.monthxcs
                            if monthxc.month == month)
@@ -374,7 +387,13 @@ class CrossCorrelation:
             # appending new month xc
             monthxc = MonthCrossCorrelation(month=month, ndata=len(self.timearray))
             self.monthxcs.append(monthxc)
-        monthxc.dataarray += xcorr
+        
+        if monthxc.dataarray.shape != xcorr.shape: 
+            
+            monthxc.dataarray[:-1] += xcorr
+        else:
+            monthxc.dataarray += xcorr
+
         monthxc.nday += 1
 
         # updating (adding) locs and ids
@@ -1107,6 +1126,12 @@ skipping ...")
         tne0 = xcout.timearray != 0.0
         x = ftan_periods                                 # x = periods
         y = (self.dist() / xcout.timearray[tne0])[::-1]  # y = velocities
+
+        # force y to be strictly increasing!
+        for i in range(1, len(y)):
+            if y[i] < y[i-1]:
+                y[i] = y[i-1] + 1               
+                        
         zampl = ampl[:, tne0][:, ::-1]                   # z = amplitudes
         zphase = phase[:, tne0][:, ::-1]                 # z = phases
         # spline interpolation
@@ -1308,6 +1333,7 @@ skipping ...")
                                         use_inst_freq=use_inst_freq,
                                         vg_at_nominal_freq=rawvg_init,
                                         **kwargs)
+                                        
         except pserrors.CannotCalculateInstFreq:
             # pb with instantaneous frequency: returnin NaNs
             print "Warning: could not calculate instantenous frequencies in raw FTAN!"
@@ -1322,6 +1348,7 @@ skipping ...")
                                              station1=self.station1,
                                              station2=self.station2)
             
+
             return cleanvg
 
         # phase function from raw vg curve
@@ -2119,12 +2146,14 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
     def plot(self, plot_type='distance', xlim=None, norm=True, whiten=False,
              sym=False, minSNR=None, minday=1, withnets=None, onlywithnets=None,
              figsize=(21.0, 12.0), outfile=None, dpi=300, showplot=True,
-             stack_style='linear'):
+             stack_style='linear', fill=False, absolute=False, 
+             freq_central=None):
+        
         
         """
         method to plot a collection of cross-correlations
-        """
-
+        """        
+        
         # preparing pairs
         pairs = self.pairs(minday=minday, minSNR=minSNR, withnets=withnets,
                            onlywithnets=onlywithnets)
@@ -2164,8 +2193,11 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                 # normalizing factor
                 nrm = max(abs(xcplot.dataarray)) if norm else 1.0
 
-                # plotting
-                plt.plot(xcplot.timearray, xcplot.dataarray / nrm)
+                # plotting                
+                if xcplot.timearray.shape !=  xcplot.dataarray.shape:
+                    plt.plot(xcplot.timearray[:-1], xcplot.dataarray / nrm)
+                else:
+                     plt.plot(xcplot.timearray, xcplot.dataarray / nrm)
                 if xlim:
                     plt.xlim(xlim)
 
@@ -2188,7 +2220,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                 
                 out = os.path.abspath(os.path.join(outfile, os.pardir))
                 outfile_individual = os.path.join(out, title)
-                
+                print outfile_individual
                 if os.path.exists(outfile_individual):
                 # backup
                     shutil.copyfile(outfile_individual, \
@@ -2206,7 +2238,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             maxdist = max(self[x][y].dist() for (x, y) in pairs)
             if maxdist > 2500.0:
                 maxdist = 2500.0
-            corr2km = maxdist / 30.0
+            corr2km = maxdist / 10.0
             cc = mpl.rcParams['axes.color_cycle']  # color cycle
             
             #filter out every station pair with more than 2500km distance
@@ -2217,6 +2249,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             dist_filter = np.array([self[s1][s2].dist() < 2500.0 for (s1, s2) in pairs])
             print "dist_filter: ", dist_filter
 
+            
             
             pairs = np.asarray(pairs)
             
@@ -2254,15 +2287,43 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                 if whiten:
                     xcplot = xcplot.whiten(inplace=False)
 
-                fill = False
-                absolute = True
+
                 
                 color = cc[ipair % len(cc)]
                 #color = 'k'
                 # normalizing factor
-                nrm = max(abs(xcplot.dataarray)) if norm else 1.0
 
+                nrm = max(xcplot.dataarray) if norm else 1.0
+    
+                filter_trace =  Trace(data=xcplot.dataarray)
+                
+                print "trace: ", filter_trace
+                
+                
+                print "time array: ", xcplot.timearray
+                # number of seconds in time array
+                n_secs = 2.0 * xcplot.timearray[-1]
+                sample_rate = int(len(xcplot.dataarray) / n_secs)
+                
+                filter_trace.stats.sampling_rate = sample_rate
+                
+                
+                freq_min = freq_central - freq_central / 10.0
+                freq_max = freq_central + freq_central / 10.0
+                
+                print "freq_min: ", freq_min
+                print "freq_max: ", freq_max
+                
+                filter_trace = filter_trace.filter(type="bandpass",
+                                                   freqmin=freq_min,
+                                                   freqmax=freq_max,
+                                                   corners=2,
+                                                   zerophase=True) 
+                         
 
+                xcplot.dataarray = filter_trace.data  
+                
+                
                 # plotting
                 xarray = xcplot.timearray
                 #get absolute value of data array for more visual plot
@@ -2274,12 +2335,15 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                             
                     plt.fill_between(xarray, xcplot.dist(), yarray, color=color)
                 elif fill and not absolute:
-                    yarray = xcplot.dist() + corr2km * xcplot.dataarray / nrm
+                    
+                    yarray = xcplot.dist() + corr2km * (xcplot.dataarray / nrm)
                     plt.fill_between(xarray, xcplot.dist(), yarray, color=color)                    
                 elif not fill and absolute:
+                    
                     yarray = xcplot.dist() + corr2km * abs(xcplot.dataarray) / nrm
                     plt.plot(xarray, yarray, color = color)
                 else:
+                    
                     yarray = xcplot.dist() + corr2km * xcplot.dataarray / nrm
                     plt.plot(xarray, yarray, color = color)                    
 
@@ -2613,13 +2677,17 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
         print "{}-{} ".format(s1, s2),
 
             # complete FTAN analysis
-        rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
-            whiten=whiten, months=monthyears,
-            vmin=vmin, vmax=vmax,
-            signal2noise_trail=signal2noise_trail,
-            noise_window_size=noise_window_size,
-            **kwargs)
-            
+        try:
+            rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
+                whiten=whiten, months=monthyears,
+                vmin=vmin, vmax=vmax,
+                signal2noise_trail=signal2noise_trail,
+                noise_window_size=noise_window_size,
+                **kwargs)
+            return cleanvg
+        
+        except:
+            return None
             #FTAN_output = (rawampl, rawvg, cleanampl, cleanvg)
             
             # save individual FTAN output files if set
@@ -2650,7 +2718,6 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             #    pdf.savefig(fig)
             #    plt.close()            
         #print "Complete."
-        return cleanvg
             
         #except Exception as err:
             # something went wrong with this FTAN

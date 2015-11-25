@@ -17,7 +17,7 @@ from pandas import read_csv
 import glob
 
 
-network_code = 'AM'
+network_code = 'XX'
 chan_list = ['DHZ', 'DHN', 'DHE']
 site_description = 'UNAM local network'
 starttime = UTCDateTime('2015-01-01')
@@ -73,17 +73,32 @@ unique_stations = list(it.chain(*list(c.execute('''SELECT DISTINCT station
                                                    FROM timeline'''))))
 
 
-new_statlist = []
+
+change_stats = False
+
+statlist = []
 for code in unique_stations:  
     
     net, stat, chan = code.split('.')
-    try:
-        # use station map dictionary from above to generate new names
-        new_stat = UNAM_statmap[stat]
-        new_statlist.append((net, new_stat, chan))
     
-    except Exception as error:
-        print "station cannot be mapped correctly: {}".format(error)
+    if change_stats:
+        try:
+            # use station map dictionary from above to generate new names
+            new_stat = UNAM_statmap[stat]
+            statlist.append((net, new_stat, chan))
+    
+        except Exception as error:
+            print "station cannot be mapped correctly: {}".format(error)
+    
+    else:
+        
+        statlist = unique_stations
+
+
+#statlist = [str(c).split('.')[1] for c in statlist]
+
+print "statlist: ", statlist
+
 
 station_list = []
 
@@ -100,22 +115,31 @@ class Site:
 
 site = Site()
 
-for stat_info in new_statlist:
-    net, stat, chan = stat_info
+for stat_info in statlist:
+    net, stat, chan = str(stat_info).split('.')
     
-    lon, lat, elev = stat_dict[stat]
+    if stat in stat_dict.keys():
+        lon, lat, elev = stat_dict[stat]
     
-    # create obspy.station.channel opject for each channel
-    channels_list = []
-    for chan in chan_list:
+        # create obspy.station.channel opject for each channel
+        channels_list = []
+        for chan in chan_list:
         
-        loc_code = '00'
-        depth = 0.0
-        channel = Channel(chan, loc_code, lat, lon,
+            if 'Z' in chan:
+                loc_code = '11'
+            elif 'N' in chan:
+                loc_code = '12'
+            elif 'E' in chan:
+                loc_code = '13'
+            
+            depth = 0.0
+
+            channel = Channel(chan, loc_code, lat, lon,
                           elev, depth)
-        channels_list.append(channel)
+
+            channels_list.append(channel)
                
-    station = Station(stat, lat, lon, elev, channels=channels_list, 
+        station = Station(stat, lat, lon, elev, channels=channels_list, 
                       site=site, vault=None, 
                       geology=None, equipments=None,
                       operators=None, 

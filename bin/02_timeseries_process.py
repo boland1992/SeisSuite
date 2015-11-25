@@ -73,11 +73,13 @@ import time
 import glob
 import sqlite3 as lite
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 # set epoch timestamp 
 epoch = dt.datetime(1970, 1, 1)
 
-total_verbose = False
+total_verbose = True
 # DECLUSTER STATIONS!
 # remove stations that are too close to one another (set by degree radius!)
 #from seissuite.spacing.search_station import Coordinates
@@ -145,7 +147,7 @@ for config_file in config_list:
     PLOT_CLASSIC = CONFIG.PLOT_CLASSIC
     PLOT_DISTANCE = CONFIG.PLOT_DISTANCE
     MAX_DISTANCE = CONFIG.MAX_DISTANCE
-
+    RESP_REMOVE = CONFIG.RESP_REMOVE
     # initialise the required databases if they haven't already been.
     #if no two SQL databases exist, then create them! 
     TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
@@ -353,8 +355,7 @@ for config_file in config_list:
                            verbose=False)
                            
     print stations
-    quit()
-    
+            
     
     DECLUSTER = False
     
@@ -388,6 +389,7 @@ for config_file in config_list:
                           
     #loop on time-series. Date now represents XCORR_INTERVAL long time intervals
     counter = 0 
+    
     
     for date in dates:
         loop_time0 = dt.datetime.now()
@@ -461,6 +463,13 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
                                                      xcorr_interval=XCORR_INTERVAL,
                                                      skiplocs=CROSSCORR_SKIPLOCS,
                                                      minfill=MINFILL)
+                                                     
+                
+                #plt.figure()
+                #plt.plot(trace.data)
+                #plt.show()
+                #plt.clf()
+                
                 
                 if total_verbose:
                     msg = 'merged'
@@ -562,29 +571,31 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
             # dataless inventory, (2) None if response found in StationXML
             # inventory (directly attached to trace) or (3) False if no
             # response found
+            if RESP_REMOVE:  
+                try:
+                    response = Preprocess.get_or_attach_response(
+                        trace=tr,
+                        dataless_inventories=dataless_inventories,
+                        xml_inventories=xml_inventories)
+                    errmsg = None
+                except pserrors.CannotPreprocess as err:
+                    # response not found
+                    response = False
+                    errmsg = '{}: skipping'.format(err)
+                except Exception as err:
+                    # unhandled exception!
+                    response = False
+                    errmsg = 'Unhandled error: {}'.format(err)
     
-            try:
-                response = Preprocess.get_or_attach_response(
-                    trace=tr,
-                    dataless_inventories=dataless_inventories,
-                    xml_inventories=xml_inventories)
-                errmsg = None
-            except pserrors.CannotPreprocess as err:
-                # response not found
-                response = False
-                errmsg = '{}: skipping'.format(err)
-            except Exception as err:
-                # unhandled exception!
-                response = False
-                errmsg = 'Unhandled error: {}'.format(err)
-    
-            responses.append(response)
-            if errmsg:
-                # printing error message
-                if total_verbose:
-                    print '{}.{} [{}] '.format(tr.stats.network, 
-                                               tr.stats.station, 
-                                               errmsg),
+                responses.append(response)
+                if errmsg:
+                    # printing error message
+                    if total_verbose:
+                        print '{}.{} [{}] '.format(tr.stats.network, 
+                                                   tr.stats.station, 
+                                                   errmsg),
+            else:
+                responses.append(None)
                                            
         
         print '\nTraces merged and responses removed in {:.1f} seconds'\
@@ -596,18 +607,25 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
         print '\nPre-processing traces ... '
 
         t0 = dt.datetime.now()
+        # must have more than one trace for cross-correlations!
+        traces = np.array(traces)
+        traces_check = traces[traces != np.array(None)]
 
-        if MULTIPROCESSING['process trace']:
-            # multiprocessing turned on: one process per station
-            pool = mp.Pool(NB_PROCESSES)
-            traces = pool.map(preprocessed_trace, zip(traces, responses))
-            pool.close()
-            pool.join()
-        else:
-            # multiprocessing turned off: processing stations one after another
-            traces = [preprocessed_trace((tr, res)) for tr, 
-                      res in zip(traces, responses)]
-    
+        if len(traces_check) > 1:
+            if MULTIPROCESSING['process trace']:
+                # multiprocessing turned on: one process per station
+                pool = mp.Pool(NB_PROCESSES)
+                traces = pool.map(preprocessed_trace, zip(traces, responses))
+                pool.close()
+                pool.join()
+            
+            else:
+                # multiprocessing turned off: processing stations one after another
+                try:
+                    traces = [preprocessed_trace((tr, res)) for tr, 
+                              res in zip(traces, responses)]
+                except:
+                    continue
         # setting up dict of current date's traces, {station: trace}
         tracedict = {s.name: trace for s, trace in zip(iterate_stations, 
                                                        traces) if trace}
@@ -657,10 +675,16 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
                 """
                 (s1, tr1), (s2, tr2) = pair
                
-                #print '{}-{} '.format(s1, s2),
+                print '{}-{} '.format(s1, s2),
                 shift = int(CROSSCORR_TMAX / PERIOD_RESAMPLE)
                 xcorr = obspy.signal.cross_correlation.xcorr(
                     tr1, tr2, shift_len=shift, full_xcorr=True)[2]
+                    
+                #plt.figure()
+                #plt.title("xcorr 1 ")
+                #plt.plot(xcorr)
+                #plt.show()
+                #plt.clf()
                 return xcorr
     
 
@@ -687,8 +711,8 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
         delta = (dt.datetime.now() - t0).total_seconds()
 
 
-        print "\nCalculated and stacked {} cross-correlations in \
-{:.1f} seconds".format(len(xcorrs), delta)
+        #print "\nCalculated and stacked {} cross-correlations in \
+#{:.1f} seconds".format(len(xcorrs), delta)
     
         loop_delta = (dt.datetime.now() - loop_time0).total_seconds()
 
@@ -702,22 +726,26 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
         
         
         # save partial pickle file only if timeseries loop is large enough
-        if len(metadata) >= 2:
-            print "Time since last save: ", abs(date - metadata[-1] + dt.timedelta(minutes=XCORR_INTERVAL)) 
-            if (date - metadata[-1]) >= dt.timedelta(days=1):
-                with open(u'{}.part.pickle'.format(OUTFILESPATH), 'wb') as f:
-                    print "\nExporting cross-correlations calculated until now." 
-                    pickle.dump(xc, f, protocol=2)
-                metadata.append(date)
+        #if len(metadata) >= 2:
+        #    print "Time since last save: ", abs(date - metadata[-1] + dt.timedelta(minutes=XCORR_INTERVAL)) 
+            #if len(metadata) % 10 == 0:# (date - metadata[-1]) >= dt.timedelta(hours=1):
+        #    with open(u'{}.part.pickle'.format(OUTFILESPATH), 'wb') as f:
+        #        print "\nExporting cross-correlations calculated until now." 
+        #        pickle.dump(xc, f, protocol=2)
+        #    metadata.append(date)
                 
-        elif len(metadata) == 0:
-            metadata.append(date)
+        #elif len(metadata) == 0:
+        #    metadata.append(date)
 
     
             
         #also create a metadata dump file for use only if the program needs to be restarted
         #use replace() to get rid of basename to create file named metadata.pickle in 
         #correct path
+            
+        with open(u'{}.part.pickle'.format(OUTFILESPATH), 'wb') as f:
+            print "\nExporting cross-correlations calculated until now." 
+            pickle.dump(xc, f, protocol=2)    
         with open(METADATA_PATH, 'wb') as f:
             print "\nExporting re-start metadata of time-series calculated until \
 now."

@@ -77,15 +77,18 @@ import glob
 import pickle
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import numpy as np
+
 
 # periods
 #PERIODS = [1.0, 2.09.0]
-PERIODS = range(3, 30)
+
+
 
 # parameters for the 1st and 2nd pass, respectively
-GRID_STEPS = (0.5, 0.5)
+GRID_STEPS = (0.005, 0.005)
 MINPECTSNRS = (2.0, 2.0)
-CORR_LENGTHS = (50, 50)
+CORR_LENGTHS = (0.1, 0.1)
 ALPHAS = (3000, 400)
 BETAS = (200, 200)
 LAMBDAS = (0.3, 0.3)
@@ -101,6 +104,11 @@ f.close()
 FTAN_DIR = CONFIG.FTAN_DIR
 TOMO_DIR = CONFIG.TOMO_DIR
 
+RAWFTAN_PERIODS = CONFIG.RAWFTAN_PERIODS
+
+PERIODS = RAWFTAN_PERIODS #np.arange(0.07, 9.0, 0.1)
+
+# make a check to see that all PERIODS are in RAWFTAN_PERIODS
 
 # selecting dispersion curves
 pickle_files = sorted(glob.glob(os.path.join(FTAN_DIR, 'FTAN.pickle')))
@@ -161,14 +169,14 @@ for pickle_file in pickle_files:
     curves = pickle.load(f)
     f.close()
     
-    
+
     # perform dispersion curves filter!     
     curves = list(curves)
-    for i, curve in enumerate(curves):
-        if curve._SNRs is None:
-            del curves[i]
-
-            
+    #for i, curve in enumerate(curves):
+    #    if curve._SNRs is None:
+    #        del curves[i]
+    
+             
     # if the name of the file containing the dispersion curves is:
     # FTAN_<suffix>.pickle,
     # then the name of the output files (without extension) is defined as:

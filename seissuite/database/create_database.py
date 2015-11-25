@@ -35,6 +35,55 @@ DATALESS_DIR = CONFIG.DATALESS_DIR
 STATIONXML_DIR = CONFIG.STATIONXML_DIR
 
 
+def check_stat(trace, checklist=[], map_dict={}):
+    """
+    Function written to map a given station name to a new station name if
+    it is in a given checklist. 
+    
+    Args:
+    station (obspy.station.Station): Obspy station object containing 
+                                     all header information.
+    checklist (list): list of station names that should be changed if the 
+                      station name is found to be in there.
+    map_dict (dictionary): dictionary with keys that are the strings of the 
+                           old station names, which store information related
+                           to the new station names. 
+    Returns:
+    station (obspy.station.Station): Obspy station object containing 
+                                     all header information.                    
+    """
+    
+    stat_name, net_name = trace.stats.station, trace.stats.network
+    
+
+        
+    if stat_name in checklist:
+        try:
+            trace.stats.station = map_dict[stat_name]
+            
+            if net_name == 'XX':
+                # set new network name to just be the first two letter/numbers
+                # of the station names
+                trace.stats.network = trace.stats.station[:2]
+
+            return trace
+
+        except Exception as error:
+            print error
+
+
+    
+    
+
+UNAM_statlist = ['C0200', 'C0230', 'C0120', 'C01E0', 
+                'C0180', 'C01B0', 'C0220', 'C00D0', 
+                'C00E0', 'COOA0', 'C0240']
+
+UNAM_statmap = {'C0200':'AM01', 'C0230':'AM03', 'C0120':'AM04', 'C01E0':'AM05', 
+                'C0180':'AM06', 'C01B0':'AM10', 'C0220':'AM12', 'C00D0':'AM13', 
+                'C00E0':'AM15', 'COOA0':'AM16', 'C0240':'AM17'}
+
+
 
 multiprocess = False
 
@@ -104,30 +153,38 @@ else:
 # =============================================================================
 # =============================================================================
 
-def extract_info(info):    
+def extract_info(info, check=False):    
     trace, path = info
     
-    stats = trace.stats
-    code ='{}.{}.{}'.format(stats.network, stats.station, stats.channel)
-    starttime = trace.stats.starttime.timestamp
+    # check that the station names fit within the checklist, else map them.
+    
+    if check:
+        trace = check_stat(trace, checklist=UNAM_statlist, 
+                               map_dict=UNAM_statmap)
+    
+
     try:
-        endtime = trace.stats.endtime.timestamp
+        stats = trace.stats
+        code ='{}.{}.{}'.format(stats.network, stats.station, stats.channel)
+        print code,
+        starttime = trace.stats.starttime.timestamp
+        try:
+            endtime = trace.stats.endtime.timestamp
+        except:    
+            endtime = (trace.stats.starttime + trace.stats.npts * \
+            (1.0/trace.stats.sampling_rate)).timestamp
+
+        information = (code, starttime, endtime, path)
+        return information
     except:
+        a=None
         
-        endtime = (trace.stats.starttime + trace.stats.npts * \
-                  (1.0/trace.stats.sampling_rate)).timestamp
-
-    information = (code, starttime, endtime, path)
-    print information
-    return information
-
 def info_from_headers(path):
 
     #print os.path.basename(path)
     try:
         #t0 = datetime.datetime.now()
         headers = read(path, headonly=True)
-        #print headers[0].stats
         headers.select(component='Z')
         info = []
         
@@ -137,7 +194,6 @@ def info_from_headers(path):
                 info.append([trace, path])
         
         timeline_header = map(extract_info, info)
-    
         return timeline_header
         
         
@@ -173,8 +229,16 @@ if multiprocess:
     pool.join()
 else:
     timeline = map(info_from_headers, abs_paths)
-#flatten output list
+
+#
+#timeline = np.array([i for i in timeline if all(i)])
+
+#flatten output list and  remove empty lists from timelines database
 timeline = np.asarray(list(itertools.chain(*timeline)))
+
+# remove None's from timeline array. 
+timeline = timeline[timeline != np.array(None)]
+
 
 t1 = datetime.datetime.now()
 print "time taken to read in and process timeline database: ", t1-t0

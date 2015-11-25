@@ -15,7 +15,9 @@ low point density points as a new cluster to search for new station points.
 # MODULES
 #------------------------------------------------------------------------------
 import os
-import fiona
+#import fiona
+import pysal
+
 import pickle
 import pyproj
 import datetime
@@ -34,8 +36,6 @@ from scipy.cluster.vq import kmeans
 from shapely.affinity import scale
 from matplotlib.path import Path
 from shapely import geometry
-
-
 
 
 #------------------------------------------------------------------------------
@@ -67,13 +67,18 @@ class InShape:
         self.output = 0.
     
     def shape_poly(self):
-        with fiona.open(self.boundary) as fiona_collection:
+        #with fiona.open(self.boundary) as fiona_collection:
             # In this case, we'll assume the shapefile only has one later
-            shapefile_record = fiona_collection.next()
+       #     shapefile_record = fiona_collection.next()
             # Use Shapely to create the polygon
-            self.polygon = geometry.asShape( shapefile_record['geometry'] )
-            return self.polygon
-            
+       #     self.polygon = geometry.asShape( shapefile_record['geometry'] )
+       #     return self.polygon
+        # Now, open the shapefile using pysal's FileIO
+        shps = pysal.open(self.boundary , 'r')
+        poly = shps.next()
+        self.polygon = geometry.asShape(poly)
+        return self.polygon
+      
     def point_check(self, coord):
         """
         Function that takes a single (2,1) shape input, converts the points
@@ -711,7 +716,7 @@ class Density:
         return np.column_stack((Hdensx, Hdensy))
 
     
-    def plot_field(self, grad=False, SHAPE=None, swell=0.05):
+    def plot_field(self, grad=False, SHAPE=None, swell=0.00):
         
         lonmin, lonmax, latmin, latmax = self.plot_lims()
         
@@ -733,6 +738,7 @@ class Density:
             plt.pcolor(self.xedges, self.yedges, H_masked, norm=LogNorm(\
             vmin=np.min(H_masked), vmax=np.max(H_masked)), cmap='rainbow',\
             alpha=0.6, zorder = 3)
+
             col = plt.colorbar()
             col.ax.set_ylabel('Points Per Bin')
         elif grad:

@@ -30,26 +30,30 @@ import datetime as dt
 import multiprocessing as mp
 from scipy.cluster.vq import kmeans
 from seissuite.misc.dataless import Dataless
+import matplotlib.pyplot as plt
+import itertools as it
+
+
+
+
 
 #------------------------------------------------------------------------------
 # VARIABLES
 #------------------------------------------------------------------------------
 
-verbose = False
+verbose = True
 #Enter path to boundary shape file.
-shape_boundary = False
-shape_path = "/home/boland/Dropbox/University/UniMelb\
-/AGOS/PROGRAMS/ANT/Versions/26.04.2015/shapefiles/aus.shp"
-dataless = True
-# Enter path to dataless file
-dataless_path = 'ALL_AUSTRALIA.870093.dataless'
-#dataless_path = 'UOM.dataless'
+shape_boundary = True
+
+dataless = False
+
+
 # Enter number new stations desired.
-N = 3
+n_stations = 15
 # Enter km spacing between path density points.
 km_points = 20.0
 # Reference elipsoid to calculate distance.
-wgs84 = pyproj.Geod(ellps='WGS84')
+wgs84 = pyproj.Geod(ellps='SEasia')
 # Enter number of bins for 2D Histogram density calculation. 
 nbins = 200
 # Enter estimated average shear wave velocity. 3kms-1 is the default!
@@ -61,10 +65,9 @@ period_range = [1,40]
 # Enter path to dataless file
 dataless_path = 'ALL_AUSTRALIA.870093.dataless'
 
-coords = Dataless.locs_from_dataless(dataless_path)
+#coords = Dataless.locs_from_dataless(dataless_path)
 
-shape_path = "/home/boland/Dropbox/University/UniMelb\
-/AGOS/PROGRAMS/ANT/Versions/26.04.2015/shapefiles/aus.shp"
+shape_path =  '/home/iese/Documents/Ben/seissuite/bin/shapefiles/bean_boundary.shp'
 
 t0 = dt.datetime.now()
 
@@ -72,16 +75,19 @@ t0 = dt.datetime.now()
 SHAPE = InShape(shape_path)
 # Create shapely polygon from imported shapefile 
 UNIQUE_SHAPE = SHAPE.shape_poly()
-print type(UNIQUE_SHAPE)
+#print type(UNIQUE_SHAPE)
 # Generate InPoly class
 INPOLY = InPoly(shape_path)
 # Create matplotlib Path object from imported shapefile
-outer_shape = UNIQUE_SHAPE.buffer(1.,resolution=1)
-inner_shape = UNIQUE_SHAPE.buffer(-8,resolution=1)
+#outer_shape = UNIQUE_SHAPE.buffer(1.,resolution=1)
+#inner_shape = UNIQUE_SHAPE.buffer(-8,resolution=1)
 
-outer_poly = INPOLY.poly_from_shape(shape=outer_shape)
-inner_poly = INPOLY.poly_from_shape(shape=inner_shape)
-many_points = INPOLY.rand_poly(poly=outer_poly, N=1e4)
+#outer_poly = INPOLY.poly_from_shape(shape=outer_shape)
+#inner_poly = INPOLY.poly_from_shape(shape=inner_shape)
+
+poly = INPOLY.poly_from_shape(shape=UNIQUE_SHAPE)
+
+many_points = INPOLY.rand_poly(poly=poly, N=1e3)
 
 # Scale smaller shape to fit inside larger shape. 
 #SMALL_SHAPE = scale(UNIQUE_SHAPE, xfact=0.3, yfact=0.3)
@@ -89,92 +95,230 @@ many_points = INPOLY.rand_poly(poly=outer_poly, N=1e4)
 # Generate matplotlib Path object for the small scalled polygon 
 #small_poly = INPOLY.node_poly(SHAPE.external_coords(shape=SMALL_SHAPE))
 # Remove points that are outside the buffered_poly
-outer_poly_points = INPOLY.points_in(many_points, poly=outer_poly)
+#outer_poly_points = INPOLY.points_in(many_points, poly=outer_poly)
 
 # Remove points that are inside the small_poly
-inner_poly_points = np.asarray(INPOLY.points_in(outer_poly_points, 
-                                                poly=inner_poly,
-                                                IN=False))
+poly_points = np.asarray(INPOLY.points_in(many_points, 
+                                                poly=poly,
+                                                IN=True))
 
-cluster_points = np.asarray(kmeans(inner_poly_points, 130)[0])
+cluster_points = np.asarray(kmeans(poly_points, n_stations)[0])
 
 
 #plt.figure()
-#plt.scatter(inner_poly_points[:,0], inner_poly_points[:,1], c='b')
+#plt.scatter(poly_points[:,0], poly_points[:,1], c='b')
 #plt.scatter(cluster_points[:,0], cluster_points[:,1], c='orange', s=35)
 #plt.show()
-
 
 #-----------------------------------------------------------------------------
 # GENERATE SECOND SET OF VARIABLES AND STATES
 #-----------------------------------------------------------------------------
 ideal_path = 'ideal_coordinates.pickle'
 #if no paths have been done before, start afresh!
-if dataless:
-    coords = Dataless.locs_from_dataless(dataless_path)
-    original_coords = coords
-elif os.path.exists(ideal_path):
-    f = open(name=ideal_path, mode='rb')
-    coords = pickle.load(f)
-    f.close()
+#if dataless:
+#    coords = Dataless.locs_from_dataless(dataless_path)
+#    original_coords = coords
+#elif os.path.exists(ideal_path):
+#    f = open(name=ideal_path, mode='rb')
+#    coords = pickle.load(f)
+#    f.close()
 
     
-coords=cluster_points
+coords = cluster_points
+
+plt.figure()
+plt.scatter(coords[:,0], coords[:,1])
+plt.show()
+
+# dump statistically optimised station spacings to .csv file
+np.savetxt("optimised_spacings.csv", coords, delimiter=",")
+
+
+
+
+#-----------------------------------------------------------------------------
+# POINT DENSITY AND RESOLUTION ESTIMATION
+#-----------------------------------------------------------------------------
+
 
 lonmin, lonmax = np.floor(min(coords[:,0])), np.ceil(max(coords[:,0]))
 latmin, latmax = np.floor(min(coords[:,1])), np.ceil(max(coords[:,1]))
-print lonmin,lonmax,latmin,latmax
+print lonmin, lonmax, latmin, latmax
 
 kappa = [np.vstack([[coord1[0],coord1[1],coord2[0],coord2[1]]\
                     for coord2 in coords]) for coord1 in coords]
-                        
+             
+             
+GEODESIC = Geodesic(km_point=0.01)
+
+def fast_geodesic(lon1, lat1, lon2, lat2, npts):
+    """
+    Returns a list of *npts* points along the geodesic between
+    (and including) *coord1* and *coord2*, in an array of
+    shape (*npts*, 2).
+    @rtype: L{ndarray}
+    """
+    if npts < 2:
+        raise Exception('nb of points must be at least 2')
+    path = wgs84.npts(lon1=lon1, lat1=lat1,
+                      lon2=lon2, lat2=lat2,
+                      npts=npts-2)
+    return np.array(path)
 
 
-GEODESIC = Geodesic()
+npts = 100
+
+total_points = []
+
+for i in kappa:
+    paths = GEODESIC.fast_paths(i)
+
+    for j in i: 
+
+        lon1, lat1, lon2, lat2 = j
+        path = fast_geodesic(lon1, lat1, lon2, lat2, npts)
+        
+    #    GEODESIC.fast_paths(path)
+        
+        total_points.append(path)
+        
+total_points = list(it.chain(*total_points))
+total_points = np.array(total_points)
+
+total_points = np.asarray(INPOLY.points_in(total_points, 
+                                           poly=poly,
+                                           IN=True))
+
+
+plt.figure()
+plt.scatter(total_points[:,0], total_points[:,1])
+plt.scatter(coords[:,0], coords[:,1], c='orange')
+
+plt.show()
+
+
+DENSITY = Density(paths=total_points, nbins=75)
+
+H, xedges, yedges = DENSITY.hist2d(paths=total_points)
+
+#histogram_GIS = np.column_stack((H, xedges, yedges))
+
+
+print H.shape, xedges.shape, yedges.shape
+
+
+coords = np.array([[x, y] for x in xedges[:-1] for y in yedges[:-1]])
+
+
+H = np.rot90(H)
+H = np.flipud(H)
+H = np.rot90(H)
+H = np.rot90(H)
+
+H_unpacked = np.array(list(it.chain(*H)))
+GIS_output = np.column_stack((coords[:,0],coords[:,1], H_unpacked))
+np.savetxt("point_density.csv", GIS_output, delimiter=",")
+
+
+print GIS_output
+quit()
+
+
+plt.figure()
+plt.scatter(coords[:,0], coords[:,1])
+plt.scatter(coords[0][0], coords[0][1], c='orange')
+plt.scatter(coords[-1][0], coords[-1][1], c='red')
+
+
+
+plt.show()
+plt.clf()
+
+
+quit()
+#grad = DENSITY.hgrad(H=H)
+    
+#H_avg1 = np.average(H)
+#grad_check1 = np.std(grad)
+    
+H_masked = DENSITY.transform_h(H=H)
+#grad = DENSITY.transform_grad(grad=grad)
+    
+DENSITY.plot_field(SHAPE=UNIQUE_SHAPE)
+
+
+quit()
+
+
+print kappa
 
 def spread_paths(coord_list):
     return GEODESIC.fast_paths(coord_list)
-    
+
+paths = map(spread_paths, kappa)
+
+
+
+
+print paths
+quit()
+
 t0 = datetime.datetime.now()
 pool = mp.Pool()    
 paths = pool.map(spread_paths, kappa)
 pool.close()
 pool.join()
+
 t1 = datetime.datetime.now()
 print t1-t0
 
 
-counter, counter2 = 0, 0
-#cd Desktop/Link\ to\ SIMULATIONS/Network_Tracks/smarter_model/
-grad_ideal, grad_check1, grad_check2, H_avg1, H_avg2 = 0, 0, 0, 0, 0
-SHAPE = (1,1)
-perc_high = 0.01
-low_counter = 0
-random_counter = 0
-#new_coord = 0
-infinite_counter = 0
-find_it = []
-check_coord = None
-use_old_path = False
-searches_per_point = 3
-factor = 0.05
-cluster = False
+print paths
+#create a flattened numpy array of size 2xN from the paths created! 
+paths1 = GEODESIC.combine_paths(paths)
 
+paths = list(paths)
+
+paths1 = GEODESIC.remove_zeros(paths1)
+
+plt.figure()
+plt.scatter(paths1[:,0], paths1[:,1])
+plt.show()
+
+
+DENSITY = Density(paths=paths1)
+
+H, xedges, yedges = DENSITY.hist2d(paths=paths1)
+grad = DENSITY.hgrad(H=H)
+    
+H_avg1 = np.average(H)
+grad_check1 = np.std(grad)
+    
+H_masked = DENSITY.transform_h(H=H)
+grad = DENSITY.transform_grad(grad=grad)
+    
+DENSITY.plot_field(SHAPE=UNIQUE_SHAPE)
+
+
+quit()
 COORDS = Coordinates()
-INPOLY = InPoly(shape_path)
 
-while infinite_counter <= 1:
+
+
+for i in [0]:
     t0 = datetime.datetime.now()
     
     #----------------------------------------------------------------------
     # Generate N new point coordinates
     #----------------------------------------------------------------------
-    if cluster:
-        new_coords = N_cluster_points
-    else:
-        new_coords = ps.points_in_shape(shape_path, N)
+    #new_coords = N_cluster_points
+   
+#    if cluster:
+ #       new_coords = N_cluster_points
+#    else:
+    #    new_coords = ps.points_in_shape(shape_path, N)
         
-    coords = np.append(coords, new_coords, axis=0)
+    #coords = np.append(coords, new_coords, axis=0)
 
     coord_set = [np.vstack([[coord1[0],coord1[1],coord2[0],coord2[1]]\
                  for coord2 in coords]) for coord1 in coords]
@@ -185,6 +329,8 @@ while infinite_counter <= 1:
     pool.close()
     pool.join()
     t1 = datetime.datetime.now()
+
+    
     print "time to generate new paths", t1-t0
     
     # Append new set of paths now that old set has been deleted.
@@ -196,6 +342,12 @@ while infinite_counter <= 1:
 
     paths1 = GEODESIC.remove_zeros(paths1)
 
+
+#    plt.figure()
+#    plt.plot(paths1[:,0], paths1[:,1])
+#    plt.show()
+
+
     DENSITY = Density(paths=paths1)
 
     H, xedges, yedges = DENSITY.hist2d(paths=paths1)
@@ -206,8 +358,10 @@ while infinite_counter <= 1:
     
     H_masked = DENSITY.transform_h(H=H)
     grad = DENSITY.transform_grad(grad=grad)
-
     
+    DENSITY.plot_field(SHAPE=UNIQUE_SHAPE)
+
+    quit()    
     #search = np.where(H<0.1*np.average(H))
     #Hmaxx, Hmaxy =  search[1], search[0]    
     #Hmaxx = (lonmax-lonmin)/(nbins) * Hmaxx + lonmin
@@ -238,8 +392,8 @@ while infinite_counter <= 1:
         grad_ideal = grad_check1
         avg_ideal = H_avg1
 
-    coords = COORDS.del_N(N=N, inputs=coords)
-    paths = COORDS.del_N(N=N, inputs=paths)
+    coords = COORDS.del_N(N=n_stations, inputs=coords)
+    paths = COORDS.del_N(N=n_stations, inputs=paths)
     paths=list(paths)
 
     counter+=1

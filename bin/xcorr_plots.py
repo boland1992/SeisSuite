@@ -10,6 +10,9 @@ from seissuite.ant import (pscrosscorr)
 import glob
 import os
 import pickle
+import numpy as np
+
+
 #PICKLE_PATH = '/storage/ANT/PROGRAMS/ANT_OUTPUT/OUTPUT/CROSS/06.05.2015-15:53:28/XCORR-STACK_01.01.2014-31.12.2014_datalesspaz.pickle'
 #PICKLE_PATH = '/home/boland/Desktop/XCORR-STACK_01.08.1999-10.06.2000_datalesspaz.part.pickle'
 # import CONFIG class initalised in ./configs/tmp_config.pickle
@@ -32,8 +35,15 @@ pickle_list = []
 folder_list = sorted(glob.glob(os.path.join(CROSSCORR_DIR, '*')))
 
 
+
+plot_distance = True
+plot_classic = False
+
 print MSEED_DIR
 print CROSSCORR_TMAX
+
+central_frequencies = np.arange(0.1, 20.0, 0.5)
+central_frequencies = central_frequencies[::-1]
 
 
 for folder in folder_list:
@@ -76,12 +86,19 @@ else:
                             
     # optimizing time-scale: max time = max distance / vmin (vmin = 2.5 km/s)
     maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
-    maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
+    maxt = max(CROSSCORR_TMAX, maxdist / 2.5)
     
-    #plot distance plot of cross-correlations
-    #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-    #outfile="/home/boland/Desktop/something1342.png", showplot=False)
-    
-    #plot individual cross-correlations
-    xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-            outfile="/home/boland/Desktop/something1342.png", showplot=False)
+    if plot_distance:
+        for central_freq in central_frequencies:
+            #plot distance plot of cross-correlations
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile="{}~.png".format(central_freq), showplot=False, 
+                    norm=True, fill=False, absolute=False, 
+                    freq_central=central_freq)
+
+
+
+    if plot_classic:
+        #plot individual cross-correlations
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                outfile="~", showplot=False)
