@@ -275,7 +275,7 @@ def get_stationsSQL(SQL_db, xml_inventories=(),
 
     # initializing list of stations by scanning name of miniseed files
     stations = []
-    print SQL_db
+
     if not os.path.exists(SQL_db):
         raise Exception("Database doesn't exist. Please \
 re-run create_database in seissuite.database")
@@ -470,7 +470,7 @@ def get_dataless_inventories(dataless_dir=DATALESS_DIR, verbose=False):
 
     if verbose:
         if flist:
-            print "Reading inventory in dataless seed file:",
+            print "Reading inventory in dataless seed folders ...",
         else:
             s = u"Could not find any dalatess seed file (*.dataless) in dir: {}!"
             print s.format(dataless_dir)

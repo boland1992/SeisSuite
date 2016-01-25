@@ -29,7 +29,8 @@ from scipy.spatial import ConvexHull
 from scipy.cluster.vq import kmeans
 from shapely.affinity import scale
 from matplotlib.path import Path
-
+from seissuite.spacing.search_station import (InShape, InPoly, Geodesic, 
+                                              Coordinates) 
 #------------------------------------------------------------------------------
 # VARIABLES
 #------------------------------------------------------------------------------
@@ -78,6 +79,11 @@ coords = locs_from_dataless(dataless_path)
 
 t0 = dt.datetime.now()
 
+
+#-----------------------------------------------------------------------------
+# INITIALISE CLASS STATES
+#-----------------------------------------------------------------------------
+
 # Generate InShape class
 SHAPE = InShape(shape_path)
 # Create shapely polygon from imported shapefile 
@@ -85,54 +91,10 @@ UNIQUE_SHAPE = SHAPE.shape_poly()
 print type(UNIQUE_SHAPE)
 # Generate InPoly class
 INPOLY = InPoly(shape_path)
-# Create matplotlib Path object from imported shapefile
-#outer_shape = UNIQUE_SHAPE.buffer(1.,resolution=1)
-#inner_shape = UNIQUE_SHAPE.buffer(-8,resolution=1)
-
-#outer_poly = INPOLY.poly_from_shape(shape=outer_shape)
-#inner_poly = INPOLY.poly_from_shape(shape=inner_shape)
-#many_points = INPOLY.rand_poly(poly=outer_poly, N=1e4)
-
-# Scale smaller shape to fit inside larger shape. 
-#SMALL_SHAPE = scale(UNIQUE_SHAPE, xfact=0.3, yfact=0.3)
-#points_in_small_shape = INPOLY.rand_shape(shape=SMALL_SHAPE, IN=False)
-# Generate matplotlib Path object for the small scalled polygon 
-#small_poly = INPOLY.node_poly(SHAPE.external_coords(shape=SMALL_SHAPE))
-# Remove points that are outside the buffered_poly
-#outer_poly_points = INPOLY.points_in(many_points, poly=outer_poly)
-
-# Remove points that are inside the small_poly
-#inner_poly_points = np.asarray(INPOLY.points_in(outer_poly_points, 
-#                                                poly=inner_poly,
-#                                                IN=False))
-
-#cluster_points = np.asarray(kmeans(inner_poly_points, 130)[0])
-
-
-#plt.figure()
-#plt.scatter(inner_poly_points[:,0], inner_poly_points[:,1], c='b')
-#plt.scatter(cluster_points[:,0], cluster_points[:,1], c='orange', s=35)
-#plt.show()
-
-#-----------------------------------------------------------------------------
-# INITIALISE CLASS STATES
-#-----------------------------------------------------------------------------
 GEODESIC = Geodesic()
 COORDS = Coordinates()
 INPOLY = InPoly(shape_path)
 POLY_NODES = INPOLY.poly_nodes()
-#-----------------------------------------------------------------------------
-# GENERATE SECOND SET OF VARIABLES AND STATES
-#-----------------------------------------------------------------------------
-ideal_path = 'ideal_coordinates.pickle'
-#if no paths have been done before, start afresh!
-#if dataless:
-#    coords = locs_from_dataless(dataless_path)
-#    original_coords = coords
-#elif os.path.exists(ideal_path):
-#    f = open(name=ideal_path, mode='rb')
-#    coords = pickle.load(f)
-#    f.close()
 
     
 # decluster the points to desired specifications. 

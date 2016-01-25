@@ -46,6 +46,7 @@ COMPLETENESS = CONFIG.COMPLETENESS
 TIME_NOMALISATION = CONFIG.TIME_NOMALISATION
 SPEC_WHITENING = CONFIG.SPEC_WHITENING
 TDD = CONFIG.TDD
+MAX_DISTANCE = CONFIG.MAX_DISTANCE
 
 RESP_REMOVE = CONFIG.RESP_REMOVE
 RESP_CHECK = CONFIG.RESP_CHECK
@@ -472,7 +473,14 @@ class Preprocess:
             raise pserrors.CannotPreprocess("{:.0f}% fill".format(fill * 100))
 
         # Merging traces, FILLING GAPS WITH LINEAR INTERP
-        st.merge(fill_value='interpolate')
-        trace = st[0]
+        if len(st) > 1:
+            st.split()
+            st.merge(fill_value='interpolate')
+#           st.merge()        
         
+        # if such and such about splitting occurs, then inact the split() fn
+        
+        #st.split()
+        trace = st[0]
+
         return trace

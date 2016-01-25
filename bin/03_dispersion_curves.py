@@ -44,55 +44,72 @@ cross-correlations are produced:
   with module pickle
 """
 
-from seissuite.ant import pscrosscorr
-from seissuite.ant.psconfig import (CROSSCORR_DIR)
 import glob
 import os
+import pickle
+import datetime as dt
 # parsing configuration file to import dir of cross-corr results
+from seissuite.ant import pscrosscorr
+
+# import CONFIG class initalised in ./configs/tmp_config.pickle
+config_pickle = 'configs/tmp_config.pickle'
+f = open(name=config_pickle, mode='rb')
+CONFIG = pickle.load(f)
+f.close()
+
+# import variables from initialised CONFIG class.
+CROSSCORR_DIR = CONFIG.CROSSCORR_DIR
 
 # loading cross-correlations (looking for *.pickle files in dir *CROSSCORR_DIR*)
 folder_list = sorted(glob.glob(os.path.join(CROSSCORR_DIR, '*')))
 
+pickle_list = []
 if len(folder_list) < 1: 
     print("There are no files or folders in the data input folder \
-please re-run cross-correlation.py to get some results")
-else:
-    print("Please select one of the following cross-correlation data \
-sets to be be processed: ")
-    print '\n0 - All except backups (*~)'
-    print '\n'.join('{} - {}'.format(i + 1, os.path.basename(f))
-        for i, f in enumerate(folder_list))
-    res = raw_input('\n')  
+please re-run 02_timeseries_process.py to get some results")
 
-#create list of pickle file names within 
-pickle_list = []
-
-for folder in folder_list:
-    
-    pickle_files = glob.glob(os.path.join(folder, '*.pickle'))
+else: 
+    for folder in folder_list:
     #check to see if there are any pickle files in the xcorr time folder 
-    if len(pickle_files) < 1:
-        print("There are no .pickle files in this folder. Skipping ...")
-        continue
-    else:
-        #append name of pickle file path location string to pickle_list
-        for pickle_file in pickle_files:
-            if 'metadata.pickle' not in pickle_file:
-                pickle_list.append(pickle_file)
-
+        if len(glob.glob(os.path.join(folder, '*.pickle'))) < 1:
+            #print("There are no .pickle files in this folder. Skipping ...")
+            continue
+        else:
+            for file_ in glob.glob(os.path.join(folder, '*.pickle')):
+                if 'metadata' not in file_ and '.part' not in file_:            
+                    pickle_list.append(file_)
+                
+if len(pickle_list) < 1: 
+    print("\nThere are no pickle files to begin from.")
+    raise Exception("No pickle files to process, first run the programme.")
+    res = ""
+        
+else:
+    print "\nPlease choose a file to process." 
+    #print combinations of partial pickle files available
+    print '\n'.join('{} - {}'.format(i + 1, f.split('/')[-2])
+        for i, f in enumerate(pickle_list))
+        
+    #change folder_list to pickle_list if this gives problems
+    res = raw_input('\n')
+    
+del f
 #create list of pickle files to process FTAN for
 if not res or res == "0":
     pickle_files = [f for f in pickle_list if f[-1] != '~']
 else:
     pickle_files = [pickle_list[int(i)-1] for i in res.split()]
 
-usersuffix = raw_input("\nEnter suffix to append: [none]\n").strip()
-
+#usersuffix = raw_input("\nEnter suffix to append: [none]\n").strip()
+usersuffix = ""
 
 # processing each set of cross-correlations
 for pickle_file in pickle_files:
-    print "\nProcessing cross-correlations of file: " + pickle_file
+    print "\nOpening pickle file ... " #+ os.path.basename(pickle_file)
+    file_opent0 = dt.datetime.now()
     xc = pscrosscorr.load_pickled_xcorr(pickle_file)
+    delta = (dt.datetime.now() - file_opent0).total_seconds()
+    print "\nThe file took {:.1f} seconds to open.".format(delta)
 
     # copying the suffix of cross-correlations file
     # (everything between 'xcorr_' and the extension)

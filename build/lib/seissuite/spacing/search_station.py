@@ -540,6 +540,66 @@ class Coordinates:
         del inputs[-N:]
         return np.asarray(inputs)
         
+
+    def decluster(self,  inputs=None, degree_dist=1., verbose=False):
+        """
+        Function that deletes points that are too close together
+        given a set degree range and returns only one point to represent
+        that cluster. Default is one degree distance. Inputs must be (2,N)
+        lon-lat coordinate arrays/lists.
+        """
+        from sklearn.cluster import DBSCAN
+        import random 
+        
+        if inputs is None:
+            if self.input_list is not None:
+                inputs = self.input_list
+            elif self.input_list is None:
+                raise "There are no list input. "
+                
+        
+        #scan for all points that are within a degree radius of one another! 
+        db = DBSCAN(eps=degree_dist).fit(inputs)
+        core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+        core_samples_mask[db.core_sample_indices_] = True
+        labels = db.labels_
+        unique_labels = set(labels)
+
+        clusters = []
+        cluster_keep = []
+        
+
+        for k in unique_labels:
+            if k != -1:
+                class_member_mask = (labels == k)        
+                cluster = inputs[class_member_mask & core_samples_mask]
+
+    # Select only 1 random point from each cluster to keep. Remove all others!          
+                clusters.append(cluster)
+                cluster_keep.append(cluster[random.randint(0,len(cluster)-1)])
+        
+        
+        cluster_keep = np.asarray(cluster_keep)
+        # flatten clusters array 
+        clusters = np.asarray(list(itertools.chain(*clusters)))
+        
+        # remove all points in clusters from the overall coords array
+        inputs = np.asarray([point for point in inputs if 
+                             point not in clusters])
+                             
+        if verbose:                     
+            print "clusters array shape: ", clusters.shape
+            print "inputs array shape: ", inputs.shape
+            print "cluster_keep array shape: ",cluster_keep.shape
+        
+        if len(cluster_keep) > 0:
+            output_coords = np.append(inputs, cluster_keep, axis=0)
+        # place single representative point from cluster into coord list
+        else:
+            output_coords = inputs
+        
+        return output_coords
+        
 class Density:
     """
     Class defined to perform to density field operations e.g. 2d histogram, 

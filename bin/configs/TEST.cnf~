@@ -1,0 +1,294 @@
+###############################################################################
+#
+# This is an example of configuration file, wherein global paths and parameters
+# related to the seismic noise tomography procedure are defined. At least one
+# configuration file should reside in the folder in which you intend to run
+# your scripts. The configuration file(s) can have any name, as long as the
+# extension is 'cnf': e.g., 'tomo.cnf', 'myconfig.cnf', 'test.cnf'...
+#
+# The parameters are divided in several sections:
+# - [processing]        : 
+# - [paths]             : default paths to input/output folders
+# - [maps]              : parameters to plot maps
+# - [cross-correlation] : parameters to calculate cross-correlations
+# - [FTAN]              : parameters of the frequency-time analysis
+# - [tomography]        : parameters of the tomographic inversion
+#
+# Before using the scripts and package pysismo, you should at least make sure
+# that the paths in section [paths] and shapefiles in section [maps] are
+# consistent with your own files and folders organization. And, of course, you
+# should make sure to set the correct interval of dates to calculate the cross-
+# correlations, in section [cross-correlation]. The other parameters can be
+# fine-tuned later as you analyze your data.
+#
+# Module pysismo.psconfig takes care of reading the configuration file and
+# defining the global parameters. If only one configuration file (*.cnf) is
+# found in the current folder, then psconfig reads it silently. If
+# several *.cnf files are found, then you'll be prompted to select one of
+# them.
+#
+# Other modules then import from psconfig the parameters they need, e.g.:
+# 
+#   from psconfig import CROSSCORR_DIR, FTAN_DIR, PERIOD_BANDS, ...
+#
+# Note that most of (but not all) the global parameters are actually default 
+# values that can be overridden in the functions where they are used. For
+# example, ``PERIOD_BANDS`` is the default value of the input argument ``bands`` 
+# of the function pscrosscorr.CrossCorrelation.plot_by_period_band(), but you
+# can specify other bands by explicitly passing the argument, e.g.: 
+# 
+#   plot_by_period_band(bands=[[10, 30], [20, 50]])
+#
+# If, in one script, you want to modify a global parameter without touching
+# the configuration file, you must first import psconfig, then modify the
+# parameters as desired, and finally import other module(s), e.g.:
+#
+# >>> from pysismo import psconfig 
+# >>> psconfig.FTAN_DIR = 'mydir'
+# >>> from pysismo import pscrosscorr
+# >>> pscrosscorr.FTAN_DIR
+# 'mydir'   # ok the changes have been taken in account
+#
+# It is strongly discouraged to modify global parameters once psconfig (or a 
+# module importing it) has been imported, as the effect can be highly
+# imprevisible (immutable default values won't be affected, mutable default
+# values can be affected, parameters used as is in the code will be affected).
+#
+###############################################################################
+#======
+[automate]
+#======
+
+# If ANY of the AUTOMATE varibales in the ./configs/ folder are set to True, then the application will loop over all of them.
+# Otherwise, if all of them are set to False you can only choose one. Option to choose more than one, but not all is coming soon! 
+
+AUTOMATE = True
+
+#======
+[paths]
+#======
+
+#Set one folder path. This folder path will be used by setup.py to create input folders (DATA, DATALESS and XML). Set the default TIMLINE_DB, and RESPONSE_DB for these SQL databases to be saved
+#and output folders (CROSS, FTAN, TOMO and DEPTH). if folder path is set to False then 
+# if folder reads DEFAULT the current working directory of the application will be chosen. 
+# Ensure that the folder path does NOT have / at the end
+
+
+#FOLDER = DEFAULT
+FOLDER = /storage/MASTERS/CONFIGURATIONS/TEST
+
+#set the folder where the computer programs in seismology have been installed if required. 
+# example CPIS dir:
+COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR = /home/seis_suite/CPIS/PROGRAMS.330/bin
+
+
+#======
+[processing]
+#======
+
+#set the individual preprocessing techniques that you want performed on your analysis. Each
+# must be set either True or False to work. Any other options with give an error
+# Take note that setting RESP_TOL, RESP_EFFECT and RESP_RANGE = [1,40] to large values, it will result in very few stations being chosen for processing.
+
+TDD = True	          ; trim, demean and detrend the trace (True recommended)
+RESP_REMOVE = True        ; remove instrument response? (True recommended)
+EVENT_REMOVE = False	  ; automate event removal from catalogue (dist to event, window and avg V) uses IRIS and others and only removes regional events inside your networks range! (automated)
+HIGHAMP_REMOVE = False    ; automate removal of high amplitude noise from entire database (recommended to perform this in collaboration with EVENT_REMOVE)
+
+# in the future do I want to set effectiveness limit for RESP_CHECK
+
+RESP_CHECK = False         ; perform an instrument response check on data and only use data with tolerance overlap
+RESP_RANGE = [1,40]       ; period range for current project. Default is 1-40s period for ambient noise methods. 
+RESP_TOL = 0.50	          ; minimum overlap between instrument response 95% effectiveness frequency range and RESP_RANGE
+RESP_EFFECT = 0.80	  ; default is  80% effectiveness frequency range. So the point at which the instrument response gain is above 95% of the maximum gain for that given instrument!
+
+
+BANDPASS = True           ; apply a band-pass filter across the set spectrum
+DOWNSAMPLE = True         ; if set to False, data is downsampled to max of min sample rate in database
+COMPLETENESS = True       ; do initial completeness check, do not process the series below tolerance
+TIME_NOMALISATION = True  ; perform time normalisation OR one-bit normalisation, OR input own!
+SPEC_WHITENING = True     ; perform spectral whitening of data
+
+
+
+#=====
+[maps]
+#=====
+
+# paths to shapefiles (coasts, tectonic provinces and labels), used
+# to plot maps, if no COAST_SHP is provided, the tomographic maps will not plot correctly!
+#
+# - ``COAST_SHP`` should be a shapefile containing lines or polygons
+#   representing coasts (you can also include borders).
+#
+# - ``TECTO_SHP`` should be a shapefile containing polygons representing
+#   tectonic provinces, AND AN ATTRIBUTE TABLE whose first field
+#   contains the province's category, which will be used to affect
+#   a color to the polygon (see below).
+#
+# - ``TECTO_LABELS`` should be a shapefile containing points representing
+#   the location of the labels associated with the tectonic provinces,
+#   AND AN ATTRIBUTE TABLE whose first field contains the label (characters
+#   '\' will be replaced with line breaks), and the second field contains
+#   the label's angle.
+#
+# You can set any of these files to ``null``.
+
+COAST_SHP = ./shapefiles/aus.shp
+TECTO_SHP = False
+TECTO_LABELS = null
+
+# JSON dict giving the color of the tectonic provinces according to their
+# category (first field of the attribute table of ``TECTO_SHP``, see above).
+# A category not appearing in this dict will be filled with white.
+# A color can be any object understood by matplotlib: a string (e.g., "green"),
+# a grey shade (e.g., "0.5"), an html hex string (e.g., "#eeefff"),
+# a R/G/B tuple (e.g., [0.5, 0.5, 0.5]) or a R/B/G/alpha tuple (e.g.,
+# [0.5, 0.5, 0.5, 0.5]).
+
+TECTO_COLORS = {
+    "Archean": [1, 0.757, 0.757],
+    "Phanerozoic": [1, 1, 0.878],
+    "Neoproterozoic": "0.863"
+    }
+
+# bounding box of (large) global maps and (small) inset maps
+# (min lon, max lon, min lat, max lat in JSON lists)
+
+BBOX_LARGE = [135, 155, -40, -25]
+BBOX_SMALL = [135, 155, -40, -25]
+
+
+#==================
+[cross-correlation]
+#==================
+
+# Comment out crosscorr_tmax if you want the function in psconfig.py to choose one for you. Else put the number of seconds for your time window!
+
+# Comment out the FIRSTDAY and LASTDAY variables in order to have it determined automatically from the SQL databases (must run the create_database.py script for this to work!)
+
+
+XCORR_INTERVAL = 45.0                ; number of minutes in xcorr time series
+USE_DATALESSPAZ = True               ; use dataless files to remove instrument response?
+USE_STATIONXML = False               ; use stationXML files to remove instrument response?
+FIRSTDAY = 01/01/2014                ; first day of cross-correlation (d/m/y)
+LASTDAY = 31/01/2014                 ; last day of cross-correlation (d/m/y)
+MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%
+CROSSCORR_STATIONS_SUBSET = null     ; subset of stations (null if all, else JSON list)
+CROSSCORR_SKIPLOCS = ["50"]          ; locations to skip (JSON list)
+PERIODMIN = 2.0                      ; bandpass filtering minimum period
+PERIODMAX = 25.0                     ; bandpass filtering maximum period 
+CORNERS = 2                          ; number of corners?
+ZEROPHASE = True	             ; zerophase?
+PERIOD_RESAMPLE = 0.5                ; resample period to decimate traces, after band-pass
+ONEBIT_NORM = False                  ; one-bit normalization?
+PERIODMIN_EARTHQUAKE = 25.0          ; estimated earthquake period minimum for filtering
+PERIODMAX_EARTHQUAKE = 75.0          ; estimated earthquake period maximum for filtering 
+WINDOW_FREQ = 0.0002                 ; freq window (Hz) to smooth ampl spectrum
+CROSSCORR_TMAX = 300                 ; number of seconds for xcorr window both positive and negative
+
+PLOT_CLASSIC = False                 ; Plot all xcorr station pairs. Take note: this takes a LONG time for large networks!
+PLOT_DISTANCE = True                 ; Plot only time-series offset of all xcorr pairs with distance
+
+#=====
+[FTAN]
+#=====
+
+# default period bands (JSON list), used to:
+# - plot cross-correlation by period bands, in plot_FTAN(), plot_by_period_bands()
+# - plot spectral SNR, in plot_spectral_SNR()
+# - estimate min spectral SNR, in FTANs()
+
+PERIOD_BANDS = [[4, 7], [7, 15], [10, 22], [15, 30], [20, 35]]
+
+# (these bands focus on periods ~5, 10, 15, 20, 25 seconds)
+
+# default parameters to define the signal and noise windows used to
+# estimate the SNR:
+# - the signal window is defined according to a min and a max velocity as:
+#   dist/vmax < t < dist/vmin
+# - the noise window has a fixed size and starts after a fixed trailing
+#   time from the end of the signal window
+
+SIGNAL_WINDOW_VMIN = 2.0
+SIGNAL_WINDOW_VMAX = 4.0
+SIGNAL2NOISE_TRAIL = 500.0
+NOISE_WINDOW_SIZE = 500.0
+
+# periods and velocities of the FTAN: start, stop and step (JSON lists)
+
+RAWFTAN_PERIODS_STARTSTOPSTEP = [3.0, 45.1, 1.0]
+CLEANFTAN_PERIODS_STARTSTOPSTEP = [3.0, 45.1, 1.0]
+FTAN_VELOCITIES_STARTSTOPSTEP = [2.0, 5.51, 0.01]
+
+# default width parameter of the narrow Gaussian bandpass filters
+# applied in the FTAN. The bandpass filters take the form:
+#
+#  exp[-FTAN_ALPHA * ((f-f0)/f0)**2],
+#
+# where f is the frequency and f0 the center frequency of the filter.
+
+FTAN_ALPHA = 20
+
+# relative strength of the smoothing term in the penalty function that
+# the dispersion curve seeks to minimize
+STRENGTH_SMOOTHING = 1.0
+
+# replace nominal frequency (i.e., center frequency of Gaussian filters)
+# with instantaneous frequency (i.e., dphi/dt(t=arrival time) with phi the
+# phase of the filtered analytic signal), in the FTAN and dispersion curves?
+# See Bensen et al. (2007) for technical details.
+
+USE_INSTANTANEOUS_FREQ = True
+
+# if the instantaneous frequency (or period) is used, we need to discard bad
+# values from instantaneous periods. So:
+# - instantaneous periods whose relative difference with respect to
+#   nominal period is greater than ``MAX_RELDIFF_INST_NOMINAL_PERIOD``
+#   are discarded,
+# - instantaneous periods lower than ``MIN_INST_PERIOD`` are discarded,
+# - instantaneous periods whose relative difference with respect to the
+#   running median is greater than ``MAX_RELDIFF_INST_MEDIAN_PERIOD`` are
+#   discarded; the running median is calculated over
+#   ``HALFWINDOW_MEDIAN_PERIOD`` points to the right and to the left
+#   of each period.
+
+MAX_RELDIFF_INST_NOMINAL_PERIOD = 0.8
+MIN_INST_PERIOD = 1.5
+HALFWINDOW_MEDIAN_PERIOD = 3
+MAX_RELDIFF_INST_MEDIAN_PERIOD = 0.5
+
+# ==========
+[tomography]
+# ==========
+
+# Default parameters related to the velocity selection criteria
+
+MINSPECTSNR = 7             ; min spectral SNR to retain velocity
+MINSPECTSNR_NOSDEV = 15     ; min spectral SNR to retain velocity if no std dev
+MAXSDEV = 0.1               ; max sdt dev (km/s) to retain velocity
+MINNBTRIMESTER = 4          ; min nb of trimesters to estimate std dev
+MAXPERIOD_FACTOR = 0.08333  ; max period = *MAXPERIOD_FACTOR* * pair distance
+
+# Default internode spacing of grid
+
+LONSTEP = 1
+LATSTEP = 1
+
+# Default correlation length of the smoothing kernel:
+# S(r,r') = exp[-|r-r'|**2 / (2 * correlation_length**2)]
+
+CORRELATION_LENGTH = 150
+
+# Default strength of the spatial smoothing term (alpha) and the
+# weighted norm penalization term (beta) in the penalty function
+
+ALPHA = 400
+BETA = 200
+
+# Default parameter in the damping factor of the norm penalization term,
+# such that the norm is weighted by exp(- lambda_*path_density)
+# With a value of 0.15, penalization becomes strong when path density < ~20
+# With a value of 0.30, penalization becomes strong when path density < ~10
+
+LAMBDA = 0.3

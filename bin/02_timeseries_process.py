@@ -72,8 +72,19 @@ import obspy.signal.cross_correlation
 import time
 import glob
 import sqlite3 as lite
+<<<<<<< HEAD
 import shutil
+=======
+import numpy as np
 
+# set epoch timestamp 
+epoch = dt.datetime(1970, 1, 1)
+>>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
+
+total_verbose = False
+# DECLUSTER STATIONS!
+# remove stations that are too close to one another (set by degree radius!)
+from seissuite.spacing.search_station import Coordinates
 
 #import matplotlib.pyplot as plt
 #import numpy as np
@@ -94,6 +105,7 @@ from seissuite.ant.psconfig import (create_config_list, run_config,
 
 config_list = create_config_list()
 
+total_time0 = dt.datetime.now()
 for config_file in config_list:
     # global variables MUST be defined 
     # with the function in the seissuite.ant.psconfig module 
@@ -136,6 +148,7 @@ for config_file in config_list:
     CROSSCORR_TMAX = CONFIG.CROSSCORR_TMAX
     PLOT_CLASSIC = CONFIG.PLOT_CLASSIC
     PLOT_DISTANCE = CONFIG.PLOT_DISTANCE
+    MAX_DISTANCE = CONFIG.MAX_DISTANCE
 
     # initialise the required databases if they haven't already been.
     #if no two SQL databases exist, then create them! 
@@ -211,17 +224,19 @@ for config_file in config_list:
         print("\nThere are no partial pickle files to begin again from.")
         print("\nThe program will start from the beginning")
         res = ""
+        
     else:
         print "\nPlease choose a file to begin again from, or a combination thereof."
         print "Else hit enter to continue anew"
         #print combinations of partial pickle files available
         print '\n0 - All except backups (*~)'    
-        print '\n'.join('{} - {}'.format(i + 1, os.path.basename(f))
-            for i, f in enumerate(folder_list))
+        print '\n'.join('{} - {}'.format(i + 1, f.split('/')[-2])
+            for i, f in enumerate(pickle_list))
                 
                 
         #change folder_list to pickle_list if this gives problems
-        res = False#raw_input('\n')
+        #res = False#raw_input('\n')
+        res = raw_input('\n')
     
     #IF LIST INDEX OUT OF RANGE START PROGRAM ALSO    
     
@@ -265,6 +280,7 @@ for config_file in config_list:
         
         if not os.path.exists(OUT_SNR):\
         os.makedirs(OUT_SNR)
+<<<<<<< HEAD
         
         # copy configuration file to output so parameters are known for each run                         
         OUTCONFIG = os.path.join(CROSSCORR_DIR, time_string, 
@@ -274,6 +290,9 @@ for config_file in config_list:
         shutil.copy(config_file, OUTCONFIG)    
         
         
+=======
+            
+>>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
         METADATA_PATH = '{}metadata.pickle'.format(OUTFILESPATH.\
                   replace(os.path.basename(OUTFILESPATH), ""))
     
@@ -282,23 +301,38 @@ for config_file in config_list:
         #reset time as previous time, reset output paths as previous path name
         #reset cross-correlation dictionaries 
         # ========================================
-        
+        print 
         PART_PICKLE = pickle_list[int(res)-1]
         OUTFILESPATH = PART_PICKLE[:-12]
-         
+        out_basename = os.path.basename(OUTFILESPATH)
+        
+        
+        print "Opening {} partial file for restart ... ".format(out_basename)
+
         # re-initialising .part.pickle collection of cross-correlations
         xc = pscrosscorr.load_pickled_xcorr(PART_PICKLE)
+        
+                    
+        for key in xc.keys():
+            for key2 in xc[key].keys():
+                #help(xc[key][key2])
+                #print xc[key][key2].endday
+                a=5
+                
+                
+        #most recent day last endday of list
         #read in metadata to find latest time slot. Then assign this to FIRSTDAY
         METADATA_PATH = '{}metadata.pickle'.format(OUTFILESPATH.\
                   replace(os.path.basename(OUTFILESPATH), ""))
       
         metadata = pscrosscorr.load_pickled_xcorr(METADATA_PATH)
-    
+        #print "metadata: ", metadata[-5:]
         #re-assign FIRSTDAY variable to where the data was cut off
-        FIRSTDAY = metadata[len(metadata) - 1] +  \
-        dt.timedelta(minutes=XCORR_INTERVAL)
-    
-    
+        #del metadata[-1]
+        FIRSTDAY = metadata[len(metadata) - 1] #+  \
+        #dt.timedelta(minutes=XCORR_INTERVAL)
+        
+    # FIND RESTART DATE FROM PARTIAL PICKLE FILE, NOT THE METADATA PICKLE
     
     
     # ============
@@ -310,13 +344,13 @@ for config_file in config_list:
     if USE_DATALESSPAZ:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            dataless_inventories = psstation.get_dataless_inventories(DATALESS_DIR,
-                                                                      verbose=True)
+            dataless_inventories = psstationSQL.get_dataless_inventories(DATALESS_DIR,
+                                                                      verbose=False)
     
     xml_inventories = []
     if USE_STATIONXML:
-        xml_inventories = psstation.get_stationxml_inventories(STATIONXML_DIR,
-                                                               verbose=True)
+        xml_inventories = psstationSQL.get_stationxml_inventories(STATIONXML_DIR,
+                                                               verbose=False)
     
     # Getting list of stations
     #stations, subdir_len = psstation.get_stations(mseed_dir=MSEED_DIR,
@@ -335,8 +369,22 @@ for config_file in config_list:
                            startday=FIRSTDAY,
                            endday=LASTDAY,
                            verbose=False)
+<<<<<<< HEAD
 
   
+=======
+    
+    DECLUSTER = False
+    
+    if DECLUSTER: 
+        stat_coords = np.asarray([station.coord for station in stations])
+        COORDS = Coordinates(input_list=stat_coords)
+        declustered_coords = COORDS.decluster(degree_dist=0.1)
+    
+        stations = [station for station in stations if 
+                    station.coord in declustered_coords]      
+
+>>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
     # Loop on time interval
      #number of time steps
     N = int(((LASTDAY - FIRSTDAY).days + 1)*60*24 / XCORR_INTERVAL)
@@ -356,37 +404,56 @@ for config_file in config_list:
                                          WINDOW_TIME,
                                          WINDOW_FREQ,
                                          ONEBIT_NORM)
-                           
+                          
     #loop on time-series. Date now represents XCORR_INTERVAL long time intervals
     counter = 0 
     
     for date in dates:
-        #there may be an overlap in metadata times. Maybe add xcorr interval to this?
-        metadata.append(date)
-        #have the program restart from the beginning of each stack! not each month
-        #this gives more redundancy!
-        #(allows to restart after a crash from that date)
-    
-        with open(u'{}.part.pickle'.format(OUTFILESPATH), 'wb') as f:
-            print "\nExporting cross-correlations calculated until now." 
-            pickle.dump(xc, f, protocol=2)
-    
-            
-        #also create a metadata dump file for use only if the program needs to be restarted
-        #use replace() to get rid of basename to create file named metadata.pickle in 
-        #correct path
-        with open(METADATA_PATH, 'wb') as f:
-            print "\nExporting re-start metadata of time-series calculated until \
-now."
-            pickle.dump(metadata, f, protocol=2)
-    
+        loop_time0 = dt.datetime.now()
+
         print "\nProcessing data for date {} with a {} minute cross-correlation\
  time-interval between times: {} and {}".format(date.date(), \
         int(XCORR_INTERVAL)  , date.time(), \
         (date + dt.timedelta(minutes=XCORR_INTERVAL)).time())
         
         iterate_stations = sorted(sta for sta in stations)
-    
+        
+        # =====================================================================
+        # check iterate stations have a file in the SQL database
+        # =====================================================================
+        
+        # connect the database
+        conn = lite.connect(SQL_db)
+        # create cursor object
+        c = conn.cursor()
+        
+        # convert to UTC timestamp to search in SQL database
+        search_start = (date - dt.timedelta(minutes=1) - epoch).total_seconds()
+        search_end =  (date + dt.timedelta(minutes=XCORR_INTERVAL+1) - epoch).total_seconds()     
+        
+        # check if files have data within the time frame search_end-search_start
+        populated_stations = c.execute('SELECT station FROM file_extrema WHERE \
+starttime <= ? AND endtime >= ?', (search_start, search_end))
+
+        populated_stations = list(it.chain(*list(populated_stations.fetchall())))
+        
+        # filter stations with no data for the given time period of this loop! 
+        for stat in iterate_stations:
+            stat_code = unicode('{}.{}.{}'.format(stat.network, 
+                                                  stat.name, 
+                                                  stat.channel))
+            
+            if stat_code not in populated_stations:
+                iterate_stations.remove(stat)
+
+
+        # close timeline.db database
+        conn.close()
+
+        iterate_stations = iterate_stations[1:]
+        # =====================================================================
+        # =====================================================================            
+
         # subset if stations (if provided)
         if CROSSCORR_STATIONS_SUBSET:
             iterate_stations = [sta for sta in iterate_stations
@@ -406,7 +473,7 @@ now."
             Preparing func that returns one trace from selected station,
             at current date. Function is ready to be parallelized.
             """
-    
+
             try:
                 trace = Preprocess.get_merged_trace(station=station,
                                                      date=date,
@@ -414,10 +481,16 @@ now."
                                                      skiplocs=CROSSCORR_SKIPLOCS,
                                                      minfill=MINFILL)
                 
+                if total_verbose:
+                    msg = 'merged'
+                    print '{}.{} [{}] '.format(trace.stats.network, 
+                                            trace.stats.station, 
+                                            msg),
                 errmsg = None
                     
             except pserrors.CannotPreprocess as err:
                 # cannot preprocess if no trace or daily fill < *minfill*
+                                
                 trace = None
                 errmsg = '{}: skipping'.format(err)
             except Exception as err:
@@ -427,7 +500,9 @@ now."
     
             if errmsg:
                 # printing error message
-                print '{}.{} [{}] '.format(station.network, station.name, errmsg),
+                if total_verbose:
+                    print '{}.{} [{}] '.format(station.network, 
+                                               station.name, errmsg),
     
             return trace
     
@@ -441,7 +516,8 @@ now."
             Function is ready to be parallelized.
             """
             
-    
+
+
             if not trace or response is False:
                 return
             
@@ -449,16 +525,16 @@ now."
             try:
                 Preprocess.preprocess_trace(trace=trace, paz=response)
                 msg = 'ok'
-                print '{}.{} [{}] '.format(trace.stats.network, 
-                                            trace.stats.station, 
-                                            msg),
+                if total_verbose:
+                    print '{}.{} [{}] '.format(trace.stats.network, 
+                                                trace.stats.station, 
+                                                msg),
     
             except pserrors.CannotPreprocess as err:
                 # cannot preprocess if no instrument response was found,
                 # trace data are not consistent etc. (see function's doc)
                 trace = None
                 print(err)
-    
                 print 'skipping'
     
             except Exception as err:
@@ -476,8 +552,8 @@ now."
         # ====================================
         # getting one merged trace per station
         # ====================================
-        
-        t0 = dt.datetime.now()
+        merge_t0 = dt.datetime.now()
+        print '\nMerging traces ... '
         if MULTIPROCESSING['merge trace']:
             # multiprocessing turned on: one process per station
             pool = mp.Pool(None)
@@ -492,11 +568,10 @@ now."
         # getting or attaching instrumental response
         # (parallelization is difficult because of inventories)
         # =====================================================
-    
+        
     
         responses = []
         for tr in traces:
-    
             
             if not tr:
                 responses.append(None)
@@ -525,16 +600,22 @@ now."
             responses.append(response)
             if errmsg:
                 # printing error message
-                print '{}.{} [{}] '.format(tr.stats.network, 
-                                           tr.stats.station, 
-                                           errmsg),
-    
+                if total_verbose:
+                    print '{}.{} [{}] '.format(tr.stats.network, 
+                                               tr.stats.station, 
+                                               errmsg),
+                                           
+        
+        print '\nTraces merged and responses removed in {:.1f} seconds'\
+        .format((dt.datetime.now() - merge_t0).total_seconds()) 
+
         # =================
         # processing traces
         # =================
-    
-    
-            
+        print '\nPre-processing traces ... '
+
+        t0 = dt.datetime.now()
+
         if MULTIPROCESSING['process trace']:
             # multiprocessing turned on: one process per station
             pool = mp.Pool(NB_PROCESSES)
@@ -551,24 +632,24 @@ now."
                                                        traces) if trace}
     
         delta = (dt.datetime.now() - t0).total_seconds()
-        print "\nProcessed stations in {:.1f} seconds".format(delta)
-        
+        print "\nProcessed traces in {:.1f} seconds".format(delta)
+
         # create tmp folder for tracedict
-        if not os.path.exists('tmp'): os.makedirs('tmp')   
+        #if not os.path.exists('tmp'): os.makedirs('tmp')   
         #dump the time interval's pre-processed items in tracedict to a pickle
-        with open('tmp/preprocessed_tracedict.pickle', 'wb') as f:
-            print "\nExporting pre-processed traces of time-series to: " + f.name
-            pickle.dump(tracedict, f, protocol=2)
+        #with open('tmp/preprocessed_tracedict.pickle', 'wb') as f:
+        #    print "\nExporting pre-processed traces of time-series to: " + f.name
+        #    pickle.dump(tracedict, f, protocol=2)
         
                                        
         # import tracedict from output pickle produced with preprocess_total
-        tracedict_pickle = 'tmp/preprocessed_tracedict.pickle'
-        f = open(name=tracedict_pickle, mode='rb')
-        tracedict = pickle.load(f)
-        f.close()
+        #tracedict_pickle = 'tmp/preprocessed_tracedict.pickle'
+        #f = open(name=tracedict_pickle, mode='rb')
+        #tracedict = pickle.load(f)
+        #f.close()
         
         # remove preprocessed tracedict pickle file
-        if os.path.isfile(tracedict_pickle): os.remove(tracedict_pickle)
+        #if os.path.isfile(tracedict_pickle): os.remove(tracedict_pickle)
             
             
         # ======================================================
@@ -586,7 +667,7 @@ now."
             # if multiprocessing is turned on, we pre-calculate cross-correlation
             # arrays between pairs of stations (one process per pair) and feed
             # them to xc.add() (which won't have to recalculate them)
-            print "Pre-calculating cross-correlation arrays"
+            print "\nProcessing cross-correlations ..."
     
             def xcorr_func(pair):
                 """
@@ -594,12 +675,14 @@ now."
                 beween two traces
                 """
                 (s1, tr1), (s2, tr2) = pair
-                print '{}-{} '.format(s1, s2),
+               
+                #print '{}-{} '.format(s1, s2),
                 shift = int(CROSSCORR_TMAX / PERIOD_RESAMPLE)
                 xcorr = obspy.signal.cross_correlation.xcorr(
                     tr1, tr2, shift_len=shift, full_xcorr=True)[2]
                 return xcorr
     
+
             pairs = list(it.combinations(sorted(tracedict.items()), 2))
             pool = mp.Pool(NB_PROCESSES)
             xcorrs = pool.map(xcorr_func, pairs)
@@ -607,8 +690,8 @@ now."
             pool.join()
             xcorrdict = {(s1, s2): xcorr for ((s1, _), (s2, _)), 
                          xcorr in zip(pairs, xcorrs)}
-            print
-            
+            print 
+        
         #print "Stacking cross-correlations"
         xc.add(tracedict=tracedict,
                stations=stations,
@@ -620,10 +703,44 @@ now."
     
     
     #==============================================================================    
+        delta = (dt.datetime.now() - t0).total_seconds()
+
+
+        print "\nCalculated and stacked {} cross-correlations in \
+{:.1f} seconds".format(len(xcorrs), delta)
     
-        print "Calculated and stacked cross-correlations in \
-    {:.1f} seconds".format(delta)
-               
+        loop_delta = (dt.datetime.now() - loop_time0).total_seconds()
+
+        print "\nIn total, the previous loop had a processing time of: \
+{:.1f} seconds".format(loop_delta)
+             
+            #there may be an overlap in metadata times. Maybe add xcorr interval to this?
+        #have the program restart from the beginning of each stack! not each month
+        #this gives more redundancy!
+        #(allows to restart after a crash from that date)
+        
+        
+        # save partial pickle file only if timeseries loop is large enough
+        if len(metadata) >= 2:
+            print "Time since last save: ", abs(date - metadata[-1] + dt.timedelta(minutes=XCORR_INTERVAL)) 
+            if (date - metadata[-1]) >= dt.timedelta(days=1):
+                with open(u'{}.part.pickle'.format(OUTFILESPATH), 'wb') as f:
+                    print "\nExporting cross-correlations calculated until now." 
+                    pickle.dump(xc, f, protocol=2)
+                metadata.append(date)
+                
+        elif len(metadata) == 0:
+            metadata.append(date)
+
+    
+            
+        #also create a metadata dump file for use only if the program needs to be restarted
+        #use replace() to get rid of basename to create file named metadata.pickle in 
+        #correct path
+        with open(METADATA_PATH, 'wb') as f:
+            print "\nExporting re-start metadata of time-series calculated until \
+now."
+            pickle.dump(metadata, f, protocol=2)
     
     # exporting cross-correlations
     if not xc.pairs():
@@ -656,10 +773,21 @@ now."
         #xc.plot_SNR(plot_type='individual', outfile=OUT_SNR)
 
     # removing file containing periodical exports of cross-corrs
-    try:
-        os.remove(u'{}.part.pickle'.format(OUTFILESPATH))
-    except:
-        pass
+    # only do this if the full file exists!     
+    #try:
+    #    os.remove(u'{}.part.pickle'.format(OUTFILESPATH))
+    #except:
+    #    pass
 
 
+    #remove_config(config_file)
+    
+
+total_delta = (dt.datetime.now() - total_time0).total_seconds()
+
+<<<<<<< HEAD
     remove_config(config_file)
+=======
+print "Calculated every xcorr in time-series in in \
+{:.1f} seconds".format(total_delta)
+>>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
