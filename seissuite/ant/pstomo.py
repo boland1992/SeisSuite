@@ -1166,7 +1166,8 @@ class VelocityMap:
         """
 
         # checkerboard function
-        f_checkerboard = self.checkerboard_func(vmid, vmin, vmax, squaresize, **kwargs)
+        f_checkerboard = self.checkerboard_func(vmid, vmin, vmax, 
+                                                squaresize, **kwargs)
 
         # setting up vector of synthetic data
         dsynth = np.zeros_like(self.dobs)

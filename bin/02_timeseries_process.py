@@ -72,7 +72,7 @@ import obspy.signal.cross_correlation
 import time
 import glob
 import sqlite3 as lite
-
+import shutil
 
 
 #import matplotlib.pyplot as plt
@@ -145,11 +145,13 @@ for config_file in config_list:
     if not os.path.exists(RESP_DB):
         # initialise response database for use with automated data selection!
         lite.connect(RESP_DB)
+        print "\nCreating response database. Please be patient ... "
         from seissuite.database import response_database
     
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!
         lite.connect(TIMELINE_DB)
+        print "\nCreating timeline database. Please be patient ... "
         from seissuite.database import create_database                                        
                                         
     print "\nProcessing parameters:"
@@ -253,7 +255,8 @@ for config_file in config_list:
         OUTFOLDERS = os.path.join(CROSSCORR_DIR, 
                                   time_string,  
                                   'XCORR_PLOTS')
-                                  
+
+        
         OUT_SNR = os.path.join(CROSSCORR_DIR, time_string,  'SNR_PLOTS')
                                   
         #create unique folder in CROSS output folder named by the present time.
@@ -262,7 +265,14 @@ for config_file in config_list:
         
         if not os.path.exists(OUT_SNR):\
         os.makedirs(OUT_SNR)
-            
+        
+        # copy configuration file to output so parameters are known for each run                         
+        OUTCONFIG = os.path.join(CROSSCORR_DIR, time_string, 
+                                 os.path.basename(config_file))
+        
+        print 'Copying configuration file to output directory ... ' 
+        shutil.copy(config_file, OUTCONFIG)    
+        
         
         METADATA_PATH = '{}metadata.pickle'.format(OUTFILESPATH.\
                   replace(os.path.basename(OUTFILESPATH), ""))
@@ -325,7 +335,8 @@ for config_file in config_list:
                            startday=FIRSTDAY,
                            endday=LASTDAY,
                            verbose=False)
-    
+
+  
     # Loop on time interval
      #number of time steps
     N = int(((LASTDAY - FIRSTDAY).days + 1)*60*24 / XCORR_INTERVAL)

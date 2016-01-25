@@ -335,6 +335,7 @@ class CrossCorrelation:
 
         # cross-correlation
         if xcorr is None:
+
             # calculating cross-corr using obspy, if not already provided
             xcorr = obspy.signal.cross_correlation.xcorr(
                 tr1, tr2, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
@@ -1687,7 +1688,7 @@ class CrossCorrelation:
         @rtype: int
         """
         nt = len(self.timearray)
-        return (nt - 1) * 0.5 if not self.symmetrized else nt - 1
+        return int((nt - 1) * 0.5) if not self.symmetrized else int(nt - 1)
 
     def _get_monthyears_xcdataarray(self, months=None):
         """
@@ -2036,9 +2037,8 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                         SNRarray, timearray = info_array[:,0], info_array[:,1]                
                         plt.plot(timearray, SNRarray, alpha=0.3, c='k')
                     
-                    except Exception as err:
-                        print err
-                        
+                    except:
+                        continue                        
             file_name = 'SNR_total.png'
             outfile_individual = os.path.join(outfile, file_name)
             if os.path.exists(outfile_individual):

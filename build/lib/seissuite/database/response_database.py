@@ -14,6 +14,7 @@ import numpy as np
 from obspy import read_inventory
 import os
 import itertools as it
+from seissuite.response.resp import (freq_check, window_overlap)
 #from obspy.station.response import Response
 #import sys
 #from xml.etree.ElementTree import parse
@@ -77,9 +78,7 @@ def get_response(min_freq, response, sampling_rate):
         t_samp=t_samp, nfft=nfft)
     
     return cpx_response, freq 
-
-
-    return window
+    
 
 def freq_check(freq_range, freq_window):
     """
@@ -219,8 +218,9 @@ class Instrument:
         
         code = code.replace('.', '_')
         
-        c.execute('''CREATE TABLE IF NOT EXISTS resp_windows (station text, 
-                  min_window real, max_window real)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS resp_windows (network text, 
+                  station text, channel text, min_window real, 
+                  max_window real, overlap real)''')
 
         # check if the net_stat_chan code already exists in the table!
         c.execute('SELECT station FROM resp_windows')
@@ -233,18 +233,27 @@ class Instrument:
         
             # calculate the response window
             window = self.response_window(gains, freqs, tolerance=RESP_EFFECT)
-        
-            window_tuple = (code, window[0][0], window[1][0])
+
+                                     
+            overlap = window_overlap(RESP_FREQS, window)
+     
+            
+            net, stat, chan = code.split('_')
+            window_tuple = (code, window[0][0], 
+                            window[1][0], overlap)
+                            
             #print window_tuple
         
-            c.execute('INSERT INTO resp_windows VALUES (?,?,?)', window_tuple)
+            c.execute('INSERT INTO resp_windows VALUES (?,?,?,?,?,?)', 
+                      window_tuple)
             #for row in c.execute('SELECT * FROM resp_windows'):
             #    print row
             
-           # commit changes
+        # commit changes
         conn.commit()
         # close database
         conn.close() 
+
         
         
     def find_sample(self, response):
@@ -391,18 +400,20 @@ class Instrument:
             try:
                 code = channel["channel_id"]
                 net, stat, loc, chan = code.split('.')
+                # check for and resolve channel naming problems from IRIS
+                if chan == 'MHE':
+                    chan = 'LHE'
+                if chan == 'MHZ':
+                    chan = 'LHZ'                    
+                if chan == 'MHN':
+                    chan = 'LHN'                    
+                    
                 sample_rate = channel['sampling_rate']
                 data = sp.getPAZ(code)
                 poles = data['poles']
                 zeros = data['zeros']
 
-                condition = True
-            except:
-                #print error
-                condition = False
-                continue
              
-            if condition:
                 t_samp = 1.0 / sample_rate
                 #nyquist = sampling_rate / 2.0
                 nfft = sample_rate / min_freq
@@ -425,6 +436,8 @@ class Instrument:
 
                 self.output_SQL(out_code, cpx_resp, freqs)
                 self.output_resp(out_code, cpx_resp, freqs)
+            except:
+                a = 5
                 
     def dataless_or_xml(self):
         """
