@@ -80,6 +80,9 @@ import matplotlib.pyplot as plt
 epoch = dt.datetime(1970, 1, 1)
 
 total_verbose = True
+psd = False
+
+
 # DECLUSTER STATIONS!
 # remove stations that are too close to one another (set by degree radius!)
 #from seissuite.spacing.search_station import Coordinates
@@ -89,8 +92,8 @@ total_verbose = True
 # turn on multiprocessing to get one merged trace per station?
 # to preprocess trace? to stack cross-correlations?
 MULTIPROCESSING = {'merge trace': False,
-                   'process trace': False,
-                   'cross-corr': False}
+                   'process trace': True,
+                   'cross-corr': True}
 # how many concurrent processes? (set None to let multiprocessing module decide)
 NB_PROCESSES = None
 if any(MULTIPROCESSING.values()):
@@ -162,7 +165,11 @@ for config_file in config_list:
         # initialise timeline database to help the application find files!
         lite.connect(TIMELINE_DB)
         from seissuite.database import create_database                                        
-                    
+    
+    
+    if psd:
+        import powerdensity
+        
 
     print "\nProcessing parameters:"
     print "- dir of miniseed data: " + MSEED_DIR
@@ -355,7 +362,8 @@ for config_file in config_list:
                            verbose=False)
                            
     print stations
-            
+    stat_coords = np.asarray([station.coord for station in stations])
+
     
     DECLUSTER = False
     

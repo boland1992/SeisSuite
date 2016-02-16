@@ -32,6 +32,7 @@ from scipy.cluster.vq import kmeans
 from seissuite.misc.dataless import Dataless
 import matplotlib.pyplot as plt
 import itertools as it
+from matplotlib.colors import LogNorm
 
 
 
@@ -49,25 +50,31 @@ dataless = False
 
 
 # Enter number new stations desired.
-n_stations = 15
+n_stations = 6
 # Enter km spacing between path density points.
-km_points = 20.0
+km_points = 0.5
 # Reference elipsoid to calculate distance.
-wgs84 = pyproj.Geod(ellps='SEasia')
+wgs84 = pyproj.Geod(ellps='WGS84')
 # Enter number of bins for 2D Histogram density calculation. 
-nbins = 200
+nbins = 75
 # Enter estimated average shear wave velocity. 3kms-1 is the default!
 velocity = 3.0
 # Define your ambient noise period range OR individual period in seconds.
 global period_range
 period_range = [1,40]
 
+# Set box length size in metres (square field)
+grid_length = 2000 # (metres)
+
+box_length = grid_length / nbins
+
 # Enter path to dataless file
 dataless_path = 'ALL_AUSTRALIA.870093.dataless'
 
 #coords = Dataless.locs_from_dataless(dataless_path)
 
-shape_path =  '/home/iese/Documents/Ben/seissuite/bin/shapefiles/bean_boundary.shp'
+shape_path = '/home/iese/10kmR.shp' 
+
 
 t0 = dt.datetime.now()
 
@@ -87,7 +94,7 @@ INPOLY = InPoly(shape_path)
 
 poly = INPOLY.poly_from_shape(shape=UNIQUE_SHAPE)
 
-many_points = INPOLY.rand_poly(poly=poly, N=1e3)
+many_points = INPOLY.rand_poly(poly=poly, N=1e5)
 
 # Scale smaller shape to fit inside larger shape. 
 #SMALL_SHAPE = scale(UNIQUE_SHAPE, xfact=0.3, yfact=0.3)
@@ -123,21 +130,38 @@ ideal_path = 'ideal_coordinates.pickle'
 #    coords = pickle.load(f)
 #    f.close()
 
-    
+GEOD = Geodesic()
+
+
 coords = cluster_points
 
+lons, lats = coords[:,0], coords[:,1]
+
+dists = []
+for lon1, lat1 in zip(lons, lats):
+    for lon2, lat2 in zip(lons, lats):
+       dists.append(GEOD.haversine(lon1, lat1, lon2, lat2))
+       
+       
+for i in dists: 
+    print i        
+print "Min. Interstation Distance: ", np.min(dists)
+print "Avg. Interstation Distance: ", np.average(dists)
+print "Max. Interstation Distance: ", np.max(dists)
+
+
 plt.figure()
-plt.scatter(coords[:,0], coords[:,1])
+plt.scatter(lons, lats)
 plt.show()
 
 # dump statistically optimised station spacings to .csv file
-np.savetxt("optimised_spacings.csv", coords, delimiter=",")
+np.savetxt('/home/iese/Desktop/optimised_spacings.csv', coords, delimiter=",")
 
 
 
 
 #-----------------------------------------------------------------------------
-# POINT DENSITY AND RESOLUTION ESTIMATION
+# POINT DENSITY ESTIMATION
 #-----------------------------------------------------------------------------
 
 
@@ -197,7 +221,7 @@ plt.scatter(coords[:,0], coords[:,1], c='orange')
 plt.show()
 
 
-DENSITY = Density(paths=total_points, nbins=75)
+DENSITY = Density(paths=total_points, nbins=nbins)
 
 H, xedges, yedges = DENSITY.hist2d(paths=total_points)
 
@@ -212,30 +236,19 @@ coords = np.array([[x, y] for x in xedges[:-1] for y in yedges[:-1]])
 
 H = np.rot90(H)
 H = np.flipud(H)
-H = np.rot90(H)
-H = np.rot90(H)
-
-H_unpacked = np.array(list(it.chain(*H)))
-GIS_output = np.column_stack((coords[:,0],coords[:,1], H_unpacked))
-np.savetxt("point_density.csv", GIS_output, delimiter=",")
-
-
-print GIS_output
-quit()
-
-
-plt.figure()
-plt.scatter(coords[:,0], coords[:,1])
-plt.scatter(coords[0][0], coords[0][1], c='orange')
-plt.scatter(coords[-1][0], coords[-1][1], c='red')
+#H = np.rot90(H)
+#H = np.rot90(H)
 
 
 
-plt.show()
-plt.clf()
+#plt.figure()
+#plt.scatter(coords[:,0], coords[:,1])
+#plt.scatter(coords[0][0], coords[0][1], c='orange')
+#plt.scatter(coords[-1][0], coords[-1][1], c='red')
+#plt.show()
+#plt.clf()
 
 
-quit()
 #grad = DENSITY.hgrad(H=H)
     
 #H_avg1 = np.average(H)
@@ -246,6 +259,62 @@ H_masked = DENSITY.transform_h(H=H)
     
 DENSITY.plot_field(SHAPE=UNIQUE_SHAPE)
 
+
+#-----------------------------------------------------------------------------
+# RESOLUTION ESTIMATION
+#-----------------------------------------------------------------------------
+
+
+
+# define the point-density to metre resolution conversion function
+def res_conv(point_density, length=box_length, k2=100.0):
+    """
+    Function to convert a point in a point density matrix into an approx. 
+    metre resolution value. 
+    """
+    
+    if point_density < k2 / 20:
+        return 0
+        
+    else: 
+        k = length
+        x = point_density
+        
+        alpha = k2 * np.log(k - 1)     
+    
+        return np.exp(alpha / x) + k - 1 
+
+    
+
+H_unpacked = np.array(list(it.chain(*H)))
+
+H_resolution = np.array(map(res_conv, H_unpacked))
+
+
+
+GIS_output = np.column_stack((coords[:,0],coords[:,1], 
+                              H_unpacked, H_resolution))
+         
+
+H_res = H_resolution.reshape(H.shape)
+
+
+plt.pcolor(xedges, yedges, H_res, norm=LogNorm(\
+    vmin=np.min(H_masked), vmax=np.max(H_masked)), cmap='rainbow',\
+    alpha=0.6, zorder = 3)
+
+
+col = plt.colorbar()
+col.ax.set_ylabel('Estimated Resolution (m)')
+
+plt.show()
+
+
+np.savetxt("/home/iese/Documents/Ben/OLSUS_GIS/resolution_matrix.csv", 
+           GIS_output, delimiter=",")
+
+
+print GIS_output
 
 quit()
 

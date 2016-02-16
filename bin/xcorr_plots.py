@@ -42,8 +42,7 @@ plot_classic = False
 print MSEED_DIR
 print CROSSCORR_TMAX
 
-central_frequencies = np.arange(0.1, 20.0, 0.5)
-central_frequencies = central_frequencies[::-1]
+central_frequencies = np.arange(5.0, 20.0, 1)
 
 
 for folder in folder_list:
@@ -89,16 +88,18 @@ else:
     maxt = max(CROSSCORR_TMAX, maxdist / 2.5)
     
     if plot_distance:
-        for central_freq in central_frequencies:
+        #for central_freq in central_frequencies:
             #plot distance plot of cross-correlations
-            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-                    outfile="{}~.png".format(central_freq), showplot=False, 
-                    norm=True, fill=False, absolute=False, 
-                    freq_central=central_freq)
+        xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile="{}~.png", showplot=False, 
+                    norm=True, fill=False, absolute=False)
 
 
 
-    if plot_classic:
-        #plot individual cross-correlations
-        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-                outfile="~", showplot=False)
+    #if plot_classic:
+#        for central_freq in central_frequencies:
+    #    central_freq = 1.0
+            #plot individual cross-correlations
+    #    xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+    #                outfile="{}~.png".format(central_freq), showplot=False,  
+    #            freq_central=central_freq)

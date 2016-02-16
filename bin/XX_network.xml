@@ -1,0 +1,405 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML schemaVersion="1.0" xmlns="http://www.fdsn.org/xml/station/1">
+  <Source>IESE Ltd.</Source>
+  <Module>ObsPy 0.10.2</Module>
+  <ModuleURI>http://www.obspy.org</ModuleURI>
+  <Created>2016-02-16T18:55:21+00:00</Created>
+  <Network code="XX">
+    <Station code="W26" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.62112</Latitude>
+      <Longitude unit="DEGREES">176.00532</Longitude>
+      <Elevation unit="METERS">516.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.62112</Latitude>
+        <Longitude unit="DEGREES">176.00532</Longitude>
+        <Elevation unit="METERS">516.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.62112</Latitude>
+        <Longitude unit="DEGREES">176.00532</Longitude>
+        <Elevation unit="METERS">516.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.62112</Latitude>
+        <Longitude unit="DEGREES">176.00532</Longitude>
+        <Elevation unit="METERS">516.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W02" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.6292</Latitude>
+      <Longitude unit="DEGREES">176.07494</Longitude>
+      <Elevation unit="METERS">380.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.6292</Latitude>
+        <Longitude unit="DEGREES">176.07494</Longitude>
+        <Elevation unit="METERS">380.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.6292</Latitude>
+        <Longitude unit="DEGREES">176.07494</Longitude>
+        <Elevation unit="METERS">380.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.6292</Latitude>
+        <Longitude unit="DEGREES">176.07494</Longitude>
+        <Elevation unit="METERS">380.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W01" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.61762</Latitude>
+      <Longitude unit="DEGREES">176.08425</Longitude>
+      <Elevation unit="METERS">293.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.61762</Latitude>
+        <Longitude unit="DEGREES">176.08425</Longitude>
+        <Elevation unit="METERS">293.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.61762</Latitude>
+        <Longitude unit="DEGREES">176.08425</Longitude>
+        <Elevation unit="METERS">293.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.61762</Latitude>
+        <Longitude unit="DEGREES">176.08425</Longitude>
+        <Elevation unit="METERS">293.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W28" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.62088</Latitude>
+      <Longitude unit="DEGREES">176.11563</Longitude>
+      <Elevation unit="METERS">350.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.62088</Latitude>
+        <Longitude unit="DEGREES">176.11563</Longitude>
+        <Elevation unit="METERS">350.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.62088</Latitude>
+        <Longitude unit="DEGREES">176.11563</Longitude>
+        <Elevation unit="METERS">350.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.62088</Latitude>
+        <Longitude unit="DEGREES">176.11563</Longitude>
+        <Elevation unit="METERS">350.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W24" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.66835</Latitude>
+      <Longitude unit="DEGREES">176.16976</Longitude>
+      <Elevation unit="METERS">383.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.66835</Latitude>
+        <Longitude unit="DEGREES">176.16976</Longitude>
+        <Elevation unit="METERS">383.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.66835</Latitude>
+        <Longitude unit="DEGREES">176.16976</Longitude>
+        <Elevation unit="METERS">383.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.66835</Latitude>
+        <Longitude unit="DEGREES">176.16976</Longitude>
+        <Elevation unit="METERS">383.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W25" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.6153</Latitude>
+      <Longitude unit="DEGREES">176.04413</Longitude>
+      <Elevation unit="METERS">444.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.6153</Latitude>
+        <Longitude unit="DEGREES">176.04413</Longitude>
+        <Elevation unit="METERS">444.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.6153</Latitude>
+        <Longitude unit="DEGREES">176.04413</Longitude>
+        <Elevation unit="METERS">444.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.6153</Latitude>
+        <Longitude unit="DEGREES">176.04413</Longitude>
+        <Elevation unit="METERS">444.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W05" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.60282</Latitude>
+      <Longitude unit="DEGREES">176.0929</Longitude>
+      <Elevation unit="METERS">326.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.60282</Latitude>
+        <Longitude unit="DEGREES">176.0929</Longitude>
+        <Elevation unit="METERS">326.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.60282</Latitude>
+        <Longitude unit="DEGREES">176.0929</Longitude>
+        <Elevation unit="METERS">326.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.60282</Latitude>
+        <Longitude unit="DEGREES">176.0929</Longitude>
+        <Elevation unit="METERS">326.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W04" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.60424</Latitude>
+      <Longitude unit="DEGREES">176.06634</Longitude>
+      <Elevation unit="METERS">369.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.60424</Latitude>
+        <Longitude unit="DEGREES">176.06634</Longitude>
+        <Elevation unit="METERS">369.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.60424</Latitude>
+        <Longitude unit="DEGREES">176.06634</Longitude>
+        <Elevation unit="METERS">369.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.60424</Latitude>
+        <Longitude unit="DEGREES">176.06634</Longitude>
+        <Elevation unit="METERS">369.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W10" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.66648</Latitude>
+      <Longitude unit="DEGREES">176.07056</Longitude>
+      <Elevation unit="METERS">-760.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.66648</Latitude>
+        <Longitude unit="DEGREES">176.07056</Longitude>
+        <Elevation unit="METERS">-760.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.66648</Latitude>
+        <Longitude unit="DEGREES">176.07056</Longitude>
+        <Elevation unit="METERS">-760.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.66648</Latitude>
+        <Longitude unit="DEGREES">176.07056</Longitude>
+        <Elevation unit="METERS">-760.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W08" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.65939</Latitude>
+      <Longitude unit="DEGREES">176.04476</Longitude>
+      <Elevation unit="METERS">401.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.65939</Latitude>
+        <Longitude unit="DEGREES">176.04476</Longitude>
+        <Elevation unit="METERS">401.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.65939</Latitude>
+        <Longitude unit="DEGREES">176.04476</Longitude>
+        <Elevation unit="METERS">401.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.65939</Latitude>
+        <Longitude unit="DEGREES">176.04476</Longitude>
+        <Elevation unit="METERS">401.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W06" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.599</Latitude>
+      <Longitude unit="DEGREES">176.04234</Longitude>
+      <Elevation unit="METERS">368.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.599</Latitude>
+        <Longitude unit="DEGREES">176.04234</Longitude>
+        <Elevation unit="METERS">368.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.599</Latitude>
+        <Longitude unit="DEGREES">176.04234</Longitude>
+        <Elevation unit="METERS">368.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.599</Latitude>
+        <Longitude unit="DEGREES">176.04234</Longitude>
+        <Elevation unit="METERS">368.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+    <Station code="W03" endDate="2016-01-01T00:00:00+00:00" startDate="2016-01-01T00:00:00+00:00">
+      <Latitude unit="DEGREES">-38.62586</Latitude>
+      <Longitude unit="DEGREES">176.04786</Longitude>
+      <Elevation unit="METERS">459.0</Elevation>
+      <Site>
+        <Name>WAIRAKEI</Name>
+        <Description>WAIRAKEI</Description>
+        <Town>WAIRAKEI</Town>
+        <County>WAIRAKEI</County>
+        <Region>WAIRAKEI</Region>
+        <Country>NZ</Country>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00+00:00</CreationDate>
+      <TerminationDate>2016-01-10T00:00:00+00:00</TerminationDate>
+      <Channel code="DHZ" locationCode="">
+        <Latitude unit="DEGREES">-38.62586</Latitude>
+        <Longitude unit="DEGREES">176.04786</Longitude>
+        <Elevation unit="METERS">459.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHN" locationCode="">
+        <Latitude unit="DEGREES">-38.62586</Latitude>
+        <Longitude unit="DEGREES">176.04786</Longitude>
+        <Elevation unit="METERS">459.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="DHE" locationCode="">
+        <Latitude unit="DEGREES">-38.62586</Latitude>
+        <Longitude unit="DEGREES">176.04786</Longitude>
+        <Elevation unit="METERS">459.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>
