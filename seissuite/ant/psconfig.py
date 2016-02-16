@@ -142,10 +142,11 @@ class Config:
         # must be set either True or False to work. Any other options with give an error
         self.MAX_DISTANCE = self.config.get('processing', 'MAX_DISTANCE')
         self.TDD = self.config.getboolean('processing', 'TDD')	 
+
+        #self.EVENT_REMOVE = self.config.getboolean('processing', 
+        #                                           'EVENT_REMOVE')
         self.RESP_REMOVE = self.config.getboolean('processing', 
-                                                  'EVENT_REMOVE')	 
-        self.EVENT_REMOVE = self.config.getboolean('processing', 
-                                                   'EVENT_REMOVE')	    
+                                                  'RESP_REMOVE')    
         self.HIGHAMP_REMOVE = self.config.getboolean('processing', 
                                                      'HIGHAMP_REMOVE')
         self.RESP_CHECK = self.config.getboolean('processing', 

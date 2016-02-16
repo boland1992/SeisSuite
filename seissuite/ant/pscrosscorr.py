@@ -386,6 +386,7 @@ class CrossCorrelation:
 
         # cross-correlation
         if xcorr is None:
+
             # calculating cross-corr using obspy, if not already provided
             xcorr = obspy.signal.cross_correlation.xcorr(
                 tr1, tr2, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
@@ -2189,9 +2190,14 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                             SNRarray, timearray = info_array[:,0], info_array[:,1]                
                             plt.plot(timearray, SNRarray, alpha=0.3, c='k')
                     
+<<<<<<< HEAD
+                    except:
+                        continue                        
+=======
                     #except Exception as err:
                     #    print err
                         
+>>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
             file_name = 'SNR_total.png'
             outfile_individual = os.path.join(outfile, file_name)
             if os.path.exists(outfile_individual):
