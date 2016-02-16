@@ -206,7 +206,6 @@ else:
 # =============================================================================
 # =============================================================================
 
-<<<<<<< HEAD
 def extract_info(info, check=False):    
     trace, path = info
     
@@ -238,8 +237,8 @@ def extract_info(info, check=False):
         #    station = 
         code ='{}.{}.{}'.format(network, station, channel)
 
-=======
-
+    except: 
+        a=5
 
 
 def extract_info(info):    
@@ -251,23 +250,21 @@ def extract_info(info):
     starttime = trace.stats.starttime.timestamp
     endtime = (trace.stats.starttime + trace.stats.npts * \
               (1/trace.stats.sampling_rate)).timestamp
->>>>>>> 0b193bcde7070792599f1332c623ca7738e42ee2
 
 
-        starttime = trace.stats.starttime.timestamp
-        try:
-            endtime = trace.stats.endtime.timestamp
-        except:    
-            endtime = (trace.stats.starttime + trace.stats.npts * \
-            (1.0/trace.stats.sampling_rate)).timestamp
+    starttime = trace.stats.starttime.timestamp
+    try:
+        endtime = trace.stats.endtime.timestamp
+    except:    
+        endtime = (trace.stats.starttime + trace.stats.npts * \
+        (1.0/trace.stats.sampling_rate)).timestamp
 
         information = (code, starttime, endtime, path)
+    
         return information
-    except:
-        a=None
+
         
 def info_from_headers(path):
-<<<<<<< HEAD
 
     #print os.path.basename(path)
     try:
@@ -306,7 +303,6 @@ def info_from_headers(path):
 
         except Exception as error:
             print error
-=======
     try:
         #t0 = datetime.datetime.now()
         print os.path.basename(path)
@@ -324,7 +320,6 @@ def info_from_headers(path):
     
     except Exception as error:
         print error    
->>>>>>> 0b193bcde7070792599f1332c623ca7738e42ee2
 
     #t1 = datetime.datetime.now()
     #print 'time taken to process previous loop: ', t1-t0
@@ -341,7 +336,6 @@ if multiprocess:
     pool.join()
 else:
     timeline = map(info_from_headers, abs_paths)
-<<<<<<< HEAD
 
 
 timeline = np.array(timeline)
@@ -360,7 +354,6 @@ print "timeline: ", timeline
 
 #timeline = [tuple(i) for i in timeline]
 
-=======
     
 try:
     
@@ -369,7 +362,6 @@ try:
 
 except:
     print "The timeline array is not the correct type and cannot be flattened"
->>>>>>> 0b193bcde7070792599f1332c623ca7738e42ee2
 
 t1 = datetime.datetime.now()
 print "time taken to read in and process timeline database: ", t1-t0

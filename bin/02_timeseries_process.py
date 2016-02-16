@@ -72,16 +72,13 @@ import obspy.signal.cross_correlation
 import time
 import glob
 import sqlite3 as lite
-<<<<<<< HEAD
 import shutil
-=======
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 # set epoch timestamp 
 epoch = dt.datetime(1970, 1, 1)
->>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
 
 total_verbose = True
 psd = False
@@ -158,20 +155,21 @@ for config_file in config_list:
     # initialise the required databases if they haven't already been.
     #if no two SQL databases exist, then create them! 
     TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
+    RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
+
    # RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
     
    # if not os.path.exists(RESP_DB):
         # initialise response database for use with automated data selection!
-<<<<<<< HEAD
   #      lite.connect(RESP_DB)
   #      from seissuite.database import response_database
     print TIMELINE_DB
-=======
+    if not os.path.exists(RESP_DB):
+
         lite.connect(RESP_DB)
         print "\nCreating response database. Please be patient ... "
         from seissuite.database import response_database
     
->>>>>>> 0b193bcde7070792599f1332c623ca7738e42ee2
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!
         lite.connect(TIMELINE_DB)
@@ -296,7 +294,6 @@ for config_file in config_list:
         
         if not os.path.exists(OUT_SNR):\
         os.makedirs(OUT_SNR)
-<<<<<<< HEAD
         
         # copy configuration file to output so parameters are known for each run                         
         OUTCONFIG = os.path.join(CROSSCORR_DIR, time_string, 
@@ -305,10 +302,7 @@ for config_file in config_list:
         print 'Copying configuration file to output directory ... ' 
         shutil.copy(config_file, OUTCONFIG)    
         
-        
-=======
-            
->>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
+
         METADATA_PATH = '{}metadata.pickle'.format(OUTFILESPATH.\
                   replace(os.path.basename(OUTFILESPATH), ""))
     
@@ -385,17 +379,12 @@ for config_file in config_list:
                            startday=FIRSTDAY,
                            endday=LASTDAY,
                            verbose=False)
-<<<<<<< HEAD
                            
     print stations
     stat_coords = np.asarray([station.coord for station in stations])
 
-=======
-<<<<<<< HEAD
 
-  
-=======
->>>>>>> 0b193bcde7070792599f1332c623ca7738e42ee2
+
     
     DECLUSTER = False
     
@@ -407,7 +396,7 @@ for config_file in config_list:
     #    stations = [station for station in stations if 
     #                station.coord in declustered_coords]      
 
->>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
+
     # Loop on time interval
      #number of time steps
     N = int(((LASTDAY - FIRSTDAY).days + 1)*60*24 / XCORR_INTERVAL)
@@ -835,9 +824,6 @@ now."
 
 total_delta = (dt.datetime.now() - total_time0).total_seconds()
 
-<<<<<<< HEAD
-    remove_config(config_file)
-=======
+remove_config(config_file)
 print "Calculated every xcorr in time-series in in \
 {:.1f} seconds".format(total_delta)
->>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
