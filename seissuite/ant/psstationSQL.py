@@ -343,6 +343,8 @@ re-run create_database in seissuite.database")
     subdir_len = len(database)
 
     for row in database:
+        #print "xml_inventories: ", xml_inventories
+        #print "row: ", row
         code, starttime, endtime, file_path = row
         starttime, endtime = UTCDateTime(starttime), UTCDateTime(endtime)
 
@@ -350,10 +352,11 @@ re-run create_database in seissuite.database")
         # this check if the start and end run times of the programme aren't
         # automatic
         year, month, day = str(starttime.date).split('-')
+        #print "year, month, day: ", year, month, day
         subdir = os.path.basename(file_path)
         
         network, name, channel = code.split('.')[0:3]
-        
+        #print "network, name, channel: ", network, name, channel
         # search response instrument database if RESP_CHECK is True
         resp_code = code.replace('.', '_')
 
@@ -384,7 +387,7 @@ re-run create_database in seissuite.database")
                 # appending new station, with current subdir
                 station = StationSQL(name=name, network=network, 
                                      channel=channel,
-                                     filename=file_path)                
+                                     filename=file_path)    
                 stations.append(station)
 
         else:
