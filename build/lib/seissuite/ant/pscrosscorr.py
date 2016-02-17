@@ -12,7 +12,7 @@ import obspy.signal
 import obspy.xseed
 import obspy.signal.cross_correlation
 import obspy.signal.filter
-from obspy.core import AttribDict, Trace#, read, UTCDateTime, Stream
+from obspy.core import AttribDict#, read, UTCDateTime, Stream
 from obspy.signal.invsim import cosTaper
 import numpy as np
 from numpy.fft import rfft, irfft, fft, ifft, fftfreq
@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import gridspec
-
+from obspy.core import Trace, Stream
 
 from pyseis.modules.rdreftekc import rdreftek, reftek2stream
 
@@ -105,6 +105,7 @@ BBOX_LARGE = CONFIG.BBOX_LARGE
 BBOX_SMALL = CONFIG.BBOX_SMALL
 FIRSTDAY = CONFIG.FIRSTDAY
 LASTDAY = CONFIG.LASTDAY
+FULL_COMB = CONFIG.FULL_COMB
 
 max_snr_pickle = os.path.join(DATALESS_DIR, 'snr.pickle')
 
@@ -437,14 +438,50 @@ class CrossCorrelation:
                 tr1, tr2, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
         
 
-            
-
         # verifying that we don't have NaN
         if np.any(np.isnan(xcorr)):
             s = u"Got NaN in cross-correlation between traces:\n{tr1}\n{tr2}"
             raise pserrors.NaNError(s.format(tr1=tr1, tr2=tr2))
         
         
+        #print "FULL_COMB: ", FULL_COMB
+        if FULL_COMB: 
+            xcorr1 = obspy.signal.cross_correlation.xcorr(
+                tr1, tr2, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
+            
+            xcorr2 = obspy.signal.cross_correlation.xcorr(
+                tr2, tr1, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
+            # generate obspy Stream object to save to miniseed
+            tr_start, tr_end = tr1.stats.starttime, tr1.stats.endtime
+            stat1, stat2 =  tr1.stats.station, tr2.stats.station
+
+            timelist_dir = sorted(os.listdir(CROSSCORR_DIR))
+            xcorr_mseed = os.path.join(CROSSCORR_DIR, timelist_dir[-1], 
+                                       'mseed')
+            
+            
+            if not os.path.exists(xcorr_mseed): os.mkdir(xcorr_mseed)
+            xcorr_str = 'xcorr_{}-{}_{}-{}.mseed'.format(stat1, stat2, 
+                                                         tr_start, tr_end)
+                                                         
+            
+            trace1, trace2 = Trace(data=xcorr1), Trace(data=xcorr2)
+            
+            # assign header metadata for xcorr mseed
+            trace1.stats.network, trace2.stats.network = \
+            tr1.stats.network, tr2.stats.network
+
+            trace1.stats.station, trace2.stats.station = stat1, stat2
+            trace1.stats.channel, trace2.stats.channel = \
+            tr1.stats.channel, tr2.stats.channel            
+
+            xcorr_st = Stream(traces=[trace1, trace2])
+            xcorr_output = os.path.join(xcorr_mseed, xcorr_str)
+            print "xcorr_output: ", xcorr_output
+            xcorr_st.write(xcorr_output, format='MSEED')
+            
+            
+            
         #
         self.dataarray += xcorr#/ np.max(xcorr) #/ (self.nday + 1)
         # reduce stack about zero
