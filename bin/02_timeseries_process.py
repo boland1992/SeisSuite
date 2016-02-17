@@ -93,8 +93,8 @@ psd = False
 # turn on multiprocessing to get one merged trace per station?
 # to preprocess trace? to stack cross-correlations?
 MULTIPROCESSING = {'merge trace': False,
-                   'process trace': True,
-                   'cross-corr': True}
+                   'process trace': False,
+                   'cross-corr': False}
 # how many concurrent processes? (set None to let multiprocessing module decide)
 NB_PROCESSES = None
 if any(MULTIPROCESSING.values()):
@@ -152,6 +152,9 @@ for config_file in config_list:
     PLOT_DISTANCE = CONFIG.PLOT_DISTANCE
     MAX_DISTANCE = CONFIG.MAX_DISTANCE
     RESP_REMOVE = CONFIG.RESP_REMOVE
+    
+    FULL_COMB = CONFIG.FULL_COMB
+
     # initialise the required databases if they haven't already been.
     #if no two SQL databases exist, then create them! 
     TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
@@ -379,8 +382,7 @@ for config_file in config_list:
                            startday=FIRSTDAY,
                            endday=LASTDAY,
                            verbose=False)
-                           
-    print stations
+
     stat_coords = np.asarray([station.coord for station in stations])
 
 
@@ -735,7 +737,34 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
                date=date,
                verbose=not MULTIPROCESSING['cross-corr'])
         
-    
+        break
+        pairs = list(it.combinations(sorted(tracedict.items()), 2))
+
+        # calculate max snr for snr weighted stack! 
+#        for pair in pairs: 
+#            (s1, tr1), (s2, tr2) = pair
+#            s1, s2 = str(s1), str(s2)
+#            snr_list = xc[s1][s2].SNR_list
+#            max_snr = np.max(snr_list)
+
+#            snr_stack = xc[s1][s2].SNR_stack
+            
+#            snr_wstack = np.zeros_like(snr_stack[0])
+             
+#            for xcorr, snr in zip(snr_stack, snr_list): 
+#                snr_wstack += xcorr * snr / max_snr
+                
+            # assign final snr weighted stack xcorr green's function to SNR_stack
+#            xc[s1][s2].SNR_stack = snr_wstack
+#            if s1 in xc.keys():
+#                if s2 in xc[s1].keys():
+#                    pws = xc[s1][s2].pws
+#                    plt.figure()
+#                    plt.plot(pws)
+#                    plt.show()
+#                    plt.clf()
+
+            
     
     #==============================================================================    
         delta = (dt.datetime.now() - t0).total_seconds()
@@ -798,8 +827,22 @@ now."
             #plot distance plot of cross-correlations
             xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
                     outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
-                    + '.png', showplot=False)
-        
+                    + '.png', showplot=False, stack_type='linear')
+                    
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+                    + '.png', showplot=False, stack_type='PWS')
+                    
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+                    + '.png', showplot=False, stack_type='SNR')
+                    
+                    
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+                    + '.png', showplot=False, stack_type='combined')                    
+                    
+                    
         if PLOT_CLASSIC:
             #plot individual cross-correlations
             xc.plot(plot_type='classic', xlim=(-maxt, maxt), 

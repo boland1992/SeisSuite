@@ -113,6 +113,8 @@ DOWNSAMPLE = True         ; if set to False, data is downsampled to max of min s
 COMPLETENESS = True       ; do initial completeness check, do not process the series below tolerance
 TIME_NOMALISATION = True  ; perform time normalisation OR one-bit normalisation, OR input own!
 SPEC_WHITENING = True     ; perform spectral whitening of data
+FULL_COMB = True	  ; perform a full combination stack + recursive stack
+
 
 
 
@@ -175,7 +177,7 @@ BBOX_SMALL = [-101.154848, -101.120574, 19.885633, 19.922488]
 
 # test the first 3 months of 2014 for cross-correlation!
 
-XCORR_INTERVAL = 45.0               ; number of minutes in xcorr time series
+XCORR_INTERVAL = 3.0               ; number of minutes in xcorr time series
 USE_DATALESSPAZ = False             ; use dataless files to remove instrument response?
 USE_STATIONXML = True               ; use stationXML files to remove instrument response?
 
@@ -196,7 +198,7 @@ ONEBIT_NORM = False                  ; one-bit normalization?
 PERIODMIN_EARTHQUAKE = 25.0          ; estimated earthquake period minimum for filtering
 PERIODMAX_EARTHQUAKE = 75.0          ; estimated earthquake period maximum for filtering 
 WINDOW_FREQ = 0.0002                 ; freq window (Hz) to smooth ampl spectrum
-CROSSCORR_TMAX = 30                 ; number of seconds for xcorr window both positive and negative
+CROSSCORR_TMAX = 10                 ; number of seconds for xcorr window both positive and negative
 
 PLOT_CLASSIC = False                 ; Plot all xcorr station pairs. Take note: this takes a LONG time for large networks!
 PLOT_DISTANCE = True                 ; Plot only time-series offset of all xcorr pairs with distance

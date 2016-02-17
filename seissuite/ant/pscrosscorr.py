@@ -105,6 +105,7 @@ BBOX_LARGE = CONFIG.BBOX_LARGE
 BBOX_SMALL = CONFIG.BBOX_SMALL
 FIRSTDAY = CONFIG.FIRSTDAY
 LASTDAY = CONFIG.LASTDAY
+FULL_COMB = CONFIG.FULL_COMB
 
 max_snr_pickle = os.path.join(DATALESS_DIR, 'snr.pickle')
 
@@ -254,8 +255,9 @@ class CrossCorrelation:
         self.pws = np.zeros(2 * nmax + 1)
         self.SNR_lin = [] #SNR with each time-step for linear stack
         self.SNR_pws = [] #SNR with each time-step for phase-weighted stack
-        
-        self.SNR_stack = []
+        self.SNR_stack = None
+        self.SNR_max = 0
+        self.comb_stack = None
         #  has cross-corr been symmetrized? whitened?
         self.symmetrized = False
         self.whitened = False
@@ -342,7 +344,16 @@ class CrossCorrelation:
         linear_comp = self.dataarray #- np.mean(self.dataarray))
         phase_comp = np.abs(self.phasearray)# - \
         #np.mean(np.abs(self.phasearray))) 
-        self.pws = linear_comp * (phase_comp ** power_v)
+        self.pws += linear_comp * (phase_comp ** power_v)
+        
+        #plt.figure()
+        #plt.plot(np.linspace(np.min(self.pws), np.max(self.pws), 
+        #                     len(self.pws)), self.pws, alpha=0.5, c='r')
+                             
+        #plt.plot(np.linspace(np.min(self.pws), np.max(self.pws), 
+        #                     len(self.pws)), self.pws, c='b', alpha=0.5)                             
+        #plt.show()
+        
         #self.pws = self.pws / np.max(self.pws)
         #self.pws = self.pws - np.mean(self.pws)
         
@@ -366,7 +377,42 @@ class CrossCorrelation:
 
         snr = np.max(linear_comp) / rms
         
+        if snr > self.SNR_max:
+            self.SNR_max = snr
         
+        
+        snr_weight = snr / self.SNR_max 
+        
+        if self.SNR_stack is None: 
+            self.SNR_stack = linear_comp
+            self.SNR_stack += self.SNR_stack * snr_weight
+            
+        else:
+            self.SNR_stack += self.SNR_stack * snr_weight 
+
+        
+        
+    def combined_stack(self, power_v=2):
+        
+        """
+        This function is applies the technique of Schimmel et al. (1997) 
+        and stacks cross-correlation waveforms based on their instaneous 
+        phases. The technique is known as phase-weighted stacking (PWS). 
+        This uses a combination of the phase and linear stack and the number
+        of stacks performed. power_v variable is described in Schimmel et al.
+        and is almost always set at 2 for successful stacking. 
+        """
+        
+        # this function only produces the most recent PWS, NOT stacking
+        # each iteration one atop the other! note also that nday is the
+        # number of iterations performed, NOT the number of days passed. 
+
+        try:
+            phase_comp = np.abs(self.phasearray)
+            self.comb_stack = self.SNR_stack * (phase_comp ** power_v)
+            
+        except Exception as error: 
+            e = error
 
 
        
@@ -411,6 +457,8 @@ class CrossCorrelation:
         self.phase_stack(tr1, tr2, xcorr=xcorr)
         self.phase_weighted_stack()
         
+        self.snr_weighted_stack()
+        self.combined_stack()
         #plt.figure()
         #plt.title('pws')
         #plt.plot(self.timearray, self.pws)
@@ -2207,7 +2255,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
     def plot(self, plot_type='distance', xlim=None, norm=True, whiten=False,
              sym=False, minSNR=None, minday=1, withnets=None, onlywithnets=None,
              figsize=(21.0, 12.0), outfile=None, dpi=300, showplot=True,
-             stack_style='linear', fill=False, absolute=False, 
+             stack_type='linear', fill=False, absolute=False, 
              freq_central=None):
         
         
@@ -2244,44 +2292,57 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             
                 plt.figure(iplot)
                 # symmetrizing cross-corr if necessary
-                xcplot = self[s1][s2].symmetrize(inplace=False) \
-                if sym else self[s1][s2]
-
+                #xcplot = self[s1][s2].symmetrize(inplace=False) \
+                #if sym else self[s1][s2]
+                xcplot = self[s1][s2]
                 # spectral whitening
                 if whiten:
                     xcplot = xcplot.whiten(inplace=False)
 
                 # subplot
                 #plt.subplot(nrow, ncol, iplot + 1)
-                filter_trace =  Trace(data=xcplot.dataarray)
                 
-                print "trace: ", filter_trace
-                
-                
-                print "time array: ", xcplot.timearray
+                if stack_type == 'PWS':
+                    filter_trace =  Trace(data=xcplot.pws)
+                    
+                elif stack_type == 'SNR':
+                    filter_trace =  Trace(data=xcplot.SNR_stack)
+                    
+                elif stack_type == 'combined':
+                    filter_trace =  Trace(data=xcplot.comb_stack)
+                    
+                    
+                elif stack_type == 'linear':
+                    filter_trace =  Trace(data=xcplot.dataarray)
+                else: 
+                    filter_trace =  Trace(data=xcplot.dataarray)
+
+
+
                 # number of seconds in time array
                 n_secs = 2.0 * xcplot.timearray[-1]
-                sample_rate = int(len(xcplot.dataarray) / n_secs)
+                sample_rate = int(len(filter_trace) / n_secs)
                 
                 filter_trace.stats.sampling_rate = sample_rate
-                
-                
-                freq_min = freq_central - freq_central / 10.0
-                freq_max = freq_central + freq_central / 10.0
-                
-                print "freq_min: ", freq_min
-                print "freq_max: ", freq_max
-                
-                filter_trace = filter_trace.filter(type="bandpass",
-                                                   freqmin=freq_min,
-                                                   freqmax=freq_max,
-                                                   corners=2,
-                                                   zerophase=True) 
                          
 
-                xcplot.dataarray = filter_trace.data  
+                xcplot.dataarray = filter_trace.data 
+                
+                #print "xcplot.dataarray: ", xcplot.dataarray
+                nrm = np.max(np.abs(xcplot.dataarray)) if norm else 1.0
+
+                
                 # normalizing factor
-                nrm = max(abs(xcplot.dataarray)) if norm else 1.0
+                #pws_nrm = np.max(np.abs(xcplot.pws)) 
+
+                #plt.figure(1)
+                #plt.plot(xcplot.timearray, xcplot.pws / pws_nrm, c='r', alpha=0.5)
+                #plt.plot(xcplot.timearray, lin / lin_nrm, c='b')
+                #plt.show()
+                #plt.clf()
+
+                
+
 
                 # plotting                
                 if xcplot.timearray.shape !=  xcplot.dataarray.shape:
@@ -2296,20 +2357,23 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                 for loc in xcplot.locs1]))
                 locs2 = ','.join(sorted(["'{0}'".format(loc) \
                 for loc in xcplot.locs2]))
-                s = '{s1}-{s2}: {nday} stacks from {t1} to {t2}.png'
+                    
                 #remove microseconds in time string
+                s = '{s1}-{s2}: {nday} stacks from {t1} to {t2} {sta} stack.png'
                 title = s.format(s1=s1, s2=s2, 
                                  nday=xcplot.nday, 
                                  t1=str(xcplot.startday)[:-11],
-                                 t2=str(xcplot.endday)[:-11])
+                                 t2=str(xcplot.endday)[:-11], sta=stack_type)
+                out = os.path.abspath(os.path.join(outfile, os.pardir))
+                outfile_individual = os.path.join(out, title)
+                                 
                 plt.title(title)
 
                 # x-axis label
                 #if iplot + 1 == npair:
                 plt.xlabel('Time (s)')
                 
-                out = os.path.abspath(os.path.join(outfile, os.pardir))
-                outfile_individual = os.path.join(out, title)
+
                 print outfile_individual
                 if os.path.exists(outfile_individual):
                 # backup
@@ -2372,7 +2436,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             for ipair, (s1, s2) in enumerate(pairs_list):
                 # symmetrizing cross-corr if necessary
                 xcplot = self[s1][s2].symmetrize(inplace=False) if sym else self[s1][s2]
-
+                #xc = self[s1][s2]
                 # spectral whitening
                 if whiten:
                     xcplot = xcplot.whiten(inplace=False)
@@ -2387,10 +2451,20 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
     
                 filter_trace =  Trace(data=xcplot.dataarray)
                 
-                print "trace: ", filter_trace
-                
-                
-                print "time array: ", xcplot.timearray
+                if stack_type == 'PWS':
+                    filter_trace =  Trace(data=xcplot.pws)
+                    
+                if stack_type == 'SNR':
+                    filter_trace =  Trace(data=xcplot.SNR_stack)
+                    
+                if stack_type == 'combined':
+                    filter_trace =  Trace(data=xcplot.comb_stack)
+                    
+                    
+                elif stack_type == 'linear':
+                    filter_trace =  Trace(data=xcplot.dataarray)
+                else: 
+                    filter_trace =  Trace(data=xcplot.dataarray)
                 # number of seconds in time array
                 #n_secs = 2.0 * xcplot.timearray[-1]
                 #sample_rate = int(len(xcplot.dataarray) / n_secs)
@@ -2415,7 +2489,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                 
                 
                 # plotting
-                xarray = xcplot.timearray[:-1]
+                xarray = xcplot.timearray
                 #get absolute value of data array for more visual plot
                 print "y shape: ", xcplot.dataarray.shape
                 print "x shape: ", xcplot.timearray.shape
@@ -2484,7 +2558,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                              t1=xcplot.startday.strftime('%d/%m/%y'),
                              t2=xcplot.endday.strftime('%d/%m/%y'))
 
-                
+                print s 
 
 
             plt.grid()
@@ -2499,7 +2573,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             plt.ylabel('Distance (km)')
             plt.ylim((0, plt.ylim()[1]))
 
-
+        print "outfile: ", outfile 
         # saving figure
         if plot_type == 'distance':
             if outfile:

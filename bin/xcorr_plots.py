@@ -36,8 +36,8 @@ folder_list = sorted(glob.glob(os.path.join(CROSSCORR_DIR, '*')))
 
 
 
-plot_distance = True
-plot_classic = False
+plot_distance = False #True
+plot_classic = True
 
 print MSEED_DIR
 print CROSSCORR_TMAX
@@ -78,7 +78,7 @@ else:
     PICKLE_PATH = pickle_list[int(res)-1]
     OUTFILESPATH = PICKLE_PATH[:-7]
     out_basename = os.path.basename(OUTFILESPATH)        
-
+    print out_basename
     print "\nOpening {} file to process ... ".format(out_basename)
     # re-initialising .part.pickle collection of cross-correlations
     xc = pscrosscorr.load_pickled_xcorr(PICKLE_PATH)
@@ -90,16 +90,48 @@ else:
     if plot_distance:
         #for central_freq in central_frequencies:
             #plot distance plot of cross-correlations
-        xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-                    outfile="{}~.png", showplot=False, 
-                    norm=True, fill=False, absolute=False)
+            #plot distance plot of cross-correlations
+            
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=out_basename + '_linear'\
+                    + '.png', showplot=False, stack_type='linear', fill=True)
+                    
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=out_basename + '_linear'\
+                    + 'abs' + '.png', showplot=False, stack_type='linear', absolute=True)   
+                    
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=out_basename + '_linear'\
+                    + 'fill_abs' + '.png', showplot=False, stack_type='linear', fill=True,
+                    absolute=True)                        
+            #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+            #        outfile=out_basename + '_PWS'\
+            #        + '.png', showplot=False, stack_type='PWS')
+                    
+            #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+            #        outfile=out_basename + '_SNR'\
+            #        + '.png', showplot=False, stack_type='SNR')
+                    
+                    
+            #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+            #        outfile=out_basename + '_combined'\
+            #        + '.png', showplot=False, stack_type='combined')   
 
 
-
-    #if plot_classic:
+    if plot_classic:
 #        for central_freq in central_frequencies:
     #    central_freq = 1.0
             #plot individual cross-correlations
-    #    xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-    #                outfile="{}~.png".format(central_freq), showplot=False,  
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                    outfile=".png", showplot=False, stack_type='PWS')
+                    
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                    outfile=".png", showplot=False, stack_type='linear'), 
+
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                    outfile=".png", showplot=False, stack_type='combined'),  
+                    
+
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                    outfile=".png", showplot=False, stack_type='SNR'),                     
     #            freq_central=central_freq)

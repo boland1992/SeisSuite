@@ -119,7 +119,7 @@ class Site:
         self.description = "WAIRAKEI"
         self.town = "WAIRAKEI"
         self.county = "WAIRAKEI"
-        self.region = "WAIRAKEI"
+        self.region = " WAIRAKEI"
         self.country = "NZ"
 
 site = Site()
