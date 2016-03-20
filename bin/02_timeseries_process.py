@@ -72,14 +72,11 @@ import obspy.signal.cross_correlation
 import time
 import glob
 import sqlite3 as lite
-<<<<<<< HEAD
 import shutil
-=======
 import numpy as np
 
 # set epoch timestamp 
 epoch = dt.datetime(1970, 1, 1)
->>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
 
 total_verbose = False
 # DECLUSTER STATIONS!
@@ -280,7 +277,6 @@ for config_file in config_list:
         
         if not os.path.exists(OUT_SNR):\
         os.makedirs(OUT_SNR)
-<<<<<<< HEAD
         
         # copy configuration file to output so parameters are known for each run                         
         OUTCONFIG = os.path.join(CROSSCORR_DIR, time_string, 
@@ -290,9 +286,7 @@ for config_file in config_list:
         shutil.copy(config_file, OUTCONFIG)    
         
         
-=======
             
->>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
         METADATA_PATH = '{}metadata.pickle'.format(OUTFILESPATH.\
                   replace(os.path.basename(OUTFILESPATH), ""))
     
@@ -369,10 +363,8 @@ for config_file in config_list:
                            startday=FIRSTDAY,
                            endday=LASTDAY,
                            verbose=False)
-<<<<<<< HEAD
 
   
-=======
     
     DECLUSTER = False
     
@@ -384,7 +376,6 @@ for config_file in config_list:
         stations = [station for station in stations if 
                     station.coord in declustered_coords]      
 
->>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
     # Loop on time interval
      #number of time steps
     N = int(((LASTDAY - FIRSTDAY).days + 1)*60*24 / XCORR_INTERVAL)
@@ -755,20 +746,17 @@ now."
         maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
         maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
         
-        if PLOT_DISTANCE:
-            #plot distance plot of cross-correlations
-            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
-                    + '.png', showplot=False)
+    
+#        if PLOT_DISTANCE:
+                #plot distance plot of cross-correlations
+#            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+#                    outfile=OUTFOLDERS, showplot=False)
         
-        if PLOT_CLASSIC:
+#        if PLOT_CLASSIC:
             #plot individual cross-correlations
-            xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
-                    + '.png', showplot=False)
-                    
-        xc.plot_SNR(plot_type='all', outfile=OUT_SNR, 
-                    config=os.path.basename(config_file))
+#            xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+#                    outfile=OUTFOLDERS, showplot=False)
+
         
         #xc.plot_SNR(plot_type='individual', outfile=OUT_SNR)
 
@@ -785,9 +773,5 @@ now."
 
 total_delta = (dt.datetime.now() - total_time0).total_seconds()
 
-<<<<<<< HEAD
-    remove_config(config_file)
-=======
 print "Calculated every xcorr in time-series in in \
 {:.1f} seconds".format(total_delta)
->>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69

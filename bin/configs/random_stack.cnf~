@@ -75,9 +75,7 @@ AUTOMATE = True
 
 
 #FOLDER = DEFAULT
-#FOLDER = /storage/ANT/PROGRAMS/ANT_OUTPUT
-FOLDER = /storage/ANT/CONFIGURATIONS/APOLLO
-
+FOLDER = /storage/MASTERS/CONFIGURATIONS/S_NETWORK
 
 #set the folder where the computer programs in seismology have been installed if required. 
 # example CPIS dir:
@@ -92,9 +90,10 @@ COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR = /home/seis_suite/CPIS/PROGRAMS.330/bin
 # must be set either True or False to work. Any other options with give an error
 # Take note that setting RESP_TOL, RESP_EFFECT and RESP_RANGE = [1,40] to large values, it will result in very few stations being chosen for processing.
 
+
 TDD = True	          ; trim, demean and detrend the trace (True recommended)
 RESP_REMOVE = True        ; remove instrument response? (True recommended)
-#EVENT_REMOVE = False	  ; automate event removal from catalogue (dist to event, window and avg V) uses IRIS and others and #only removes regional events inside your networks range! (automated)
+EVENT_REMOVE = False	  ; automate event removal from catalogue (dist to event, window and avg V) uses IRIS and others and only removes regional events inside your networks range! (automated)
 HIGHAMP_REMOVE = False    ; automate removal of high amplitude noise from entire database (recommended to perform this in collaboration with EVENT_REMOVE)
 
 # in the future do I want to set effectiveness limit for RESP_CHECK
@@ -110,9 +109,9 @@ DOWNSAMPLE = True         ; if set to False, data is downsampled to max of min s
 COMPLETENESS = True       ; do initial completeness check, do not process the series below tolerance
 TIME_NOMALISATION = True  ; perform time normalisation OR one-bit normalisation, OR input own!
 SPEC_WHITENING = True     ; perform spectral whitening of data
-
-
-
+MAX_DISTANCE = 2000.0
+DECLUSTER = False
+DECLUSTER_MIN = 1.0
 #=====
 [maps]
 #=====
@@ -173,10 +172,10 @@ BBOX_SMALL = [135, 155, -40, -25]
 XCORR_INTERVAL = 45.0                ; number of minutes in xcorr time series
 USE_DATALESSPAZ = True               ; use dataless files to remove instrument response?
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
-FIRSTDAY = 01/07/1969                ; first day of cross-correlation (d/m/y)
-LASTDAY = 01/01/1979                 ; last day of cross-correlation (d/m/y)
+FIRSTDAY = 01/01/2014                ; first day of cross-correlation (d/m/y)
+LASTDAY = 31/01/2014                 ; last day of cross-correlation (d/m/y)
 MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%
-CROSSCORR_STATIONS_SUBSET = null     ; subset of stations (null if all, else JSON list)
+CROSSCORR_STATIONS_SUBSET = ["AUAYR", "AUBSH", "AUDHS", "AUKAR", "AUKAT", "AUMOU", "AUNHS", "AUNRC", "AUTOO", "AUWSH"]     ; subset of stations (null if all, else JSON list)
 CROSSCORR_SKIPLOCS = ["50"]          ; locations to skip (JSON list)
 PERIODMIN = 2.0                      ; bandpass filtering minimum period
 PERIODMAX = 25.0                     ; bandpass filtering maximum period 
@@ -187,10 +186,10 @@ ONEBIT_NORM = False                  ; one-bit normalization?
 PERIODMIN_EARTHQUAKE = 25.0          ; estimated earthquake period minimum for filtering
 PERIODMAX_EARTHQUAKE = 75.0          ; estimated earthquake period maximum for filtering 
 WINDOW_FREQ = 0.0002                 ; freq window (Hz) to smooth ampl spectrum
-CROSSCORR_TMAX = 150                 ; number of seconds for xcorr window both positive and negative
+CROSSCORR_TMAX = 300                 ; number of seconds for xcorr window both positive and negative
 
-PLOT_CLASSIC = False                 ; Plot all xcorr station pairs. Take note: this takes a LONG time for large networks!
-PLOT_DISTANCE = True                 ; Plot only time-series offset of all xcorr pairs with distance
+PLOT_CLASSIC = True                ; Plot all xcorr station pairs. Take note: this takes a LONG time for large networks!
+PLOT_DISTANCE = False                 ; Plot only time-series offset of all xcorr pairs with distance
 
 #=====
 [FTAN]
@@ -201,7 +200,7 @@ PLOT_DISTANCE = True                 ; Plot only time-series offset of all xcorr
 # - plot spectral SNR, in plot_spectral_SNR()
 # - estimate min spectral SNR, in FTANs()
 
-PERIOD_BANDS = [[4, 7], [7, 15], [10, 22], [15, 30], [20, 35]]
+PERIOD_BANDS = [[2, 5], [5, 12], [12, 17], [17, 25],]
 
 # (these bands focus on periods ~5, 10, 15, 20, 25 seconds)
 

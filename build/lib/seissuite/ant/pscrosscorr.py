@@ -543,39 +543,43 @@ class CrossCorrelation:
         # linear stack at current time step of the xcorrs for station pair 
         dataarray = self.dataarray
         timearray = self.timearray
-        try:
-            # signal and noise windows
-            tsignal, tnoise = self.signal_noise_windows(
-            vmin, vmax, signal2noise_trail, noise_window_size)
-            
-            signal_window_plus = (timearray >= tsignal[0]) & \
-                                 (timearray <= tsignal[1])
-                                 
-            signal_window_minus = (timearray <= -tsignal[0]) & \
-                                  (timearray >= -tsignal[1])
-            
-            peak1 = np.abs(dataarray[signal_window_plus]).max()
-            peak2 = np.abs(dataarray[signal_window_minus]).max()
-            peak = max([peak1, peak2])                      
+        
 
-            noise_window1 = (timearray > tsignal[1]) & \
-                            (timearray <= self.timearray[-1])
+        try:
+            self.SNR_lin.append([np.max(dataarray) / np.std(dataarray), date]) 
+
+            # signal and noise windows
+            #tsignal, tnoise = self.signal_noise_windows(
+            #vmin, vmax, signal2noise_trail, noise_window_size)
             
-            noise_window2 = (timearray > -tsignal[0]) & \
-                           (timearray < tsignal[0])
+            #signal_window_plus = (timearray >= tsignal[0]) & \
+            #                     (timearray <= tsignal[1])
+                                 
+            #signal_window_minus = (timearray <= -tsignal[0]) & \
+            #                      (timearray >= -tsignal[1])
             
-            noise_window3 = (timearray >= self.timearray[0]) & \
-                            (timearray < -tsignal[1])
+            #peak1 = np.abs(dataarray[signal_window_plus]).max()
+            #peak2 = np.abs(dataarray[signal_window_minus]).max()
+            #peak = max([peak1, peak2])                      
+
+            #noise_window1 = (timearray > tsignal[1]) & \
+            #                (timearray <= self.timearray[-1])
+            
+            #noise_window2 = (timearray > -tsignal[0]) & \
+            #               (timearray < tsignal[0])
+            
+            #noise_window3 = (timearray >= self.timearray[0]) & \
+            #                (timearray < -tsignal[1])
         
 
             
-            noise1 = dataarray[noise_window1]
-            noise2 = dataarray[noise_window2]
-            noise3 = dataarray[noise_window3]
+            #noise1 = dataarray[noise_window1]
+            #noise2 = dataarray[noise_window2]
+            #noise3 = dataarray[noise_window3]
             
-            noise_list = list(it.chain(*[noise1, noise2, noise3]))
+            #noise_list = list(it.chain(*[noise1, noise2, noise3]))
             
-            noise = np.nanstd(noise_list)
+            #noise = np.nanstd(noise_list)
             #SNR with each time-step for linear stack
             self.SNR_lin.append([peak / noise, date]) 
             
@@ -592,6 +596,7 @@ class CrossCorrelation:
         pws = self.pws
         
         try:
+
             # signal and noise windows
             tsignal, tnoise = self.signal_noise_windows(
             vmin, vmax, signal2noise_trail, noise_window_size)
@@ -604,6 +609,7 @@ class CrossCorrelation:
             
             peak1 = np.abs(pws[signal_window_plus]).max()
             peak2 = np.abs(pws[signal_window_minus]).max()
+            
             peak = max([peak1, peak2])                      
 
             noise_window1 = (timearray > tsignal[1]) & \
@@ -636,7 +642,8 @@ class CrossCorrelation:
             #plt.show()
             noise = np.nanstd(noise_list)
             if peak or noise: 
-                SNR_rat = peak/noise
+                #SNR_rat = peak/noise
+                SNR_rat = np.max(pws) / np.std(pws)
             #SNR with each time-step for phase-weighted stack 
             if SNR_rat:
                 self.SNR_pws.append([SNR_rat, date])
@@ -2029,9 +2036,10 @@ class CrossCorrelationCollection(AttribDict):
 
 
     def plot_SNR(self, plot_type='all', figsize=(21.0, 12.0), 
-                 outfile=None, dpi=300, showplot=True, config='config_1', 
+                 outfile=None, dpi=300, showplot=True, 
                  verbose=False):
         
+        print "Plotting signal-to-noise ratio figures ... " 
         # preparing pairs
         pairs = self.pairs()
         
@@ -2052,19 +2060,17 @@ class CrossCorrelationCollection(AttribDict):
                     if len(info_array) > 0:
                         SNRarray, timearray = info_array[:,0], info_array[:,1]                
                         plt.plot(timearray, SNRarray, c='k')
-                        s = '{s1}-{s2}: SNR vs. time for {nstacks}\n \
-stacks from {t1} to {t2} {}'
+                        s = '{s1}-{s2}: SNR vs. time for {nstacks} stacks from {t1} to {t2}.'
                         title = s.format(s1=s1, s2=s2, 
                                          nstacks=len(SNRarray), 
                                          t1=timearray[0],
-                                         t2=timearray[-1],
-                                         cnf=config)
+                                         t2=timearray[-1])
             
                         plt.title(title)
                         plt.ylabel('SNR (Max. Signal Amp. / Noise Std')
                         plt.xlabel('Time (UTC)')
                 
-                        file_name = '{}-{}-{}-SNR.png'.format(s1, s2, config)
+                        file_name = '{}-{}-SNR.png'.format(s1, s2)
                         outfile_individual = os.path.join(outfile, file_name)
                 
                         if os.path.exists(outfile_individual):
@@ -2075,6 +2081,7 @@ stacks from {t1} to {t2} {}'
                         fig.set_size_inches(figsize)
 
                         print '{s1}-{s2}'.format(s1=s1, s2=s2),
+            
                         fig.savefig(outfile_individual, dpi=dpi)
                         fig.clf()
 
@@ -2105,14 +2112,10 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                             SNRarray, timearray = info_array[:,0], info_array[:,1]                
                             plt.plot(timearray, SNRarray, alpha=0.3, c='k')
                     
-<<<<<<< HEAD
-                    except:
-                        continue                        
-=======
+                         
                     #except Exception as err:
                     #    print err
                         
->>>>>>> c228dd26c0a3178e70f0699197da00dbc6511f69
             file_name = 'SNR_total.png'
             outfile_individual = os.path.join(outfile, file_name)
             if os.path.exists(outfile_individual):
@@ -2163,7 +2166,8 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                 # spectral whitening
                 if whiten:
                     xcplot = xcplot.whiten(inplace=False)
-
+                distance = self[s1][s2].dist()
+                dist_str = format(distance, '.2f')
                 # subplot
                 #plt.subplot(nrow, ncol, iplot + 1)
 
@@ -2180,21 +2184,22 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                 for loc in xcplot.locs1]))
                 locs2 = ','.join(sorted(["'{0}'".format(loc) \
                 for loc in xcplot.locs2]))
-                s = '{s1}-{s2}: {nday} stacks from {t1} to {t2}.png'
+                s = '{s1}-{s2}: {nday} stacks from {t1} to {t2} at {dist} km apart.'
                 #remove microseconds in time string
                 title = s.format(s1=s1, s2=s2, 
                                  nday=xcplot.nday, 
                                  t1=str(xcplot.startday)[:-11],
-                                 t2=str(xcplot.endday)[:-11])
+                                 t2=str(xcplot.endday)[:-11],
+                                 dist=dist_str)
                 plt.title(title)
 
                 # x-axis label
                 #if iplot + 1 == npair:
                 plt.xlabel('Time (s)')
-                
-                out = os.path.abspath(os.path.join(outfile, os.pardir))
-                outfile_individual = os.path.join(out, title)
-                
+                #print outfile
+                #out = os.path.abspath(os.path.join(outfile, os.pardir))
+                outfile_individual = os.path.join(outfile, title + '.png')
+                #print outfile_individual
                 if os.path.exists(outfile_individual):
                 # backup
                     shutil.copyfile(outfile_individual, \
@@ -2348,17 +2353,19 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             plt.xlabel('Time (s)')
             plt.ylabel('Distance (km)')
             plt.ylim((0, plt.ylim()[1]))
-
+        
+        title = "moveout_distance_plot.png"
+        outfile_distance = os.path.join(outfile, title)
 
         # saving figure
         if plot_type == 'distance':
             if outfile:
-                if os.path.exists(outfile):
+                if os.path.exists(outfile_distance):
                 # backup
-                    shutil.copyfile(outfile, outfile + '~')
+                    shutil.copyfile(outfile_distance, outfile + '~')
                 fig = plt.gcf()
                 fig.set_size_inches(figsize)
-                fig.savefig(outfile, dpi=dpi)
+                fig.savefig(outfile_distance, dpi=dpi)
         else:
             pass
 

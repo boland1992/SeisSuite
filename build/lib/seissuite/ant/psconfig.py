@@ -19,7 +19,7 @@ except:
     
 
 cnf_path = os.path.join(os.getcwd(), 'configs')
-
+print cnf_path
 def cnf_list(cnf_path, ext='cnf'):
     return glob.glob(os.path.join(cnf_path, u'*.{}'.format(ext)))
 
