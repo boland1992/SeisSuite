@@ -67,7 +67,7 @@ from seissuite.ant import (pscrosscorr, psutils)
 
 process_type = "serial"
 
-multiprocess = True
+multiprocess = False
 #import multiprocessing as mp
 if multiprocess:
     

@@ -81,6 +81,9 @@ import matplotlib.pyplot as plt
 epoch = dt.datetime(1970, 1, 1)
 
 total_verbose = True
+psd = False
+
+
 # DECLUSTER STATIONS!
 # remove stations that are too close to one another (set by degree radius!)
 #from seissuite.spacing.search_station import Coordinates
@@ -149,29 +152,45 @@ for config_file in config_list:
     PLOT_DISTANCE = CONFIG.PLOT_DISTANCE
     MAX_DISTANCE = CONFIG.MAX_DISTANCE
     RESP_REMOVE = CONFIG.RESP_REMOVE
+    
+    FULL_COMB = CONFIG.FULL_COMB
+
     # initialise the required databases if they haven't already been.
     #if no two SQL databases exist, then create them! 
     TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
+    RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
+
    # RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
     
    # if not os.path.exists(RESP_DB):
         # initialise response database for use with automated data selection!
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> iese
   #      lite.connect(RESP_DB)
   #      from seissuite.database import response_database
     print TIMELINE_DB
-=======
+    if not os.path.exists(RESP_DB):
+
         lite.connect(RESP_DB)
         print "\nCreating response database. Please be patient ... "
         from seissuite.database import response_database
     
+<<<<<<< HEAD
 >>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
+=======
+>>>>>>> iese
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!
         lite.connect(TIMELINE_DB)
         print "\nCreating timeline database. Please be patient ... "
         from seissuite.database import create_database                                        
-                    
+    
+    
+    if psd:
+        import powerdensity
+        
 
     print "\nProcessing parameters:"
     print "- dir of miniseed data: " + MSEED_DIR
@@ -294,8 +313,12 @@ for config_file in config_list:
         print 'Copying configuration file to output directory ... ' 
         shutil.copy(config_file, OUTCONFIG)    
         
+<<<<<<< HEAD
         
             
+=======
+
+>>>>>>> iese
         METADATA_PATH = '{}metadata.pickle'.format(OUTFILESPATH.\
                   replace(os.path.basename(OUTFILESPATH), ""))
     
@@ -373,6 +396,7 @@ for config_file in config_list:
                            endday=LASTDAY,
                            verbose=False)
 <<<<<<< HEAD
+<<<<<<< HEAD
                            
     print stations
             
@@ -380,6 +404,13 @@ for config_file in config_list:
 
   
 >>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
+=======
+
+    stat_coords = np.asarray([station.coord for station in stations])
+
+
+
+>>>>>>> iese
     
     DECLUSTER = False
     
@@ -391,6 +422,10 @@ for config_file in config_list:
     #    stations = [station for station in stations if 
     #                station.coord in declustered_coords]      
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> iese
     # Loop on time interval
      #number of time steps
     N = int(((LASTDAY - FIRSTDAY).days + 1)*60*24 / XCORR_INTERVAL)
@@ -729,7 +764,34 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
                date=date,
                verbose=not MULTIPROCESSING['cross-corr'])
         
-    
+        break
+        pairs = list(it.combinations(sorted(tracedict.items()), 2))
+
+        # calculate max snr for snr weighted stack! 
+#        for pair in pairs: 
+#            (s1, tr1), (s2, tr2) = pair
+#            s1, s2 = str(s1), str(s2)
+#            snr_list = xc[s1][s2].SNR_list
+#            max_snr = np.max(snr_list)
+
+#            snr_stack = xc[s1][s2].SNR_stack
+            
+#            snr_wstack = np.zeros_like(snr_stack[0])
+             
+#            for xcorr, snr in zip(snr_stack, snr_list): 
+#                snr_wstack += xcorr * snr / max_snr
+                
+            # assign final snr weighted stack xcorr green's function to SNR_stack
+#            xc[s1][s2].SNR_stack = snr_wstack
+#            if s1 in xc.keys():
+#                if s2 in xc[s1].keys():
+#                    pws = xc[s1][s2].pws
+#                    plt.figure()
+#                    plt.plot(pws)
+#                    plt.show()
+#                    plt.clf()
+
+            
     
     #==============================================================================    
         delta = (dt.datetime.now() - t0).total_seconds()
@@ -788,6 +850,7 @@ now."
         maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
         maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
         
+<<<<<<< HEAD
     
 #        if PLOT_DISTANCE:
                 #plot distance plot of cross-correlations
@@ -795,6 +858,29 @@ now."
 #                    outfile=OUTFOLDERS, showplot=False)
         
 #        if PLOT_CLASSIC:
+=======
+        if PLOT_DISTANCE:
+            #plot distance plot of cross-correlations
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+                    + '.png', showplot=False, stack_type='linear')
+                    
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+                    + '.png', showplot=False, stack_type='PWS')
+                    
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+                    + '.png', showplot=False, stack_type='SNR')
+                    
+                    
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+                    + '.png', showplot=False, stack_type='combined')                    
+                    
+                    
+        if PLOT_CLASSIC:
+>>>>>>> iese
             #plot individual cross-correlations
 #            xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
 #                    outfile=OUTFOLDERS, showplot=False)
@@ -815,5 +901,9 @@ now."
 
 total_delta = (dt.datetime.now() - total_time0).total_seconds()
 
+<<<<<<< HEAD
+=======
+remove_config(config_file)
+>>>>>>> iese
 print "Calculated every xcorr in time-series in in \
 {:.1f} seconds".format(total_delta)

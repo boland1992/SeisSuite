@@ -26,7 +26,14 @@ from obspy.signal.trigger import carlSTATrig, recSTALTA
 from obspy.core import Stream
 import matplotlib.pyplot as plt
 
+from pyseis.modules.rdreftekc import rdreftek, reftek2stream
 
+def read_ref(path):
+    ref_head, ref_data = rdreftek(path)
+    st = reftek2stream(ref_head, ref_data)
+    return st
+    
+    
 # import CONFIG class initalised in ./configs/tmp_config.pickle
 config_pickle = 'configs/tmp_config.pickle'
 f = open(name=config_pickle, mode='rb')
@@ -464,13 +471,44 @@ class Preprocess:
         #station_path_old = station.getpath(date, MSEED_DIR)
         station_path_SQL = station.getpath(t0, t0+dt.timedelta\
                                                       (minutes=xcorr_interval))
+        
+                                        
         #print "station old path: ", station_path_old
         #print "station SQl path: ", station_path_SQL
-        
+        #print 
         #print "SQL path: ", station_path_SQL
+        try:
+            st = read(pathname_or_url=station_path_SQL,
+                      starttime=path_start, endtime=path_end)
+        except:
+            st = read_ref(station_path_SQL)
+            st = st.trim(starttime=path_start, endtime=path_end)
+
+
+        # check traces
+        for tr in st: 
+            path_info = station_path_SQL.split('/')
+            alt_station = path_info[-3]
+    
+            stats = tr.stats
+            network = stats.network
+            station = stats.station
+            channel = stats.channel
         
-        st = read(pathname_or_url=station_path_SQL,
-                  starttime=path_start, endtime=path_end)
+            if station == '' and len(alt_station) == 4:
+                station = path_info[-3]
+        
+            if network == '':
+                network = 'XX'
+        
+            if len(channel) == 1:
+                channel = 'DH' + channel
+                
+            tr.stats.channel = channel
+            tr.stats.station = station
+            tr.stats.network = network
+            
+
 
         # MAKE THIS AN OPTION IN THE CONFIGURATION FILES!        
         st = st.select(component='Z')
@@ -507,9 +545,12 @@ class Preprocess:
             st.merge(fill_value='interpolate')
 #           st.merge()        
         
-        # if such and such about splitting occurs, then inact the split() fn
         
+        # if such and such about splitting occurs, then inact the split() fn
+        #st.plot()
+                
         #st.split()
         trace = st[0]
+        
 
         return trace

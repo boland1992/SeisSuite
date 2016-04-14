@@ -12,8 +12,9 @@ import sqlite3 as lite
 # ====================================================
 
 
-FOLDER = '/home/iese/Documents/Ben/UNAM'
-DATABASE_DIR = '/home/iese/Documents/Ben/UNAM/DATABASES'
+FOLDER = '/home/iese/Documents/Ben/WAIRAKEI'
+DATABASE_DIR = os.path.join(FOLDER, 'DATABASES')
+
 
 #try:
 #from seissuite.ant.psconfig import FOLDER, DATABASE_DIR

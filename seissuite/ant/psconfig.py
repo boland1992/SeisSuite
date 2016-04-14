@@ -169,6 +169,8 @@ class Config:
         self.SPEC_WHITENING = self.config.getboolean('processing', 
                                                      'SPEC_WHITENING')   
         
+        self.FULL_COMB = self.config.getboolean('processing', 
+                                                     'FULL_COMB')   
         # ---------------
         # maps parameters
         # ---------------

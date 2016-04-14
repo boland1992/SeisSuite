@@ -19,12 +19,8 @@ from obspy import read_inventory
 from scipy import signal
 from obspy import read
 
-from scipy.interpolate import interp1d
 
-from pysismo import pscrosscorr
-from pysismo.psconfig import (CROSSCORR_TMAX)
-    
-
+print "This spectrum script is running ... " 
 #PICKLE_PATH = '/home/boland/Desktop/XCORR-STACK_01.08.1999-10.06.2000\
 #_datalesspaz.part.pickle'
 
@@ -61,9 +57,9 @@ def spectrum(tr):
     #y.reverse()
 #    print f_interp(x)
     #f,np.sqrt(Pxx_spec),'o',
-#    plt.figure()
-#    plt.plot(x,f_interp(x),'-' )
-#    plt.show()
+    #plt.figure()
+    #plt.plot(f, Pxx_spec, '-' )
+    #plt.show()
     
 
 
@@ -111,10 +107,14 @@ def paths(folder_path, extension):
     return abs_paths
 
 
-folder_path = '/storage/ANT/INPUT/DATA/AU-2014'
-extension = 'mseed'
+folder_path = '/home/iese/Documents/Ben/UNAM/INPUT/DATA'
+extension = 'msd'
 
 paths_list = paths(folder_path, extension)
+
+
+#print "paths list: \n"
+#print paths_list
 
 t0_total = datetime.datetime.now()
 figs_counter = 0
@@ -122,10 +122,10 @@ figs_counter = 0
 
 fig1 = plt.figure(figsize=(15,10))
 ax1 = fig1.add_subplot(111)    
-ax1.set_title("Seismic Waveform Power Density Spectrum\n{}".format('S | 2014'))
+ax1.set_title("Seismic Waveform Power Density Spectrum\n{}".format('UNAM | 2015'))
 ax1.set_xlabel('Frequency (Hz)')
 ax1.set_ylabel('Power Density Spectrum (V RMS)')
-ax1.set_xlim([0,4])
+ax1.set_xlim([0,40])
 ax1.grid(True, axis='both', color='gray')
 ax1.set_autoscaley_on(True)
 ax1.set_yscale('log')
@@ -143,34 +143,41 @@ for s in paths_list:
         st = read(s)
         t1 = datetime.datetime.now()
         
-        if net == 'S':
-
-            
-            print "time taken to import one month mseed was: ", t1-t0
-            # set up loop for all traces within each imported stream.
-            t0 = datetime.datetime.now()
-            pool = mp.Pool()
-            spectra = pool.map(spectrum, st[:])
-            pool.close()
-            pool.join()    
-            t1 = datetime.datetime.now()
-            print "time taken to calculate monthly spectra: ", t1-t0
+        # select only Z component
+        tr = st.select(component='Z')[0]
         
+        fs = tr.stats.sampling_rate
+        f, Pxx_spec = signal.welch(tr.data, fs, 'flattop', 
+                                   nperseg=1024, 
+                                   scaling='spectrum')
+                                   
+        #column = np.column_stack((f[:255], np.abs(np.sqrt(Pxx_spec)[:255])))   
 
-            # Caclulate weighted average spectrum for this station for this month
-            spectra = np.asarray(spectra)
-            search = np.where(spectra==0.)
-            spectra = np.delete(spectra, search)    
-            spectra = np.average(spectra, axis=0)
+                    #plt.semilogy(f, np.sqrt(Pxx_spec))        
+        
+        print "time taken to import one month mseed was: ", t1-t0
+        # set up loop for all traces within each imported stream.
+        #t0 = datetime.datetime.now()
+        #pool = mp.Pool()
+        #spectra = pool.map(spectrum, st[:])
+        #pool.close()
+        #pool.join()    
+        t1 = datetime.datetime.now()
+        print "time taken to calculate monthly spectra: ", t1-t0
+        
+        # Caclulate weighted average spectrum for this station for this month
+        #spectra = np.asarray(spectra)
+        #search = np.where(spectra==0.)
+        #spectra = np.delete(spectra, search)    
+        #spectra = np.average(spectra, axis=0)
     
+        plt.plot(f, Pxx_spec, c='k', alpha=0.1)
+        
+        
+    except Exception as error:
+        print error
     
-            plt.plot(spectra[:,0], spectra[:,1], c='k', alpha=0.1)
-    
-
-    except:
-        a=5
-    
-fig1.savefig('network_spectrum/PDS_S_2014.svg', format='svg', dpi=300)  
+fig1.savefig('/home/iese/Documents/GERD_PDS.svg', format='svg', dpi=300)  
 plt.clf()
 
        
