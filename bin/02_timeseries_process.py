@@ -72,6 +72,7 @@ import obspy.signal.cross_correlation
 import time
 import glob
 import sqlite3 as lite
+import shutil
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -155,12 +156,20 @@ for config_file in config_list:
     
    # if not os.path.exists(RESP_DB):
         # initialise response database for use with automated data selection!
+<<<<<<< HEAD
   #      lite.connect(RESP_DB)
   #      from seissuite.database import response_database
     print TIMELINE_DB
+=======
+        lite.connect(RESP_DB)
+        print "\nCreating response database. Please be patient ... "
+        from seissuite.database import response_database
+    
+>>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!
         lite.connect(TIMELINE_DB)
+        print "\nCreating timeline database. Please be patient ... "
         from seissuite.database import create_database                                        
                     
 
@@ -267,7 +276,8 @@ for config_file in config_list:
         OUTFOLDERS = os.path.join(CROSSCORR_DIR, 
                                   time_string,  
                                   'XCORR_PLOTS')
-                                  
+
+        
         OUT_SNR = os.path.join(CROSSCORR_DIR, time_string,  'SNR_PLOTS')
                                   
         #create unique folder in CROSS output folder named by the present time.
@@ -276,6 +286,15 @@ for config_file in config_list:
         
         if not os.path.exists(OUT_SNR):\
         os.makedirs(OUT_SNR)
+        
+        # copy configuration file to output so parameters are known for each run                         
+        OUTCONFIG = os.path.join(CROSSCORR_DIR, time_string, 
+                                 os.path.basename(config_file))
+        
+        print 'Copying configuration file to output directory ... ' 
+        shutil.copy(config_file, OUTCONFIG)    
+        
+        
             
         METADATA_PATH = '{}metadata.pickle'.format(OUTFILESPATH.\
                   replace(os.path.basename(OUTFILESPATH), ""))
@@ -353,9 +372,14 @@ for config_file in config_list:
                            startday=FIRSTDAY,
                            endday=LASTDAY,
                            verbose=False)
+<<<<<<< HEAD
                            
     print stations
             
+=======
+
+  
+>>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
     
     DECLUSTER = False
     
@@ -764,20 +788,17 @@ now."
         maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
         maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
         
-        if PLOT_DISTANCE:
-            #plot distance plot of cross-correlations
-            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
-                    + '.png', showplot=False)
+    
+#        if PLOT_DISTANCE:
+                #plot distance plot of cross-correlations
+#            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+#                    outfile=OUTFOLDERS, showplot=False)
         
-        if PLOT_CLASSIC:
+#        if PLOT_CLASSIC:
             #plot individual cross-correlations
-            xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
-                    + '.png', showplot=False)
-                    
-        xc.plot_SNR(plot_type='all', outfile=OUT_SNR, 
-                    config=os.path.basename(config_file))
+#            xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+#                    outfile=OUTFOLDERS, showplot=False)
+
         
         #xc.plot_SNR(plot_type='individual', outfile=OUT_SNR)
 

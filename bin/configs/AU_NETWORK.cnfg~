@@ -77,7 +77,7 @@ AUTOMATE = True
 
 
 #FOLDER = DEFAULT
-FOLDER = /storage/ANT/PROGRAMS/ANT_OUTPUT
+FOLDER = /storage/ANT/CONFIGURATIONS/AU_NETWORK
 
 #set the folder where the computer programs in seismology have been installed if required. 
 # example CPIS dir:
@@ -95,11 +95,11 @@ COMPUTER_PROGRAMS_IN_SEISMOLOGY_DIR = /home/seis_suite/CPIS/PROGRAMS.330/bin
 TDD = True	          ; trim, demean and detrend the trace (True recommended)
 RESP_REMOVE = True        ; remove instrument response? (True recommended)
 EVENT_REMOVE = False	  ; automate event removal from catalogue (dist to event, window and avg V) uses IRIS and others and only removes regional events inside your networks range! (automated)
-HIGHAMP_REMOVE = False     ; automate removal of high amplitude noise from entire database (recommended to perform this in collaboration with EVENT_REMOVE)
+HIGHAMP_REMOVE = False    ; automate removal of high amplitude noise from entire database (recommended to perform this in collaboration with EVENT_REMOVE)
 
 # in the future do I want to set effectiveness limit for RESP_CHECK
 
-RESP_CHECK = True         ; perform an instrument response check on data and only use data with tolerance overlap
+RESP_CHECK = False         ; perform an instrument response check on data and only use data with tolerance overlap
 RESP_RANGE = [1,40]       ; period range for current project. Default is 1-40s period for ambient noise methods. 
 RESP_TOL = 0.50		  ; minimum overlap between instrument response range and the range set in RESP_RANGE
 RESP_EFFECT = 0.80	  ; default is  80% effectiveness frequency range. So the point at which the instrument response gain is above 95% of the maximum gain for that given instrument!

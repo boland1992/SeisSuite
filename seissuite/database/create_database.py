@@ -15,6 +15,8 @@ import sqlite3 as lite
 from seissuite.misc.path_search import paths
 import pickle
 
+RANK = False
+
 try:
     import cPickle as pickle
 except:
@@ -123,6 +125,8 @@ if not os.path.exists('tmp'): os.mkdir('tmp')
 # create database if it doesn't exist already, if it does, stop the programme.
 database_name = os.path.join(DATABASE_DIR, 'timeline.db')
 
+resp_db = os.path.join(DATABASE_DIR, 'response.db')
+
 if not AUTOMATE:
     if os.path.exists(database_name):
         yeses = ['y','Y','yes','Yes','YES']    
@@ -153,6 +157,7 @@ else:
 # =============================================================================
 # =============================================================================
 
+<<<<<<< HEAD
 def extract_info(info, check=False):    
     trace, path = info
     
@@ -162,6 +167,22 @@ def extract_info(info, check=False):
         trace = check_stat(trace, checklist=UNAM_statlist, 
                                map_dict=UNAM_statmap)
     
+=======
+
+
+
+def extract_info(info):    
+    trace, path = info
+    
+    stats = trace.stats
+    code ='{}.{}.{}'.format(stats.network, stats.station, stats.channel)
+    
+    starttime = trace.stats.starttime.timestamp
+    endtime = (trace.stats.starttime + trace.stats.npts * \
+              (1/trace.stats.sampling_rate)).timestamp
+
+    return (code, starttime, endtime, path)
+>>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
 
     try:
         stats = trace.stats
@@ -180,6 +201,7 @@ def extract_info(info, check=False):
         a=None
         
 def info_from_headers(path):
+<<<<<<< HEAD
 
     #print os.path.basename(path)
     try:
@@ -213,6 +235,25 @@ def info_from_headers(path):
 
         except Exception as error:
             print error
+=======
+    try:
+        #t0 = datetime.datetime.now()
+        print os.path.basename(path)
+        headers = read(path, headonly=True)
+        headers.select(component='Z')
+        info = []
+    
+        for trace in headers:
+            #if code in ranked_list:
+            info.append([trace, path])
+        
+        timeline_header = map(extract_info, info)
+    
+        return timeline_header
+    
+    except Exception as error:
+        print error    
+>>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
 
     #t1 = datetime.datetime.now()
     #print 'time taken to process previous loop: ', t1-t0
@@ -229,12 +270,23 @@ if multiprocess:
     pool.join()
 else:
     timeline = map(info_from_headers, abs_paths)
+<<<<<<< HEAD
 
 #
 #timeline = np.array([i for i in timeline if all(i)])
 
 #flatten output list and  remove empty lists from timelines database
 timeline = np.asarray(list(itertools.chain(*timeline)))
+=======
+    
+try:
+    
+    #flatten output list
+    timeline = np.asarray(list(itertools.chain(*timeline)))
+
+except:
+    print "The timeline array is not the correct type and cannot be flattened"
+>>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
 
 # remove None's from timeline array. 
 timeline = timeline[timeline != np.array(None)]
@@ -324,8 +376,12 @@ for path in paths_list:
     row_extrema = c.execute('''SELECT station, MIN(starttime), 
                             MAX(endtime), file_path FROM timeline 
                             WHERE file_path=?''', path)   
-   
-    for info in row_extrema: file_extrema.append(info)
+
+    for info in row_extrema:
+        #if RANK: 
+        code, min_time, maxtime, file_path = info
+        net, stat, chan = code.split('.')
+        file_extrema.append(info)
   
 file_extrema = tuple(file_extrema)
 

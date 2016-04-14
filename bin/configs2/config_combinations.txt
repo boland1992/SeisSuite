@@ -1,0 +1,9 @@
+('HIGHAMP_REMOVE', 'RESP_CHECK', 'BANDPASS')
+('HIGHAMP_REMOVE', 'RESP_CHECK', '')
+('HIGHAMP_REMOVE', 'BANDPASS', '')
+('HIGHAMP_REMOVE', '', '')
+('RESP_CHECK', 'BANDPASS', '')
+('RESP_CHECK', '', '')
+('BANDPASS', '', '')
+('', '', '')
+Number of processing configurations:  8

@@ -22,6 +22,7 @@ CONFIG = pickle.load(f)
 f.close()
     
 # import variables from initialised CONFIG class.
+    # import variables from initialised CONFIG class.
 MSEED_DIR = CONFIG.MSEED_DIR
 DATABASE_DIR = CONFIG.DATABASE_DIR
 DATALESS_DIR = CONFIG.DATALESS_DIR
@@ -29,7 +30,26 @@ STATIONXML_DIR = CONFIG.STATIONXML_DIR
 CROSSCORR_DIR = CONFIG.CROSSCORR_DIR
 USE_DATALESSPAZ = CONFIG.USE_DATALESSPAZ
 USE_STATIONXML = CONFIG.USE_STATIONXML
+CROSSCORR_STATIONS_SUBSET = CONFIG.CROSSCORR_STATIONS_SUBSET
+CROSSCORR_SKIPLOCS = CONFIG.CROSSCORR_SKIPLOCS
+FIRSTDAY = CONFIG.FIRSTDAY
+LASTDAY = CONFIG.LASTDAY
+MINFILL = CONFIG.MINFILL
+FREQMIN = CONFIG.FREQMIN
+FREQMAX = CONFIG.FREQMAX
+CORNERS = CONFIG.CORNERS
+ZEROPHASE = CONFIG.ZEROPHASE
+PERIOD_RESAMPLE = CONFIG.PERIOD_RESAMPLE
+ONEBIT_NORM = CONFIG.ONEBIT_NORM
+FREQMIN_EARTHQUAKE = CONFIG.FREQMIN_EARTHQUAKE
+FREQMAX_EARTHQUAKE = CONFIG.FREQMAX_EARTHQUAKE
+WINDOW_TIME = CONFIG.WINDOW_TIME
+WINDOW_FREQ = CONFIG.WINDOW_FREQ
+XCORR_INTERVAL = CONFIG.XCORR_INTERVAL
 CROSSCORR_TMAX = CONFIG.CROSSCORR_TMAX
+PLOT_CLASSIC = CONFIG.PLOT_CLASSIC
+PLOT_DISTANCE = CONFIG.PLOT_DISTANCE
+MAX_DISTANCE = CONFIG.MAX_DISTANCE
 
 pickle_list = []
 folder_list = sorted(glob.glob(os.path.join(CROSSCORR_DIR, '*')))
@@ -79,8 +99,13 @@ else:
     PICKLE_PATH = pickle_list[int(res)-1]
     OUTFILESPATH = PICKLE_PATH[:-7]
     out_basename = os.path.basename(OUTFILESPATH)        
+    OUTPATH = os.path.dirname(OUTFILESPATH)    
+    OUTFOLDERS = os.path.join(OUTPATH, 'XCORR_PLOTS')
 
-    print "\nOpening {} file to process ... ".format(out_basename)
+
+    print "\nOpening {} file to process ... ".format(OUTFOLDERS)
+
+
     # re-initialising .part.pickle collection of cross-correlations
     xc = pscrosscorr.load_pickled_xcorr(PICKLE_PATH)
                             
@@ -88,6 +113,7 @@ else:
     maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
     maxt = max(CROSSCORR_TMAX, maxdist / 2.5)
     
+<<<<<<< HEAD
     if plot_distance:
         for central_freq in central_frequencies:
             #plot distance plot of cross-correlations
@@ -102,3 +128,24 @@ else:
         #plot individual cross-correlations
         xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
                 outfile="~", showplot=False)
+=======
+    #plot distance plot of cross-correlations
+    #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+    #outfile="/home/boland/Desktop/something1342.png", showplot=False)
+    
+    #plot individual cross-correlations
+    #xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+    #        outfile="/home/boland/Desktop/something1342.png", showplot=False)
+            
+        
+    
+    if PLOT_DISTANCE:
+            #plot distance plot of cross-correlations
+        xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                outfile=OUTFOLDERS, showplot=False)
+        
+    if PLOT_CLASSIC:
+        #plot individual cross-correlations
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                outfile=OUTFOLDERS, showplot=False)
+>>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
