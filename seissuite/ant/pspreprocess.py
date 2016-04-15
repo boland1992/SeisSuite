@@ -54,7 +54,7 @@ TIME_NOMALISATION = CONFIG.TIME_NOMALISATION
 SPEC_WHITENING = CONFIG.SPEC_WHITENING
 TDD = CONFIG.TDD
 MAX_DISTANCE = CONFIG.MAX_DISTANCE
-
+COMPONENT = CONFIG.COMPONENT
 RESP_REMOVE = CONFIG.RESP_REMOVE
 RESP_CHECK = CONFIG.RESP_CHECK
 RESP_FREQS = CONFIG.RESP_FREQS
@@ -510,8 +510,9 @@ class Preprocess:
             
 
 
-        # MAKE THIS AN OPTION IN THE CONFIGURATION FILES!        
-        st = st.select(component='Z')
+        # MAKE THIS AN OPTION IN THE CONFIGURATION FILES!    
+	    
+        st = st.select(component=COMPONENT)
         #print "st: ", st
         
         #st = read(pathname_or_url=station.getpath(date),

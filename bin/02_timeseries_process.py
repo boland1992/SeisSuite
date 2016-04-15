@@ -167,11 +167,11 @@ for config_file in config_list:
   #      lite.connect(RESP_DB)
   #      from seissuite.database import response_database
     print TIMELINE_DB
-    if not os.path.exists(RESP_DB):
+    #if not os.path.exists(RESP_DB):
 
-        lite.connect(RESP_DB)
-        print "\nCreating response database. Please be patient ... "
-        from seissuite.database import response_database
+    #    lite.connect(RESP_DB)
+    #    print "\nCreating response database. Please be patient ... "
+    #    from seissuite.database import response_database
     
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!

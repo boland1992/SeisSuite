@@ -21,17 +21,17 @@ def read_ref(path):
     st = reftek2stream(ref_head, ref_data)
     return st
 
-
+data_folder = '/home/iese_nas_staff/projects/IESE00253_AmericanSamoa_Seismic_Monitoring/7_Data'
 # mapping old station names to new station names
-statmap = {'A324':'W01', 'A320':'W02', 'AA09':'W03', 'A333':'W04', 
-           'A971':'W05', 'A356':'W06', 'A316':'W25', '9994':'W08', 
-           'B15A':'W26','B2FA':'W10', 'B205':'W11', 'A276':'W19', 
-           'A956':'W24', 'B205':'W28', 'ALRZ':'W80', 'HRRZ':'W82', 
-           'GRRZ':'W81', 'RITZ':'W97', 'WATZ':'W98', 'WHTZ':'W99',
-           'KRVZ':'W83', 'OTVZ':'W84', 'PRRZ':'W85', 'WPRZ':'W86', 
-           'HSRZ':'W87', 'MRHZ':'W88', 'ARAZ':'W90', 'HATZ':'W91', 
-           'HITZ':'W92', 'KATZ':'W93','KUTZ':'W94','POIZ':'W95', 
-           'RATZ':'W96' }
+#statmap = {'A324':'W01', 'A320':'W02', 'AA09':'W03', 'A333':'W04', 
+#           'A971':'W05', 'A356':'W06', 'A316':'W25', '9994':'W08', 
+#           'B15A':'W26','B2FA':'W10', 'B205':'W11', 'A276':'W19', 
+#           'A956':'W24', 'B205':'W28', 'ALRZ':'W80', 'HRRZ':'W82', 
+#           'GRRZ':'W81', 'RITZ':'W97', 'WATZ':'W98', 'WHTZ':'W99',
+#           'KRVZ':'W83', 'OTVZ':'W84', 'PRRZ':'W85', 'WPRZ':'W86', 
+#           'HSRZ':'W87', 'MRHZ':'W88', 'ARAZ':'W90', 'HATZ':'W91', 
+#           'HITZ':'W92', 'KATZ':'W93','KUTZ':'W94','POIZ':'W95', 
+#           'RATZ':'W96' }
 
 
 
@@ -52,6 +52,10 @@ f.close()
 # import variables from initialised CONFIG class.
 AUTOMATE = CONFIG.AUTOMATE
 MSEED_DIR = CONFIG.MSEED_DIR
+
+# CHANGE THIS IN FUTURE!
+MSEED_DIR = data_folder
+
 DATABASE_DIR = CONFIG.DATABASE_DIR
 DATALESS_DIR = CONFIG.DATALESS_DIR
 STATIONXML_DIR = CONFIG.STATIONXML_DIR
@@ -125,7 +129,7 @@ def get_filepaths(directory):
 
 multiprocess = False
 global reftek
-reftek = True
+reftek = False
 
 if multiprocess:
     import multiprocessing as mp
@@ -215,30 +219,30 @@ def extract_info(info, check=False):
     #    trace = check_stat(trace, checklist=UNAM_statlist, 
     #                           map_dict=UNAM_statmap)
     
-    path_info = path.split('/')
-    alt_station = path_info[-3]
+#    path_info = path.split('/')
+#    alt_station = path_info[-3]
     
-    try:
-        stats = trace.stats
-        network = stats.network
-        station = stats.station
-        channel = stats.channel
+#    try:
+#        stats = trace.stats
+#        network = stats.network
+#        station = stats.station
+#        channel = stats.channel
         
-        if station == '' and len(alt_station) == 4:
-             station = statmap[path_info[-3]]
+#        if station == '' and len(alt_station) == 4:
+#             station = statmap[path_info[-3]]
         
-        if network == '':
-            network = 'XX'
+#        if network == '':
+#            network = 'XX'
         
-        if len(channel) == 1:
-            channel = 'DH' + channel
+#        if len(channel) == 1:
+#            channel = 'DH' + channel
             # potentially raw reftek format. 
             
         #    station = 
-        code ='{}.{}.{}'.format(network, station, channel)
+#        code ='{}.{}.{}'.format(network, station, channel)
 
-    except: 
-        a=5
+#    except: 
+#        a=5
 
 
 def extract_info(info):    
@@ -255,33 +259,36 @@ def extract_info(info):
     starttime = trace.stats.starttime.timestamp
     try:
         endtime = trace.stats.endtime.timestamp
+        information = (code, starttime, endtime, path)
+    	#print information
+        return information
     except:    
         endtime = (trace.stats.starttime + trace.stats.npts * \
         (1.0/trace.stats.sampling_rate)).timestamp
 
         information = (code, starttime, endtime, path)
-    
+    	#print information
         return information
 
         
 def info_from_headers(path):
-
+    print os.path.basename(path)
     #print os.path.basename(path)
     try:
         #t0 = datetime.datetime.now()
         if reftek:
             headers = read_ref(path)
-            print headers
+
         else:
             headers = read(path, headonly=True)
-            
-        headers.select(component='Z')
+          
+        #headers.select(component='Z')
         info = []
-        
+        print headers
         for trace in headers:
             # double check that we are only dealing with the Z channel 
-            if 'Z' in trace.stats.channel:
-                info.append([trace, path])
+         #   if 'Z' in trace.stats.channel:
+            info.append([trace, path])
         
         timeline_header = map(extract_info, info)
         return timeline_header
@@ -292,7 +299,7 @@ def info_from_headers(path):
         try:
             headers = read(path)
 
-            headers.select(component='Z')
+            #headers.select(component='Z')
             info = []
             for trace in headers:
                 info.append([trace, path])
@@ -303,6 +310,7 @@ def info_from_headers(path):
 
         except Exception as error:
             print error
+
     try:
         #t0 = datetime.datetime.now()
         print os.path.basename(path)
@@ -347,6 +355,9 @@ timeline = timeline[timeline != np.array(None)]
 timeline = np.asarray(list(itertools.chain(*timeline)))
 print "timeline: ", timeline
 
+
+print timeline
+
 timeline = [tuple(i) for i in timeline]
 print "timeline: ", timeline
 
@@ -355,13 +366,13 @@ print "timeline: ", timeline
 #timeline = [tuple(i) for i in timeline]
 
     
-try:
+#try:
     
     #flatten output list
-    timeline = np.asarray(list(itertools.chain(*timeline)))
+#    timeline = np.asarray(list(itertools.chain(*timeline)))
 
-except:
-    print "The timeline array is not the correct type and cannot be flattened"
+#except:
+#    print "The timeline array is not the correct type and cannot be flattened"
 
 t1 = datetime.datetime.now()
 print "time taken to read in and process timeline database: ", t1-t0

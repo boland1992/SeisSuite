@@ -31,10 +31,14 @@ config_pickle = 'configs/tmp_config.pickle'
 f = open(name=config_pickle, mode='rb')
 CONFIG = pickle.load(f)
 f.close()
-    
+data_folder = '/home/iese_nas_staff/projects/IESE00253_AmericanSamoa_Seismic_Monitoring/7_Data'
 # import variables from initialised CONFIG class.
 AUTOMATE = CONFIG.AUTOMATE
 MSEED_DIR = CONFIG.MSEED_DIR
+# CHANGE THIS IN FUTURE!
+MSEED_DIR = data_folder
+
+
 DATABASE_DIR = CONFIG.DATABASE_DIR
 DATALESS_DIR = CONFIG.DATALESS_DIR
 STATIONXML_DIR = CONFIG.STATIONXML_DIR
