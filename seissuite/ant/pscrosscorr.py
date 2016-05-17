@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #!/usr/bin/env python
 """
 Module that contains classes holding cross-correlations and related
@@ -2274,11 +2273,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                             SNRarray, timearray = info_array[:,0], info_array[:,1]                
                             plt.plot(timearray, SNRarray, alpha=0.3, c='k')
                     
-<<<<<<< HEAD
-=======
-                     
 
->>>>>>> iese
                     #except Exception as err:
                     #    print err
                         
@@ -3692,7 +3687,7 @@ if __name__ == '__main__':
     # loading pickled cross-correlations
     xc = load_pickled_xcorr_interactive()
     print "Cross-correlations available in variable 'xc':"
-=======
+
 #!/usr/bin/env python
 """
 Module that contains classes holding cross-correlations and related
@@ -7128,5 +7123,4 @@ if __name__ == '__main__':
     # loading pickled cross-correlations
     xc = load_pickled_xcorr_interactive()
     print "Cross-correlations available in variable 'xc':"
->>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
     print xc

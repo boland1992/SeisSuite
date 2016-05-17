@@ -125,7 +125,7 @@ def get_filepaths(directory):
 
 multiprocess = False
 global reftek
-reftek = True
+reftek = False
 
 if multiprocess:
     import multiprocessing as mp
@@ -159,6 +159,8 @@ extensions = ['']
 abs_paths = get_filepaths(MSEED_DIR)
 
 
+# create new path REMOVE LATER
+abs_paths = [path for path in abs_paths if 'BHZ' in path]
 
 # initialise timeline dictionary, one key per station!
 global timeline
@@ -206,10 +208,6 @@ else:
 # =============================================================================
 # =============================================================================
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> iese
 def extract_info(info, check=False):    
     trace, path = info
     
@@ -255,11 +253,8 @@ def extract_info(info):
     endtime = (trace.stats.starttime + trace.stats.npts * \
               (1/trace.stats.sampling_rate)).timestamp
 
-<<<<<<< HEAD
     return (code, starttime, endtime, path)
->>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
-=======
->>>>>>> iese
+
 
     starttime = trace.stats.starttime.timestamp
     try:
@@ -274,12 +269,9 @@ def extract_info(info):
 
         
 def info_from_headers(path):
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> iese
 
-    #print os.path.basename(path)
+
+    print path# os.path.basename(path)
     try:
         #t0 = datetime.datetime.now()
         if reftek:
@@ -333,10 +325,7 @@ def info_from_headers(path):
     
     except Exception as error:
         print error    
-<<<<<<< HEAD
->>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
-=======
->>>>>>> iese
+
 
     #t1 = datetime.datetime.now()
     #print 'time taken to process previous loop: ', t1-t0
@@ -353,10 +342,7 @@ if multiprocess:
     pool.join()
 else:
     timeline = map(info_from_headers, abs_paths)
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> iese
+
 
 
 timeline = np.array(timeline)
@@ -383,14 +369,11 @@ try:
 
 except:
     print "The timeline array is not the correct type and cannot be flattened"
-<<<<<<< HEAD
->>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
 
 # remove None's from timeline array. 
 timeline = timeline[timeline != np.array(None)]
 
-=======
->>>>>>> iese
+
 
 t1 = datetime.datetime.now()
 print "time taken to read in and process timeline database: ", t1-t0

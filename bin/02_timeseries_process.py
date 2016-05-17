@@ -164,10 +164,7 @@ for config_file in config_list:
     
    # if not os.path.exists(RESP_DB):
         # initialise response database for use with automated data selection!
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> iese
+
   #      lite.connect(RESP_DB)
   #      from seissuite.database import response_database
     print TIMELINE_DB
@@ -177,10 +174,7 @@ for config_file in config_list:
         print "\nCreating response database. Please be patient ... "
         from seissuite.database import response_database
     
-<<<<<<< HEAD
->>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
-=======
->>>>>>> iese
+
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!
         lite.connect(TIMELINE_DB)
@@ -313,12 +307,7 @@ for config_file in config_list:
         print 'Copying configuration file to output directory ... ' 
         shutil.copy(config_file, OUTCONFIG)    
         
-<<<<<<< HEAD
-        
-            
-=======
 
->>>>>>> iese
         METADATA_PATH = '{}metadata.pickle'.format(OUTFILESPATH.\
                   replace(os.path.basename(OUTFILESPATH), ""))
     
@@ -395,22 +384,12 @@ for config_file in config_list:
                            startday=FIRSTDAY,
                            endday=LASTDAY,
                            verbose=False)
-<<<<<<< HEAD
-<<<<<<< HEAD
-                           
-    print stations
-            
-=======
 
-  
->>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
-=======
 
     stat_coords = np.asarray([station.coord for station in stations])
 
 
 
->>>>>>> iese
     
     DECLUSTER = False
     
@@ -422,10 +401,7 @@ for config_file in config_list:
     #    stations = [station for station in stations if 
     #                station.coord in declustered_coords]      
 
-<<<<<<< HEAD
-=======
 
->>>>>>> iese
     # Loop on time interval
      #number of time steps
     N = int(((LASTDAY - FIRSTDAY).days + 1)*60*24 / XCORR_INTERVAL)
@@ -850,15 +826,7 @@ now."
         maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
         maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
         
-<<<<<<< HEAD
-    
-#        if PLOT_DISTANCE:
-                #plot distance plot of cross-correlations
-#            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-#                    outfile=OUTFOLDERS, showplot=False)
-        
-#        if PLOT_CLASSIC:
-=======
+
         if PLOT_DISTANCE:
             #plot distance plot of cross-correlations
             xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
@@ -879,8 +847,7 @@ now."
                     + '.png', showplot=False, stack_type='combined')                    
                     
                     
-        if PLOT_CLASSIC:
->>>>>>> iese
+        #if PLOT_CLASSIC:
             #plot individual cross-correlations
 #            xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
 #                    outfile=OUTFOLDERS, showplot=False)
@@ -901,9 +868,6 @@ now."
 
 total_delta = (dt.datetime.now() - total_time0).total_seconds()
 
-<<<<<<< HEAD
-=======
-remove_config(config_file)
->>>>>>> iese
+
 print "Calculated every xcorr in time-series in in \
 {:.1f} seconds".format(total_delta)
