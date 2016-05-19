@@ -489,11 +489,11 @@ class CrossCorrelation:
         #self.dataarray = self.dataarray / np.max(self.dataarray)
         
 
-        self.phase_stack(tr1, tr2, xcorr=xcorr)
-        self.phase_weighted_stack()
+        #self.phase_stack(tr1, tr2, xcorr=xcorr)
+        #self.phase_weighted_stack()
         
-        self.snr_weighted_stack()
-        self.combined_stack()
+        #self.snr_weighted_stack()
+        #self.combined_stack()
         #plt.figure()
         #plt.title('pws')
         #plt.plot(self.timearray, self.pws)

@@ -362,17 +362,17 @@ print "timeline: ", timeline
 #timeline = [tuple(i) for i in timeline]
 
     
-try:
+#try:
     
     #flatten output list
-    timeline = np.asarray(list(itertools.chain(*timeline)))
+#    timeline = np.asarray(list(itertools.chain(*timeline)))
 
-except:
-    print "The timeline array is not the correct type and cannot be flattened"
+#except:
+#    print "The timeline array is not the correct type and cannot be flattened"
 
 # remove None's from timeline array. 
-timeline = timeline[timeline != np.array(None)]
-
+timeline = [tuple(i) for i in timeline if i is not None]#timeline[timeline != np.array(None)]
+print "timeline yeah: ", timeline
 
 
 t1 = datetime.datetime.now()
