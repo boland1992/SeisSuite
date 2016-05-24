@@ -92,9 +92,9 @@ psd = False
 #import numpy as np
 # turn on multiprocessing to get one merged trace per station?
 # to preprocess trace? to stack cross-correlations?
-MULTIPROCESSING = {'merge trace': False,
-                   'process trace': False,
-                   'cross-corr': False}
+MULTIPROCESSING = {'merge trace': True,
+                   'process trace': True,
+                   'cross-corr': True}
 # how many concurrent processes? (set None to let multiprocessing module decide)
 NB_PROCESSES = None
 if any(MULTIPROCESSING.values()):
@@ -551,7 +551,7 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
     
             try:
                 Preprocess.preprocess_trace(trace=trace, paz=response, 
-                                            verbose=True)
+                                            verbose=False)
                 msg = 'ok'
                 if total_verbose:
                     print '{}.{} [{}] '.format(trace.stats.network, 
