@@ -12,8 +12,8 @@ from seissuite.response.resp import (freq_check, process_response,
 import obspy
 import obspy.core
 from obspy import read_inventory
-from obspy.xseed.utils import SEEDParserException
 import os
+    
 import glob
 import pickle
 from copy import copy

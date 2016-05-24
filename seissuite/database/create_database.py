@@ -139,7 +139,7 @@ folder_path = MSEED_DIR
 
 # set file extension
 #extensions = ['m', 'mseed', 'miniseed', 'MSEED']
-extensions = ['']
+extensions = ['msd']
 
  
 #abs_paths = []
@@ -271,7 +271,7 @@ def extract_info(info):
 def info_from_headers(path):
 
 
-    print path# os.path.basename(path)
+    print os.path.basename(path)
     try:
         #t0 = datetime.datetime.now()
         if reftek:

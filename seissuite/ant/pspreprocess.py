@@ -13,7 +13,11 @@ from seissuite.response.resp import (freq_check, process_response,
                                      window_overlap)
 
 import obspy.signal
-import obspy.xseed
+try:
+    import obspy.io.xseed
+except:
+    import obspy.xseed
+    
 import obspy.signal.cross_correlation
 import obspy.signal.filter
 from obspy import read

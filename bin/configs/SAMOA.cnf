@@ -177,13 +177,13 @@ BBOX_SMALL = [-101.154848, -101.120574, 19.885633, 19.922488]
 
 # test the first 3 months of 2014 for cross-correlation!
 
-XCORR_INTERVAL = 45.0             ; number of minutes in xcorr time series
+XCORR_INTERVAL = 60.0             ; number of minutes in xcorr time series
 USE_DATALESSPAZ = True             ; use dataless files to remove instrument response?
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
 
 
-FIRSTDAY = 01/01/2005                ; first day of cross-correlation (d/m/y)
-LASTDAY = 01/01/2010                 ; last day of cross-correlation (d/m/y)
+FIRSTDAY = 01/10/2007                ; first day of cross-correlation (dd/MM/yyyy)
+LASTDAY = 01/01/2010                 ; last day of cross-correlation (dd/MM/yyyy)
 
 
 MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%

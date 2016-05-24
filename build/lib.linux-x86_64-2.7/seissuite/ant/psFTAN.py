@@ -9,7 +9,10 @@ dispersion curves.
 from seissuite.ant import pserrors, psutils, pstomo
 
 import obspy.signal
-import obspy.xseed
+try:
+    import obspy.io.xseed
+except:
+    import obspy.xseed
 import obspy.signal.cross_correlation
 import obspy.signal.filter
 from obspy.core import AttribDict#, read, UTCDateTime, Stream
