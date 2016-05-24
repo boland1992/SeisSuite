@@ -74,7 +74,7 @@ FREQMAX = CONFIG.FREQMAX
 # Constants and parameters
 # ========================
 
-EPS = 1.0e-5
+EPS = 1.0e-3
 ONESEC = dt.timedelta(seconds=1)
 
 class Preprocess:

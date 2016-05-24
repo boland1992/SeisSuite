@@ -153,7 +153,7 @@ for config_file in config_list:
     MAX_DISTANCE = CONFIG.MAX_DISTANCE
     RESP_REMOVE = CONFIG.RESP_REMOVE
     
-    FULL_COMB = CONFIG.FULL_COMB
+    #FULL_COMB = CONFIG.FULL_COMB
 
     # initialise the required databases if they haven't already been.
     #if no two SQL databases exist, then create them! 
@@ -169,11 +169,12 @@ for config_file in config_list:
   #      from seissuite.database import response_database
     print TIMELINE_DB
     if not os.path.exists(RESP_DB):
-
-        lite.connect(RESP_DB)
-        print "\nCreating response database. Please be patient ... "
-        from seissuite.database import response_database
-    
+        try:
+            lite.connect(RESP_DB)
+            print "\nCreating response database. Please be patient ... "
+            from seissuite.database import response_database
+        except:
+            print "Response database could not be initialised ... "
 
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!
@@ -427,6 +428,7 @@ for config_file in config_list:
     
     
     for date in dates:
+        print date
         loop_time0 = dt.datetime.now()
 
         print "\nProcessing data for date {} with a {} minute cross-correlation\
@@ -548,7 +550,8 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
             
     
             try:
-                Preprocess.preprocess_trace(trace=trace, paz=response)
+                Preprocess.preprocess_trace(trace=trace, paz=response, 
+                                            verbose=True)
                 msg = 'ok'
                 if total_verbose:
                     print '{}.{} [{}] '.format(trace.stats.network, 
@@ -740,7 +743,6 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
                date=date,
                verbose=not MULTIPROCESSING['cross-corr'])
         
-        break
         pairs = list(it.combinations(sorted(tracedict.items()), 2))
 
         # calculate max snr for snr weighted stack! 
@@ -805,46 +807,46 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
         #use replace() to get rid of basename to create file named metadata.pickle in 
         #correct path
             
-        with open(u'{}.part.pickle'.format(OUTFILESPATH), 'wb') as f:
-            print "\nExporting cross-correlations calculated until now." 
-            pickle.dump(xc, f, protocol=2)    
+        #with open(u'{}.part.pickle'.format(OUTFILESPATH), 'wb') as f:
+        #    print "\nExporting cross-correlations calculated until now." 
+        #    pickle.dump(xc, f, protocol=2)    
         with open(METADATA_PATH, 'wb') as f:
             print "\nExporting re-start metadata of time-series calculated until \
 now."
             pickle.dump(metadata, f, protocol=2)
     
     # exporting cross-correlations
-    if not xc.pairs():
-        print "No cross-correlation could be calculated: nothing to export!"
-    else:
+    #if not xc.pairs():
+    #    print "No cross-correlation could be calculated: nothing to export!"
+    #else:
         # exporting to binary and ascii files
-        xc.export(outprefix=OUTFILESPATH, stations=stations, verbose=True)
+    #    xc.export(outprefix=OUTFILESPATH, stations=stations, verbose=True)
     
         # exporting to png file
-        print "Exporting cross-correlations to file: {}.png".format(OUTFILESPATH)
+        #print "Exporting cross-correlations to file: {}.png".format(OUTFILESPATH)
         # optimizing time-scale: max time = max distance / vmin (vmin = 2.5 km/s)
-        maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
-        maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
+        #maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
+        #maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
         
 
-        if PLOT_DISTANCE:
+        #if PLOT_DISTANCE:
             #plot distance plot of cross-correlations
-            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
-                    + '.png', showplot=False, stack_type='linear')
+        #    xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+        #            outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+        #            + '.png', showplot=False, stack_type='linear')
                     
-            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
-                    + '.png', showplot=False, stack_type='PWS')
+        #    xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+        #            outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+        #            + '.png', showplot=False, stack_type='PWS')
                     
-            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
-                    + '.png', showplot=False, stack_type='SNR')
+        #    xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+        #            outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+        #            + '.png', showplot=False, stack_type='SNR')
                     
                     
-            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
-                    + '.png', showplot=False, stack_type='combined')                    
+        #    xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+        #            outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+        #            + '.png', showplot=False, stack_type='combined')                    
                     
                     
         #if PLOT_CLASSIC:
