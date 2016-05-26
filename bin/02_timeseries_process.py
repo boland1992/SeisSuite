@@ -92,9 +92,9 @@ psd = False
 #import numpy as np
 # turn on multiprocessing to get one merged trace per station?
 # to preprocess trace? to stack cross-correlations?
-MULTIPROCESSING = {'merge trace': True,
-                   'process trace': True,
-                   'cross-corr': True}
+MULTIPROCESSING = {'merge trace': False,
+                   'process trace': False,
+                   'cross-corr': False}
 # how many concurrent processes? (set None to let multiprocessing module decide)
 NB_PROCESSES = None
 if any(MULTIPROCESSING.values()):
@@ -816,30 +816,30 @@ now."
             pickle.dump(metadata, f, protocol=2)
     
     # exporting cross-correlations
-    #if not xc.pairs():
-    #    print "No cross-correlation could be calculated: nothing to export!"
-    #else:
+    if not xc.pairs():
+        print "No cross-correlation could be calculated: nothing to export!"
+    else:
         # exporting to binary and ascii files
-    #    xc.export(outprefix=OUTFILESPATH, stations=stations, verbose=True)
+        xc.export(outprefix=OUTFILESPATH, stations=stations, verbose=True)
     
         # exporting to png file
-        #print "Exporting cross-correlations to file: {}.png".format(OUTFILESPATH)
+    print "Exporting cross-correlations to file: {}.png".format(OUTFILESPATH)
         # optimizing time-scale: max time = max distance / vmin (vmin = 2.5 km/s)
-        #maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
-        #maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
+    maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
+    maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
         
 
-        #if PLOT_DISTANCE:
+    if PLOT_DISTANCE:
             #plot distance plot of cross-correlations
-        #    xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-        #            outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
-        #            + '.png', showplot=False, stack_type='linear')
+        xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+                    + '.png', showplot=False, stack_type='linear')
                     
-        #    xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+        #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
         #            outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
         #            + '.png', showplot=False, stack_type='PWS')
                     
-        #    xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+        #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
         #            outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
         #            + '.png', showplot=False, stack_type='SNR')
                     
@@ -849,20 +849,20 @@ now."
         #            + '.png', showplot=False, stack_type='combined')                    
                     
                     
-        #if PLOT_CLASSIC:
+    if PLOT_CLASSIC:
             #plot individual cross-correlations
-#            xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-#                    outfile=OUTFOLDERS, showplot=False)
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                    outfile=OUTFOLDERS, showplot=False)
 
         
         #xc.plot_SNR(plot_type='individual', outfile=OUT_SNR)
 
     # removing file containing periodical exports of cross-corrs
     # only do this if the full file exists!     
-    #try:
-    #    os.remove(u'{}.part.pickle'.format(OUTFILESPATH))
-    #except:
-    #    pass
+    try:
+        os.remove(u'{}.part.pickle'.format(OUTFILESPATH))
+    except:
+        pass
 
 
     #remove_config(config_file)
