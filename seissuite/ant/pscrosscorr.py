@@ -2036,7 +2036,7 @@ class CrossCorrelationCollection(AttribDict):
 
 
     def plot_SNR(self, plot_type='all', figsize=(21.0, 12.0), 
-                 outfile=None, dpi=300, showplot=True, 
+                 outfile=None, dpi=300, showplot=True, stat_list=[], 
                  verbose=False):
         
         print "Plotting signal-to-noise ratio figures ... " 
@@ -2047,6 +2047,7 @@ class CrossCorrelationCollection(AttribDict):
         if not npair:
             raise Exception("So SNR pairs to plot!")
             return
+
                     
         if plot_type == 'individual':
             # plot all individual SNR vs. time curves on seperate figures 
@@ -2055,6 +2056,7 @@ class CrossCorrelationCollection(AttribDict):
                 for s2 in item[1].keys():
                     #print '{}-{}'.format(s1, s2)
                     #try:
+                    
                     fig = plt.figure()
                     info_array = np.asarray(self[s1][s2].SNR_lin)
                     if len(info_array) > 0:

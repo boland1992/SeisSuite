@@ -189,6 +189,11 @@ class Config:
         # cross-correlation / spectra parameters
         # --------------------------------------
         
+        
+        self.RANDOM_STACK = self.config.getboolean('cross-correlation', 
+                                                   'RANDOM_STACK')
+                                                 
+                                                 
         # use dataless files or stationXML files to remove instrument response?
         self.USE_DATALESSPAZ = self.config.getboolean('cross-correlation', 
                                                  'USE_DATALESSPAZ')

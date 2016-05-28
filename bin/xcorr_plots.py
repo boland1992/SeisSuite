@@ -98,7 +98,8 @@ else:
 
     # re-initialising .part.pickle collection of cross-correlations
     xc = pscrosscorr.load_pickled_xcorr(PICKLE_PATH)
-                            
+
+    
     # optimizing time-scale: max time = max distance / vmin (vmin = 2.5 km/s)
     maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
     maxt = min(CROSSCORR_TMAX, maxdist / 2.5)

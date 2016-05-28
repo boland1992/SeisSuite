@@ -101,9 +101,12 @@ from seissuite.ant.psconfig import (create_config_list, run_config,
                                     remove_config)
 
 config_list = create_config_list()
+config_file = config_list[0]
 
 total_time0 = dt.datetime.now()
-for config_file in config_list:
+#for config_file in config_list:
+for i in range(0, 100):   
+    
     # global variables MUST be defined 
     # with the function in the seissuite.ant.psconfig module 
     run_config(config_file)
@@ -146,7 +149,7 @@ for config_file in config_list:
     PLOT_CLASSIC = CONFIG.PLOT_CLASSIC
     PLOT_DISTANCE = CONFIG.PLOT_DISTANCE
     MAX_DISTANCE = CONFIG.MAX_DISTANCE
-
+    RANDOM_STACK = CONFIG.RANDOM_STACK
     # initialise the required databases if they haven't already been.
     #if no two SQL databases exist, then create them! 
     TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
@@ -233,7 +236,13 @@ for config_file in config_list:
                 
         #change folder_list to pickle_list if this gives problems
         #res = False#raw_input('\n')
-        res = raw_input('\n')
+        res = ''
+        
+        
+        #res = raw_input('\n')
+
+
+
     
     #IF LIST INDEX OUT OF RANGE START PROGRAM ALSO    
     
@@ -383,6 +392,13 @@ for config_file in config_list:
     dates = [FIRSTDAY + dt.timedelta(minutes=i) for i in \
              [j*XCORR_INTERVAL for j in range(N)]]
     
+    if RANDOM_STACK:
+        #print dates        
+        # randomly shuffle dates 
+        #dates = np.array(dates)
+        np.random.shuffle(dates)
+        #print dates
+        
     
     #begin = raw_input("\nPress enter to begin the program ")
     
