@@ -8,7 +8,11 @@ from seissuite.ant import (pserrors, psutils)
 import obspy
 import obspy.core
 from obspy import read_inventory
-from obspy.xseed.utils import SEEDParserException
+
+
+
+    
+
 import os
 import glob
 import pickle

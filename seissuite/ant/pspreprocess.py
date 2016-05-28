@@ -13,7 +13,11 @@ from seissuite.response.resp import (freq_check, process_response,
                                      window_overlap)
 
 import obspy.signal
-import obspy.xseed
+try:
+    import obspy.io.xseed
+except:
+    import obspy.xseed
+    
 import obspy.signal.cross_correlation
 import obspy.signal.filter
 from obspy import read
@@ -26,7 +30,14 @@ from obspy.signal.trigger import carlSTATrig, recSTALTA
 from obspy.core import Stream
 import matplotlib.pyplot as plt
 
+from pyseis.modules.rdreftekc import rdreftek, reftek2stream
 
+def read_ref(path):
+    ref_head, ref_data = rdreftek(path)
+    st = reftek2stream(ref_head, ref_data)
+    return st
+    
+    
 # import CONFIG class initalised in ./configs/tmp_config.pickle
 config_pickle = 'configs/tmp_config.pickle'
 f = open(name=config_pickle, mode='rb')
@@ -63,7 +74,7 @@ FREQMAX = CONFIG.FREQMAX
 # Constants and parameters
 # ========================
 
-EPS = 1.0e-5
+EPS = 1.0e-3
 ONESEC = dt.timedelta(seconds=1)
 
 class Preprocess:
@@ -342,8 +353,12 @@ class Preprocess:
             delta = (dt.datetime.now() - t1).total_seconds()
             if verbose:
                 print "\nProcessed trim in {:.1f} seconds".format(delta)
-
         
+        #plt.figure()
+        #plt.title("TDD")
+        #plt.plot(trace.data)
+        #plt.show()
+        #plt.clf()
         # =========
         # Band-pass
         # =========
@@ -355,16 +370,28 @@ class Preprocess:
                          corners=self.corners,
                          zerophase=self.zerophase)
             delta = (dt.datetime.now() - t0).total_seconds()
+            
+            
             if verbose:
                 print "\nProcessed filters in {:.1f} seconds".format(delta)
-                
+        
+        
+        #plt.figure()
+        #plt.title("Bandpass")
+        #plt.plot(trace.data)
+        #plt.show()
+        #plt.clf()
         # ============
         # Downsampling
         # ============
         if DOWNSAMPLE:
             if abs(1.0 / trace.stats.sampling_rate - self.period_resample)>EPS:
                 psutils.resample(trace, dt_resample=self.period_resample)
-
+        #plt.figure()
+        #plt.title("DOWNSAMPLE")
+        #plt.plot(trace.data)
+        #plt.show()
+        #plt.clf()
         # ==================
         # Time normalization
         # ==================
@@ -377,7 +404,11 @@ class Preprocess:
             if verbose:
                 print "\nProcessed time-normalisation in {:.1f} seconds"\
                 .format(delta)
-
+        #plt.figure()
+        #plt.title("NORMALISATION")
+        #plt.plot(trace.data)
+        #plt.show()
+        #plt.clf()
         # ==================
         # Spectral whitening
         # ==================
@@ -388,7 +419,11 @@ class Preprocess:
             if verbose:
                 print "\nProcessed spectral whitening in {:.1f} seconds".\
                 format(delta)
-
+        #plt.figure()
+        #plt.title("SPECTRAL WHITENING")
+        #plt.plot(trace.data)
+        #plt.show()
+        #plt.clf()
         # ==============================================
         # Verifying that we don't have nan in trace data
         # ==============================================
@@ -440,13 +475,49 @@ class Preprocess:
         #station_path_old = station.getpath(date, MSEED_DIR)
         station_path_SQL = station.getpath(t0, t0+dt.timedelta\
                                                       (minutes=xcorr_interval))
+        
+                                        
         #print "station old path: ", station_path_old
         #print "station SQl path: ", station_path_SQL
+        #print 
+        #print "SQL path: ", station_path_SQL
+        try:
+            st = read(pathname_or_url=station_path_SQL,
+                      starttime=path_start, endtime=path_end)
+        except:
+            st = read_ref(station_path_SQL)
+            st = st.trim(starttime=path_start, endtime=path_end)
+
+
+        # check traces
+        for tr in st: 
+            path_info = station_path_SQL.split('/')
+            alt_station = path_info[-3]
+    
+            stats = tr.stats
+            network = stats.network
+            station = stats.station
+            channel = stats.channel
         
-        st = read(pathname_or_url=station_path_SQL,
-                  starttime=path_start, endtime=path_end)
-                  
-              
+            if station == '' and len(alt_station) == 4:
+                station = path_info[-3]
+        
+            if network == '':
+                network = 'XX'
+        
+            if len(channel) == 1:
+                channel = 'DH' + channel
+                
+            tr.stats.channel = channel
+            tr.stats.station = station
+            tr.stats.network = network
+            
+
+
+        # MAKE THIS AN OPTION IN THE CONFIGURATION FILES!        
+        st = st.select(component='Z')
+        #print "st: ", st
+        
         #st = read(pathname_or_url=station.getpath(date),
         #          starttime=t0 - dt.timedelta(hours=1),
         #          endtime=t0 + dt.timedelta(days=1, hours=1))
@@ -478,9 +549,12 @@ class Preprocess:
             st.merge(fill_value='interpolate')
 #           st.merge()        
         
-        # if such and such about splitting occurs, then inact the split() fn
         
+        # if such and such about splitting occurs, then inact the split() fn
+        #st.plot()
+                
         #st.split()
         trace = st[0]
+        
 
         return trace

@@ -46,6 +46,9 @@ LAMBDA = CONFIG.LAMBDA
 FTAN_ALPHA = CONFIG.FTAN_ALPHA
 FTAN_VELOCITIES_STEP  = CONFIG.FTAN_VELOCITIES_STEP
 PERIOD_RESAMPLE = CONFIG.PERIOD_RESAMPLE
+RAWFTAN_PERIODS = CONFIG.RAWFTAN_PERIODS
+
+
 
 # this is the bounding box for the stations that will be processed for tomo map
 global filter_box
@@ -173,19 +176,25 @@ class DispersionCurve:
         return 'Dispersion curve between stations {}-{}'.format(self.station1.name,
                                                                 self.station2.name)
 
-    def get_period_index(self, period):
+    def get_period_index(self, period, verbose=True):
         """
         Gets index of *period*, or raises an error if period
         is not found
         """
+        
+        if verbose:
+            print "period: ", period
+            print "self.periods: ", self.periods
         iperiod = np.abs(self.periods - period).argmin()
+
         if np.abs(self.periods[iperiod] - period) > EPS:
             raise Exception('Cannot find period in dispersion curve')
             
         return iperiod
 
     def update_parameters(self, minspectSNR=None, minspectSNR_nosdev=None,
-                          maxsdev=None, minnbtrimester=None, maxperiodfactor=None):
+                          maxsdev=None, minnbtrimester=None, 
+                          maxperiodfactor=None):
         """
         Updating one or more filtering parameter(s)
         """
@@ -700,16 +709,7 @@ class VelocityMap:
 
 
         # reading inversion parameters
-        minspectSNR = 5.0
-        minspectSNR_nosdev = 1.0
-        minnbtrimester = 1.0
-        maxsdev = 0.1
-        lonstep = 1.0
-        latstep = 1.0
-        correlation_length = 100.0
-        alpha = 400.0
-        beta = 200.0
-        lambda_ = 0.3
+
         
         if verbose:
             print "Velocities selection criteria:"
@@ -788,10 +788,20 @@ class VelocityMap:
         sigmav = np.array(sigmav)
         sigmav_isnan = np.isnan(sigmav)
 
+
+
+        
         if np.all(sigmav_isnan):
             s = "No valid std deviation at selected period ({} sec)"
-            raise pserrors.CannotPerformTomoInversion(s.format(period))
-
+            print "Setting std to maximum by taking smallest order of magnitude."
+            sigmav = np.array([i/100. for i in vels])
+            sigmav_isnan = np.isnan(sigmav)            
+            #raise pserrors.CannotPerformTomoInversion(s.format(period))
+            
+        print "vels: ", vels
+        print "sigmav: ", sigmav
+        print "sigmav_isnan: ", sigmav_isnan
+        
         # If the resolution in the velocities space is dv,
         # it means that a velocity v is actually anything between
         # v-dv/2 and v+dv/2, so the standard deviation cannot be
@@ -837,6 +847,10 @@ class VelocityMap:
         self.Cinv = np.matrix(np.zeros((len(sigmav), len(sigmav))))
         np.fill_diagonal(self.Cinv, 1.0 / sigmad**2)
 
+        
+        # REMOVE HARD WIRES WHEN POSSIBLE        
+        lonstep = 0.1
+        latstep = 0.1
 
         # spatial grid for tomographic inversion (slightly enlarged to be
         # sure that no path will fall outside)
@@ -848,6 +862,7 @@ class VelocityMap:
         latmin = np.floor(min(lats1 + lats2) - tol)
         nlat = np.ceil((max(lats1 + lats2) + tol - latmin) / latstep) + 1
         
+    
         self.grid = Grid(lonmin, lonstep, nlon, latmin, latstep, nlat)
         
         

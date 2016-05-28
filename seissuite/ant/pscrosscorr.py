@@ -9,7 +9,11 @@ dispersion curves.
 from seissuite.ant import pserrors, psutils, pstomo
 
 import obspy.signal
-import obspy.xseed
+try:
+    import obspy.io.xseed
+except:
+    import obspy.xseed
+    
 import obspy.signal.cross_correlation
 import obspy.signal.filter
 from obspy.core import AttribDict#, read, UTCDateTime, Stream
@@ -32,7 +36,14 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import gridspec
+from obspy.core import Trace, Stream
 
+from pyseis.modules.rdreftekc import rdreftek, reftek2stream
+
+def read_ref(path):
+    ref_head, ref_data = rdreftek(path)
+    st = reftek2stream(ref_head, ref_data)
+    return st
 
 
 
@@ -47,7 +58,9 @@ config_pickle = 'configs/tmp_config.pickle'
 f = open(name=config_pickle, mode='rb')
 CONFIG = pickle.load(f)
 f.close()
-    
+
+
+
 # import variables from initialised CONFIG class.
 MSEED_DIR = CONFIG.MSEED_DIR
 DATABASE_DIR = CONFIG.DATABASE_DIR
@@ -96,6 +109,22 @@ BBOX_LARGE = CONFIG.BBOX_LARGE
 BBOX_SMALL = CONFIG.BBOX_SMALL
 FIRSTDAY = CONFIG.FIRSTDAY
 LASTDAY = CONFIG.LASTDAY
+#FULL_COMB = CONFIG.FULL_COMB
+
+max_snr_pickle = os.path.join(DATALESS_DIR, 'snr.pickle')
+
+
+#if os.path.exists(max_snr_pickle):
+#    global max_snr
+
+#    f = open(name=max_snr_pickle, mode='rb')
+#    max_snr = pickle.load(f)
+#    f.close()
+
+#else: 
+#    print "No maximum SNR file, must calculate to run SNR weighted stacking."
+    
+
 
 # ========================
 # Constants and parameters
@@ -230,7 +259,9 @@ class CrossCorrelation:
         self.pws = np.zeros(2 * nmax + 1)
         self.SNR_lin = [] #SNR with each time-step for linear stack
         self.SNR_pws = [] #SNR with each time-step for phase-weighted stack
-        
+        self.SNR_stack = None
+        self.SNR_max = 0
+        self.comb_stack = None
         #  has cross-corr been symmetrized? whitened?
         self.symmetrized = False
         self.whitened = False
@@ -285,7 +316,8 @@ class CrossCorrelation:
             # calculating cross-corr using obspy, if not already provided
             xcorr = obspy.signal.cross_correlation.xcorr(
                 tr1, tr2, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
-                        
+
+        
         # verifying that we don't have NaN
         if np.any(np.isnan(xcorr)):
             s = u"Got NaN in cross-correlation between traces:\n{tr1}\n{tr2}"
@@ -316,9 +348,77 @@ class CrossCorrelation:
         linear_comp = self.dataarray #- np.mean(self.dataarray))
         phase_comp = np.abs(self.phasearray)# - \
         #np.mean(np.abs(self.phasearray))) 
-        self.pws = linear_comp * (phase_comp ** power_v)
+        self.pws += linear_comp * (phase_comp ** power_v)
+        
+        #plt.figure()
+        #plt.plot(np.linspace(np.min(self.pws), np.max(self.pws), 
+        #                     len(self.pws)), self.pws, alpha=0.5, c='r')
+                             
+        #plt.plot(np.linspace(np.min(self.pws), np.max(self.pws), 
+        #                     len(self.pws)), self.pws, c='b', alpha=0.5)                             
+        #plt.show()
+        
         #self.pws = self.pws / np.max(self.pws)
         #self.pws = self.pws - np.mean(self.pws)
+        
+    def snr_weighted_stack(self):
+        """
+        This function is applies the technique of Schimmel et al. (1997) 
+        and stacks cross-correlation waveforms based on their instaneous 
+        phases. The technique is known as phase-weighted stacking (PWS). 
+        This uses a combination of the phase and linear stack and the number
+        of stacks performed. power_v variable is described in Schimmel et al.
+        and is almost always set at 2 for successful stacking. 
+        """
+        
+        # this function only produces the most recent PWS, NOT stacking
+        # each iteration one atop the other! note also that nday is the
+        # number of iterations performed, NOT the number of days passed. 
+        
+        linear_comp = self.dataarray #- np.mean(self.dataarray))
+
+        rms = np.sqrt(np.mean(np.square(linear_comp)))
+
+        snr = np.max(linear_comp) / rms
+        
+        if snr > self.SNR_max:
+            self.SNR_max = snr
+        
+        
+        snr_weight = snr / self.SNR_max 
+        
+        if self.SNR_stack is None: 
+            self.SNR_stack = linear_comp
+            self.SNR_stack += self.SNR_stack * snr_weight
+            
+        else:
+            self.SNR_stack += self.SNR_stack * snr_weight 
+
+        
+        
+    def combined_stack(self, power_v=2):
+        
+        """
+        This function is applies the technique of Schimmel et al. (1997) 
+        and stacks cross-correlation waveforms based on their instaneous 
+        phases. The technique is known as phase-weighted stacking (PWS). 
+        This uses a combination of the phase and linear stack and the number
+        of stacks performed. power_v variable is described in Schimmel et al.
+        and is almost always set at 2 for successful stacking. 
+        """
+        
+        # this function only produces the most recent PWS, NOT stacking
+        # each iteration one atop the other! note also that nday is the
+        # number of iterations performed, NOT the number of days passed. 
+
+        try:
+            phase_comp = np.abs(self.phasearray)
+            self.comb_stack = self.SNR_stack * (phase_comp ** power_v)
+            
+        except Exception as error: 
+            e = error
+
+
        
     def add(self, tr1, tr2, xcorr=None):
         """
@@ -336,13 +436,10 @@ class CrossCorrelation:
 
         # cross-correlation
         if xcorr is None:
-
             # calculating cross-corr using obspy, if not already provided
             xcorr = obspy.signal.cross_correlation.xcorr(
                 tr1, tr2, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
-                
-
-            
+        
 
         # verifying that we don't have NaN
         if np.any(np.isnan(xcorr)):
@@ -350,6 +447,44 @@ class CrossCorrelation:
             raise pserrors.NaNError(s.format(tr1=tr1, tr2=tr2))
         
         
+        #print "FULL_COMB: ", FULL_COMB
+        #if FULL_COMB: 
+        #    xcorr1 = obspy.signal.cross_correlation.xcorr(
+        #        tr1, tr2, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
+            
+        #    xcorr2 = obspy.signal.cross_correlation.xcorr(
+        #        tr2, tr1, shift_len=self._get_xcorr_nmax(), full_xcorr=True)[2]
+            # generate obspy Stream object to save to miniseed
+        #    tr_start, tr_end = tr1.stats.starttime, tr1.stats.endtime
+        #    stat1, stat2 =  tr1.stats.station, tr2.stats.station
+
+        #    timelist_dir = sorted(os.listdir(CROSSCORR_DIR))
+        #    xcorr_mseed = os.path.join(CROSSCORR_DIR, timelist_dir[-1], 
+        #                               'mseed')
+            
+            
+        #    if not os.path.exists(xcorr_mseed): os.mkdir(xcorr_mseed)
+        #    xcorr_str = 'xcorr_{}-{}_{}-{}.mseed'.format(stat1, stat2, 
+        #                                                 tr_start, tr_end)
+                                                         
+            
+        #    trace1, trace2 = Trace(data=xcorr1), Trace(data=xcorr2)
+            
+            # assign header metadata for xcorr mseed
+        #    trace1.stats.network, trace2.stats.network = \
+        #    tr1.stats.network, tr2.stats.network
+
+        #    trace1.stats.station, trace2.stats.station = stat1, stat2
+        #    trace1.stats.channel, trace2.stats.channel = \
+        #    tr1.stats.channel, tr2.stats.channel            
+
+        #    xcorr_st = Stream(traces=[trace1, trace2])
+        #    xcorr_output = os.path.join(xcorr_mseed, xcorr_str)
+        #    print "xcorr_output: ", xcorr_output
+        #    xcorr_st.write(xcorr_output, format='MSEED')
+            
+            
+            
         #
         self.dataarray += xcorr#/ np.max(xcorr) #/ (self.nday + 1)
         # reduce stack about zero
@@ -357,6 +492,17 @@ class CrossCorrelation:
         # normalise about 0, max amplitude 1
         #self.dataarray = self.dataarray / np.max(self.dataarray)
         
+
+        #self.phase_stack(tr1, tr2, xcorr=xcorr)
+        #self.phase_weighted_stack()
+        
+        #self.snr_weighted_stack()
+        #self.combined_stack()
+        #plt.figure()
+        #plt.title('pws')
+        #plt.plot(self.timearray, self.pws)
+        #plt.show()
+        #plt.clf()
         
         # updating stats: 1st day, last day, nb of days of cross-corr
         startday = (tr1.stats.starttime + ONESEC)
@@ -368,6 +514,9 @@ class CrossCorrelation:
 
         # stacking cross-corr over single month
         month = MonthYear((tr1.stats.starttime + ONESEC).date)
+        
+        
+        
         try:
             monthxc = next(monthxc for monthxc in self.monthxcs
                            if monthxc.month == month)
@@ -375,7 +524,13 @@ class CrossCorrelation:
             # appending new month xc
             monthxc = MonthCrossCorrelation(month=month, ndata=len(self.timearray))
             self.monthxcs.append(monthxc)
-        monthxc.dataarray += xcorr
+        
+        if monthxc.dataarray.shape != xcorr.shape: 
+            
+            monthxc.dataarray[:-1] += xcorr
+        else:
+            monthxc.dataarray += xcorr
+
         monthxc.nday += 1
 
         # updating (adding) locs and ids
@@ -397,11 +552,17 @@ class CrossCorrelation:
             # already symmetrized
             return self
 
+        
         # symmetrizing on self or copy of self
         xcout = self if inplace else self.copy()
 
         n = len(xcout.timearray)
         mid = (n - 1) / 2
+
+        
+        if n % 2 != 1:
+            xcout.timearray = xcout.timearray[:-1]
+            n = len(xcout.timearray)
 
         # verifying that time array is symmetric wrt 0
         if n % 2 != 1:
@@ -413,7 +574,9 @@ class CrossCorrelation:
         xcout.timearray = xcout.timearray[mid:]
         for obj in [xcout] + (xcout.monthxcs if hasattr(xcout, 'monthxcs') else []):
             a = obj.dataarray
-            obj.dataarray = (a[mid:] + a[mid::-1]) / 2.0
+            a_mid = a[mid:]
+            a_mid_rev = a_mid[::-1]
+            obj.dataarray = (a_mid + a_mid_rev) / 2.0
 
         xcout.symmetrized = True
         return xcout
@@ -543,43 +706,39 @@ class CrossCorrelation:
         # linear stack at current time step of the xcorrs for station pair 
         dataarray = self.dataarray
         timearray = self.timearray
-        
-
         try:
-            self.SNR_lin.append([np.max(dataarray) / np.std(dataarray), date]) 
-
             # signal and noise windows
-            #tsignal, tnoise = self.signal_noise_windows(
-            #vmin, vmax, signal2noise_trail, noise_window_size)
+            tsignal, tnoise = self.signal_noise_windows(
+            vmin, vmax, signal2noise_trail, noise_window_size)
             
-            #signal_window_plus = (timearray >= tsignal[0]) & \
-            #                     (timearray <= tsignal[1])
+            signal_window_plus = (timearray >= tsignal[0]) & \
+                                 (timearray <= tsignal[1])
                                  
-            #signal_window_minus = (timearray <= -tsignal[0]) & \
-            #                      (timearray >= -tsignal[1])
+            signal_window_minus = (timearray <= -tsignal[0]) & \
+                                  (timearray >= -tsignal[1])
             
-            #peak1 = np.abs(dataarray[signal_window_plus]).max()
-            #peak2 = np.abs(dataarray[signal_window_minus]).max()
-            #peak = max([peak1, peak2])                      
+            peak1 = np.abs(dataarray[signal_window_plus]).max()
+            peak2 = np.abs(dataarray[signal_window_minus]).max()
+            peak = max([peak1, peak2])                      
 
-            #noise_window1 = (timearray > tsignal[1]) & \
-            #                (timearray <= self.timearray[-1])
+            noise_window1 = (timearray > tsignal[1]) & \
+                            (timearray <= self.timearray[-1])
             
-            #noise_window2 = (timearray > -tsignal[0]) & \
-            #               (timearray < tsignal[0])
+            noise_window2 = (timearray > -tsignal[0]) & \
+                           (timearray < tsignal[0])
             
-            #noise_window3 = (timearray >= self.timearray[0]) & \
-            #                (timearray < -tsignal[1])
+            noise_window3 = (timearray >= self.timearray[0]) & \
+                            (timearray < -tsignal[1])
         
 
             
-            #noise1 = dataarray[noise_window1]
-            #noise2 = dataarray[noise_window2]
-            #noise3 = dataarray[noise_window3]
+            noise1 = dataarray[noise_window1]
+            noise2 = dataarray[noise_window2]
+            noise3 = dataarray[noise_window3]
             
-            #noise_list = list(it.chain(*[noise1, noise2, noise3]))
+            noise_list = list(it.chain(*[noise1, noise2, noise3]))
             
-            #noise = np.nanstd(noise_list)
+            noise = np.nanstd(noise_list)
             #SNR with each time-step for linear stack
             self.SNR_lin.append([peak / noise, date]) 
             
@@ -596,7 +755,6 @@ class CrossCorrelation:
         pws = self.pws
         
         try:
-
             # signal and noise windows
             tsignal, tnoise = self.signal_noise_windows(
             vmin, vmax, signal2noise_trail, noise_window_size)
@@ -609,7 +767,6 @@ class CrossCorrelation:
             
             peak1 = np.abs(pws[signal_window_plus]).max()
             peak2 = np.abs(pws[signal_window_minus]).max()
-            
             peak = max([peak1, peak2])                      
 
             noise_window1 = (timearray > tsignal[1]) & \
@@ -642,8 +799,7 @@ class CrossCorrelation:
             #plt.show()
             noise = np.nanstd(noise_list)
             if peak or noise: 
-                #SNR_rat = peak/noise
-                SNR_rat = np.max(pws) / np.std(pws)
+                SNR_rat = peak/noise
             #SNR with each time-step for phase-weighted stack 
             if SNR_rat:
                 self.SNR_pws.append([SNR_rat, date])
@@ -1115,6 +1271,12 @@ skipping ...")
         tne0 = xcout.timearray != 0.0
         x = ftan_periods                                 # x = periods
         y = (self.dist() / xcout.timearray[tne0])[::-1]  # y = velocities
+
+        # force y to be strictly increasing!
+        for i in range(1, len(y)):
+            if y[i] < y[i-1]:
+                y[i] = y[i-1] + 1               
+                        
         zampl = ampl[:, tne0][:, ::-1]                   # z = amplitudes
         zphase = phase[:, tne0][:, ::-1]                 # z = phases
         # spline interpolation
@@ -1303,6 +1465,7 @@ skipping ...")
         """
         # symmetrized, whitened cross-corr
         xc = self.symmetrize(inplace=False)
+        
         if whiten:
             xc = xc.whiten(inplace=False)
 
@@ -1316,6 +1479,7 @@ skipping ...")
                                         use_inst_freq=use_inst_freq,
                                         vg_at_nominal_freq=rawvg_init,
                                         **kwargs)
+                                        
         except pserrors.CannotCalculateInstFreq:
             # pb with instantaneous frequency: returnin NaNs
             print "Warning: could not calculate instantenous frequencies in raw FTAN!"
@@ -1330,6 +1494,7 @@ skipping ...")
                                              station1=self.station1,
                                              station2=self.station2)
             
+
             return cleanvg
 
         # phase function from raw vg curve
@@ -2036,10 +2201,13 @@ class CrossCorrelationCollection(AttribDict):
 
 
     def plot_SNR(self, plot_type='all', figsize=(21.0, 12.0), 
+<<<<<<< HEAD
                  outfile=None, dpi=300, showplot=True, stat_list=[], 
+=======
+                 outfile=None, dpi=300, showplot=True, config='config_1', 
+>>>>>>> a02db0a39759d104fbc6316bbbbf735d88df870c
                  verbose=False):
         
-        print "Plotting signal-to-noise ratio figures ... " 
         # preparing pairs
         pairs = self.pairs()
         
@@ -2062,17 +2230,19 @@ class CrossCorrelationCollection(AttribDict):
                     if len(info_array) > 0:
                         SNRarray, timearray = info_array[:,0], info_array[:,1]                
                         plt.plot(timearray, SNRarray, c='k')
-                        s = '{s1}-{s2}: SNR vs. time for {nstacks} stacks from {t1} to {t2}.'
+                        s = '{s1}-{s2}: SNR vs. time for {nstacks}\n \
+stacks from {t1} to {t2} {}'
                         title = s.format(s1=s1, s2=s2, 
                                          nstacks=len(SNRarray), 
                                          t1=timearray[0],
-                                         t2=timearray[-1])
+                                         t2=timearray[-1],
+                                         cnf=config)
             
                         plt.title(title)
                         plt.ylabel('SNR (Max. Signal Amp. / Noise Std')
                         plt.xlabel('Time (UTC)')
                 
-                        file_name = '{}-{}-SNR.png'.format(s1, s2)
+                        file_name = '{}-{}-{}-SNR.png'.format(s1, s2, config)
                         outfile_individual = os.path.join(outfile, file_name)
                 
                         if os.path.exists(outfile_individual):
@@ -2083,7 +2253,6 @@ class CrossCorrelationCollection(AttribDict):
                         fig.set_size_inches(figsize)
 
                         print '{s1}-{s2}'.format(s1=s1, s2=s2),
-            
                         fig.savefig(outfile_individual, dpi=dpi)
                         fig.clf()
 
@@ -2114,7 +2283,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                             SNRarray, timearray = info_array[:,0], info_array[:,1]                
                             plt.plot(timearray, SNRarray, alpha=0.3, c='k')
                     
-                         
+
                     #except Exception as err:
                     #    print err
                         
@@ -2130,12 +2299,14 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
     def plot(self, plot_type='distance', xlim=None, norm=True, whiten=False,
              sym=False, minSNR=None, minday=1, withnets=None, onlywithnets=None,
              figsize=(21.0, 12.0), outfile=None, dpi=300, showplot=True,
-             stack_style='linear'):
+             stack_type='linear', fill=False, absolute=False, 
+             freq_central=None):
+        
         
         """
         method to plot a collection of cross-correlations
-        """
-
+        """        
+        
         # preparing pairs
         pairs = self.pairs(minday=minday, minSNR=minSNR, withnets=withnets,
                            onlywithnets=onlywithnets)
@@ -2160,24 +2331,68 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             pairs.sort()
             print 'Now saving cross-correlation plots for all station pairs ...'
             for iplot, (s1, s2) in enumerate(pairs):
+                
+                
+            
                 plt.figure(iplot)
                 # symmetrizing cross-corr if necessary
-                xcplot = self[s1][s2].symmetrize(inplace=False) \
-                if sym else self[s1][s2]
-
+                #xcplot = self[s1][s2].symmetrize(inplace=False) \
+                #if sym else self[s1][s2]
+                xcplot = self[s1][s2]
                 # spectral whitening
                 if whiten:
                     xcplot = xcplot.whiten(inplace=False)
-                distance = self[s1][s2].dist()
-                dist_str = format(distance, '.2f')
+
                 # subplot
                 #plt.subplot(nrow, ncol, iplot + 1)
+                
+                if stack_type == 'PWS':
+                    filter_trace =  Trace(data=xcplot.pws)
+                    
+                elif stack_type == 'SNR':
+                    filter_trace =  Trace(data=xcplot.SNR_stack)
+                    
+                elif stack_type == 'combined':
+                    filter_trace =  Trace(data=xcplot.comb_stack)
+                    
+                    
+                elif stack_type == 'linear':
+                    filter_trace =  Trace(data=xcplot.dataarray)
+                else: 
+                    filter_trace =  Trace(data=xcplot.dataarray)
 
+
+
+                # number of seconds in time array
+                n_secs = 2.0 * xcplot.timearray[-1]
+                sample_rate = int(len(filter_trace) / n_secs)
+                
+                filter_trace.stats.sampling_rate = sample_rate
+                         
+
+                xcplot.dataarray = filter_trace.data 
+                
+                #print "xcplot.dataarray: ", xcplot.dataarray
+                nrm = np.max(np.abs(xcplot.dataarray)) if norm else 1.0
+
+                
                 # normalizing factor
-                nrm = max(abs(xcplot.dataarray)) if norm else 1.0
+                #pws_nrm = np.max(np.abs(xcplot.pws)) 
 
-                # plotting
-                plt.plot(xcplot.timearray, xcplot.dataarray / nrm)
+                #plt.figure(1)
+                #plt.plot(xcplot.timearray, xcplot.pws / pws_nrm, c='r', alpha=0.5)
+                #plt.plot(xcplot.timearray, lin / lin_nrm, c='b')
+                #plt.show()
+                #plt.clf()
+
+                
+
+
+                # plotting                
+                if xcplot.timearray.shape !=  xcplot.dataarray.shape:
+                    plt.plot(xcplot.timearray[:-1], xcplot.dataarray / nrm)
+                else:
+                     plt.plot(xcplot.timearray, xcplot.dataarray / nrm)
                 if xlim:
                     plt.xlim(xlim)
 
@@ -2186,22 +2401,24 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                 for loc in xcplot.locs1]))
                 locs2 = ','.join(sorted(["'{0}'".format(loc) \
                 for loc in xcplot.locs2]))
-                s = '{s1}-{s2}: {nday} stacks from {t1} to {t2} at {dist} km apart.'
+                    
                 #remove microseconds in time string
+                s = '{s1}-{s2}: {nday} stacks from {t1} to {t2} {sta} stack.png'
                 title = s.format(s1=s1, s2=s2, 
                                  nday=xcplot.nday, 
                                  t1=str(xcplot.startday)[:-11],
-                                 t2=str(xcplot.endday)[:-11],
-                                 dist=dist_str)
+                                 t2=str(xcplot.endday)[:-11], sta=stack_type)
+                out = os.path.abspath(os.path.join(outfile, os.pardir))
+                outfile_individual = os.path.join(out, title)
+                                 
                 plt.title(title)
 
                 # x-axis label
                 #if iplot + 1 == npair:
                 plt.xlabel('Time (s)')
-                #print outfile
-                #out = os.path.abspath(os.path.join(outfile, os.pardir))
-                outfile_individual = os.path.join(outfile, title + '.png')
-                #print outfile_individual
+                
+
+                print outfile_individual
                 if os.path.exists(outfile_individual):
                 # backup
                     shutil.copyfile(outfile_individual, \
@@ -2219,7 +2436,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             maxdist = max(self[x][y].dist() for (x, y) in pairs)
             if maxdist > 2500.0:
                 maxdist = 2500.0
-            corr2km = maxdist / 30.0
+            corr2km = maxdist / 10.0
             cc = mpl.rcParams['axes.color_cycle']  # color cycle
             
             #filter out every station pair with more than 2500km distance
@@ -2230,6 +2447,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             dist_filter = np.array([self[s1][s2].dist() < 2500.0 for (s1, s2) in pairs])
             print "dist_filter: ", dist_filter
 
+            
             
             pairs = np.asarray(pairs)
             
@@ -2262,24 +2480,72 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             for ipair, (s1, s2) in enumerate(pairs_list):
                 # symmetrizing cross-corr if necessary
                 xcplot = self[s1][s2].symmetrize(inplace=False) if sym else self[s1][s2]
-
+                #xc = self[s1][s2]
                 # spectral whitening
                 if whiten:
                     xcplot = xcplot.whiten(inplace=False)
 
-                fill = False
-                absolute = True
+
                 
                 color = cc[ipair % len(cc)]
                 #color = 'k'
                 # normalizing factor
-                nrm = max(abs(xcplot.dataarray)) if norm else 1.0
 
+                nrm = max(xcplot.dataarray) if norm else 1.0
+    
+                filter_trace =  Trace(data=xcplot.dataarray)
+                
+                if stack_type == 'PWS':
+                    filter_trace =  Trace(data=xcplot.pws)
+                    
+                if stack_type == 'SNR':
+                    filter_trace =  Trace(data=xcplot.SNR_stack)
+                    
+                if stack_type == 'combined':
+                    filter_trace =  Trace(data=xcplot.comb_stack)
+                    
+                    
+                elif stack_type == 'linear':
+                    filter_trace =  Trace(data=xcplot.dataarray)
+                else: 
+                    filter_trace =  Trace(data=xcplot.dataarray)
+                # number of seconds in time array
+                #n_secs = 2.0 * xcplot.timearray[-1]
+                #sample_rate = int(len(xcplot.dataarray) / n_secs)
+                
+                #filter_trace.stats.sampling_rate = sample_rate
+                
+                
+                #freq_min = freq_central - freq_central / 10.0
+                #freq_max = freq_central + freq_central / 10.0
+                
+                #print "freq_min: ", freq_min
+                #print "freq_max: ", freq_max
+                
+                #filter_trace = filter_trace.filter(type="bandpass",
+                #                                   freqmin=freq_min,
+                #                                   freqmax=freq_max,
+                #                                   corners=2,
+                #                                   zerophase=True) 
+                         
 
+                xcplot.dataarray = filter_trace.data  
+                
+                
                 # plotting
                 xarray = xcplot.timearray
                 #get absolute value of data array for more visual plot
+                print "y shape: ", xcplot.dataarray.shape
+                print "x shape: ", xcplot.timearray.shape
                 
+                if xcplot.dataarray.shape > xcplot.timearray.shape:
+                    xcplot.dataarray.shape = xcplot.dataarray.shape[:-1]
+                    
+                elif xcplot.dataarray.shape < xcplot.timearray.shape:
+                    xcplot.timearray.shape = xcplot.timearray.shape[:-1]                
+                print "y shape: ", xcplot.dataarray.shape
+                print "x shape: ", xcplot.timearray.shape
+
                 if fill and absolute:
                     yarray = corr2km * abs(xcplot.dataarray) / nrm + xcplot.dist()
                     #for point in yarray: 
@@ -2287,12 +2553,15 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                             
                     plt.fill_between(xarray, xcplot.dist(), yarray, color=color)
                 elif fill and not absolute:
-                    yarray = xcplot.dist() + corr2km * xcplot.dataarray / nrm
+                    
+                    yarray = xcplot.dist() + corr2km * (xcplot.dataarray / nrm)
                     plt.fill_between(xarray, xcplot.dist(), yarray, color=color)                    
                 elif not fill and absolute:
+                    
                     yarray = xcplot.dist() + corr2km * abs(xcplot.dataarray) / nrm
                     plt.plot(xarray, yarray, color = color)
                 else:
+                    
                     yarray = xcplot.dist() + corr2km * xcplot.dataarray / nrm
                     plt.plot(xarray, yarray, color = color)                    
 
@@ -2341,7 +2610,7 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
                              t1=xcplot.startday.strftime('%d/%m/%y'),
                              t2=xcplot.endday.strftime('%d/%m/%y'))
 
-                
+                print s 
 
 
             plt.grid()
@@ -2355,19 +2624,17 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             plt.xlabel('Time (s)')
             plt.ylabel('Distance (km)')
             plt.ylim((0, plt.ylim()[1]))
-        
-        title = "moveout_distance_plot.png"
-        outfile_distance = os.path.join(outfile, title)
 
+        print "outfile: ", outfile 
         # saving figure
         if plot_type == 'distance':
             if outfile:
-                if os.path.exists(outfile_distance):
+                if os.path.exists(outfile):
                 # backup
-                    shutil.copyfile(outfile_distance, outfile + '~')
+                    shutil.copyfile(outfile, outfile + '~')
                 fig = plt.gcf()
                 fig.set_size_inches(figsize)
-                fig.savefig(outfile_distance, dpi=dpi)
+                fig.savefig(outfile, dpi=dpi)
         else:
             pass
 
@@ -2628,13 +2895,17 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
         print "{}-{} ".format(s1, s2),
 
             # complete FTAN analysis
-        rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
-            whiten=whiten, months=monthyears,
-            vmin=vmin, vmax=vmax,
-            signal2noise_trail=signal2noise_trail,
-            noise_window_size=noise_window_size,
-            **kwargs)
-            
+        try:
+            rawampl, rawvg, cleanampl, cleanvg = xc.FTAN_complete(
+                whiten=whiten, months=monthyears,
+                vmin=vmin, vmax=vmax,
+                signal2noise_trail=signal2noise_trail,
+                noise_window_size=noise_window_size,
+                **kwargs)
+            return cleanvg
+        
+        except:
+            return None
             #FTAN_output = (rawampl, rawvg, cleanampl, cleanvg)
             
             # save individual FTAN output files if set
@@ -2665,7 +2936,6 @@ stacks from {} to {}'.format(FIRSTDAY, LASTDAY)
             #    pdf.savefig(fig)
             #    plt.close()            
         #print "Complete."
-        return cleanvg
             
         #except Exception as err:
             # something went wrong with this FTAN
@@ -3435,4 +3705,3 @@ if __name__ == '__main__':
     # loading pickled cross-correlations
     xc = load_pickled_xcorr_interactive()
     print "Cross-correlations available in variable 'xc':"
-    print xc

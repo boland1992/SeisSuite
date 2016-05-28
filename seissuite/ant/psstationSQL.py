@@ -12,8 +12,8 @@ from seissuite.response.resp import (freq_check, process_response,
 import obspy
 import obspy.core
 from obspy import read_inventory
-from obspy.xseed.utils import SEEDParserException
 import os
+    
 import glob
 import pickle
 from copy import copy
@@ -252,6 +252,37 @@ def get_coords(dataless_inventories, xml_inventories, USE_STATIONXML):
     return coordinates
     
     
+def check_statname(station, checklist=[], map_dict={}):
+    """
+    Function written to map a given station name to a new station name if
+    it is in a given checklist. 
+    
+    Args:
+    station (obspy.station.Station): Obspy station object containing 
+                                     all header information.
+    checklist (list): list of station names that should be changed if the 
+                      station name is found to be in there.
+    map_dict (dictionary): dictionary with keys that are the strings of the 
+                           old station names, which store information related
+                           to the new station names. 
+    Returns:
+    station (obspy.station.Station): Obspy station object containing 
+                                     all header information.                    
+    """
+    
+    stat_name = station.name
+    
+    if stat_name in checklist:
+        try:
+            station.name = map_dict[stat_name]
+        except Exception as error:
+            print error
+        
+    
+    return station
+    
+    
+    
 def get_stationsSQL(SQL_db, xml_inventories=(), 
                     dataless_inventories=(), networks=None, 
                     startday=None, endday=None, coord_tolerance=1E-4,
@@ -314,6 +345,8 @@ re-run create_database in seissuite.database")
     subdir_len = len(database)
 
     for row in database:
+        #print "xml_inventories: ", xml_inventories
+        #print "row: ", row
         code, starttime, endtime, file_path = row
         starttime, endtime = UTCDateTime(starttime), UTCDateTime(endtime)
 
@@ -321,10 +354,11 @@ re-run create_database in seissuite.database")
         # this check if the start and end run times of the programme aren't
         # automatic
         year, month, day = str(starttime.date).split('-')
+        #print "year, month, day: ", year, month, day
         subdir = os.path.basename(file_path)
         
         network, name, channel = code.split('.')[0:3]
-        
+        #print "network, name, channel: ", network, name, channel
         # search response instrument database if RESP_CHECK is True
         resp_code = code.replace('.', '_')
 
@@ -355,40 +389,54 @@ re-run create_database in seissuite.database")
                 # appending new station, with current subdir
                 station = StationSQL(name=name, network=network, 
                                      channel=channel,
-                                     filename=file_path)                
+                                     filename=file_path)    
                 stations.append(station)
 
         else:
             # appending subdir to list of subdirs of station
             station.subdirs.append(subdir)
 
+   
     if verbose:
-        print 'Found {0} stations'.format(len(stations))
+         print 'Found {0} stations'.format(len(stations))
 
-    # adding lon/lat of stations from inventories
+     # adding lon/lat of stations from inventories
     if verbose:
-        print "Inserting coordinates to stations from inventories"
-
+         print "Inserting coordinates to stations from inventories"
+    
+    #print stations
+    
     for sta in copy(stations):
         # coordinates of station in dataless inventories
+        #print xml_inventories
         coords_set = set((c['longitude'], c['latitude']) for
                           inv in dataless_inventories for c 
                           in inv.getInventory()['channels']
                           if c['channel_id'].split('.')[:2]
                           == [sta.network, sta.name])
+
         # coordinates of station in xml inventories
+
         coords_set = coords_set.union((s.longitude, s.latitude) for 
                                        inv in xml_inventories for net 
                                        in inv for s in net.stations
                                        if net.code == sta.network 
                                        and s.code == sta.name)
+                                       
+    
+
+        #print "coords_set 1", coords_set
+        #print 'stations 1: ', stations
         if not coords_set:
             # no coords found: removing station
             if verbose:
                 print "WARNING: skipping {}. No coords found".format(repr(sta))
             stations.remove(sta)
+            #print "station removed: ", sta
+            
+        
         elif len(coords_set) == 1:
-            # one set of coords found
+           # one set of coords found
             sta.coord = list(coords_set)[0]
         else:
             # several sets of coordinates: calculating max diff

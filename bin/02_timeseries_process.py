@@ -74,22 +74,27 @@ import glob
 import sqlite3 as lite
 import shutil
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 # set epoch timestamp 
 epoch = dt.datetime(1970, 1, 1)
 
-total_verbose = False
+total_verbose = True
+psd = False
+
+
 # DECLUSTER STATIONS!
 # remove stations that are too close to one another (set by degree radius!)
-from seissuite.spacing.search_station import Coordinates
+#from seissuite.spacing.search_station import Coordinates
 
 #import matplotlib.pyplot as plt
 #import numpy as np
 # turn on multiprocessing to get one merged trace per station?
 # to preprocess trace? to stack cross-correlations?
-MULTIPROCESSING = {'merge trace': True,
-                   'process trace': True,
-                   'cross-corr': True}
+MULTIPROCESSING = {'merge trace': False,
+                   'process trace': False,
+                   'cross-corr': False}
 # how many concurrent processes? (set None to let multiprocessing module decide)
 NB_PROCESSES = None
 if any(MULTIPROCESSING.values()):
@@ -149,24 +154,46 @@ for i in range(0, 100):
     PLOT_CLASSIC = CONFIG.PLOT_CLASSIC
     PLOT_DISTANCE = CONFIG.PLOT_DISTANCE
     MAX_DISTANCE = CONFIG.MAX_DISTANCE
+<<<<<<< HEAD
     RANDOM_STACK = CONFIG.RANDOM_STACK
+=======
+    RESP_REMOVE = CONFIG.RESP_REMOVE
+    
+    #FULL_COMB = CONFIG.FULL_COMB
+
+>>>>>>> a02db0a39759d104fbc6316bbbbf735d88df870c
     # initialise the required databases if they haven't already been.
     #if no two SQL databases exist, then create them! 
     TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
     RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
+
+   # RESP_DB = os.path.join(DATABASE_DIR, 'response.db')
     
-    if not os.path.exists(RESP_DB):
+   # if not os.path.exists(RESP_DB):
         # initialise response database for use with automated data selection!
-        lite.connect(RESP_DB)
-        print "\nCreating response database. Please be patient ... "
-        from seissuite.database import response_database
-    
+
+  #      lite.connect(RESP_DB)
+  #      from seissuite.database import response_database
+    print TIMELINE_DB
+    if not os.path.exists(RESP_DB):
+        try:
+            lite.connect(RESP_DB)
+            print "\nCreating response database. Please be patient ... "
+            from seissuite.database import response_database
+        except:
+            print "Response database could not be initialised ... "
+
     if not os.path.exists(TIMELINE_DB):
         # initialise timeline database to help the application find files!
         lite.connect(TIMELINE_DB)
         print "\nCreating timeline database. Please be patient ... "
         from seissuite.database import create_database                                        
-                                        
+    
+    
+    if psd:
+        import powerdensity
+        
+
     print "\nProcessing parameters:"
     print "- dir of miniseed data: " + MSEED_DIR
     print "- dir of dataless seed data: " + DATALESS_DIR
@@ -294,8 +321,7 @@ for i in range(0, 100):
         print 'Copying configuration file to output directory ... ' 
         shutil.copy(config_file, OUTCONFIG)    
         
-        
-            
+
         METADATA_PATH = '{}metadata.pickle'.format(OUTFILESPATH.\
                   replace(os.path.basename(OUTFILESPATH), ""))
     
@@ -373,17 +399,22 @@ for i in range(0, 100):
                            endday=LASTDAY,
                            verbose=False)
 
-  
+
+    stat_coords = np.asarray([station.coord for station in stations])
+
+
+
     
     DECLUSTER = False
     
-    if DECLUSTER: 
-        stat_coords = np.asarray([station.coord for station in stations])
-        COORDS = Coordinates(input_list=stat_coords)
-        declustered_coords = COORDS.decluster(degree_dist=0.1)
+    #if DECLUSTER: 
+    #    stat_coords = np.asarray([station.coord for station in stations])
+    #    COORDS = Coordinates(input_list=stat_coords)
+    #    declustered_coords = COORDS.decluster(degree_dist=0.1)
     
-        stations = [station for station in stations if 
-                    station.coord in declustered_coords]      
+    #    stations = [station for station in stations if 
+    #                station.coord in declustered_coords]      
+
 
     # Loop on time interval
      #number of time steps
@@ -415,7 +446,9 @@ for i in range(0, 100):
     #loop on time-series. Date now represents XCORR_INTERVAL long time intervals
     counter = 0 
     
+    
     for date in dates:
+        print date
         loop_time0 = dt.datetime.now()
 
         print "\nProcessing data for date {} with a {} minute cross-correlation\
@@ -487,6 +520,13 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
                                                      xcorr_interval=XCORR_INTERVAL,
                                                      skiplocs=CROSSCORR_SKIPLOCS,
                                                      minfill=MINFILL)
+                                                     
+                
+                #plt.figure()
+                #plt.plot(trace.data)
+                #plt.show()
+                #plt.clf()
+                
                 
                 if total_verbose:
                     msg = 'merged'
@@ -530,7 +570,8 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
             
     
             try:
-                Preprocess.preprocess_trace(trace=trace, paz=response)
+                Preprocess.preprocess_trace(trace=trace, paz=response, 
+                                            verbose=False)
                 msg = 'ok'
                 if total_verbose:
                     print '{}.{} [{}] '.format(trace.stats.network, 
@@ -588,29 +629,31 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
             # dataless inventory, (2) None if response found in StationXML
             # inventory (directly attached to trace) or (3) False if no
             # response found
+            if RESP_REMOVE:  
+                try:
+                    response = Preprocess.get_or_attach_response(
+                        trace=tr,
+                        dataless_inventories=dataless_inventories,
+                        xml_inventories=xml_inventories)
+                    errmsg = None
+                except pserrors.CannotPreprocess as err:
+                    # response not found
+                    response = False
+                    errmsg = '{}: skipping'.format(err)
+                except Exception as err:
+                    # unhandled exception!
+                    response = False
+                    errmsg = 'Unhandled error: {}'.format(err)
     
-            try:
-                response = Preprocess.get_or_attach_response(
-                    trace=tr,
-                    dataless_inventories=dataless_inventories,
-                    xml_inventories=xml_inventories)
-                errmsg = None
-            except pserrors.CannotPreprocess as err:
-                # response not found
-                response = False
-                errmsg = '{}: skipping'.format(err)
-            except Exception as err:
-                # unhandled exception!
-                response = False
-                errmsg = 'Unhandled error: {}'.format(err)
-    
-            responses.append(response)
-            if errmsg:
-                # printing error message
-                if total_verbose:
-                    print '{}.{} [{}] '.format(tr.stats.network, 
-                                               tr.stats.station, 
-                                               errmsg),
+                responses.append(response)
+                if errmsg:
+                    # printing error message
+                    if total_verbose:
+                        print '{}.{} [{}] '.format(tr.stats.network, 
+                                                   tr.stats.station, 
+                                                   errmsg),
+            else:
+                responses.append(None)
                                            
         
         print '\nTraces merged and responses removed in {:.1f} seconds'\
@@ -622,18 +665,25 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
         print '\nPre-processing traces ... '
 
         t0 = dt.datetime.now()
+        # must have more than one trace for cross-correlations!
+        traces = np.array(traces)
+        traces_check = traces[traces != np.array(None)]
 
-        if MULTIPROCESSING['process trace']:
-            # multiprocessing turned on: one process per station
-            pool = mp.Pool(NB_PROCESSES)
-            traces = pool.map(preprocessed_trace, zip(traces, responses))
-            pool.close()
-            pool.join()
-        else:
-            # multiprocessing turned off: processing stations one after another
-            traces = [preprocessed_trace((tr, res)) for tr, 
-                      res in zip(traces, responses)]
-    
+        if len(traces_check) > 1:
+            if MULTIPROCESSING['process trace']:
+                # multiprocessing turned on: one process per station
+                pool = mp.Pool(NB_PROCESSES)
+                traces = pool.map(preprocessed_trace, zip(traces, responses))
+                pool.close()
+                pool.join()
+            
+            else:
+                # multiprocessing turned off: processing stations one after another
+                try:
+                    traces = [preprocessed_trace((tr, res)) for tr, 
+                              res in zip(traces, responses)]
+                except:
+                    continue
         # setting up dict of current date's traces, {station: trace}
         tracedict = {s.name: trace for s, trace in zip(iterate_stations, 
                                                        traces) if trace}
@@ -683,10 +733,16 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
                 """
                 (s1, tr1), (s2, tr2) = pair
                
-                #print '{}-{} '.format(s1, s2),
+                print '{}-{} '.format(s1, s2),
                 shift = int(CROSSCORR_TMAX / PERIOD_RESAMPLE)
                 xcorr = obspy.signal.cross_correlation.xcorr(
                     tr1, tr2, shift_len=shift, full_xcorr=True)[2]
+                    
+                #plt.figure()
+                #plt.title("xcorr 1 ")
+                #plt.plot(xcorr)
+                #plt.show()
+                #plt.clf()
                 return xcorr
     
 
@@ -707,14 +763,40 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
                date=date,
                verbose=not MULTIPROCESSING['cross-corr'])
         
-    
+        pairs = list(it.combinations(sorted(tracedict.items()), 2))
+
+        # calculate max snr for snr weighted stack! 
+#        for pair in pairs: 
+#            (s1, tr1), (s2, tr2) = pair
+#            s1, s2 = str(s1), str(s2)
+#            snr_list = xc[s1][s2].SNR_list
+#            max_snr = np.max(snr_list)
+
+#            snr_stack = xc[s1][s2].SNR_stack
+            
+#            snr_wstack = np.zeros_like(snr_stack[0])
+             
+#            for xcorr, snr in zip(snr_stack, snr_list): 
+#                snr_wstack += xcorr * snr / max_snr
+                
+            # assign final snr weighted stack xcorr green's function to SNR_stack
+#            xc[s1][s2].SNR_stack = snr_wstack
+#            if s1 in xc.keys():
+#                if s2 in xc[s1].keys():
+#                    pws = xc[s1][s2].pws
+#                    plt.figure()
+#                    plt.plot(pws)
+#                    plt.show()
+#                    plt.clf()
+
+            
     
     #==============================================================================    
         delta = (dt.datetime.now() - t0).total_seconds()
 
 
-        print "\nCalculated and stacked {} cross-correlations in \
-{:.1f} seconds".format(len(xcorrs), delta)
+        #print "\nCalculated and stacked {} cross-correlations in \
+#{:.1f} seconds".format(len(xcorrs), delta)
     
         loop_delta = (dt.datetime.now() - loop_time0).total_seconds()
 
@@ -728,22 +810,26 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
         
         
         # save partial pickle file only if timeseries loop is large enough
-        if len(metadata) >= 2:
-            print "Time since last save: ", abs(date - metadata[-1] + dt.timedelta(minutes=XCORR_INTERVAL)) 
-            if (date - metadata[-1]) >= dt.timedelta(days=1):
-                with open(u'{}.part.pickle'.format(OUTFILESPATH), 'wb') as f:
-                    print "\nExporting cross-correlations calculated until now." 
-                    pickle.dump(xc, f, protocol=2)
-                metadata.append(date)
+        #if len(metadata) >= 2:
+        #    print "Time since last save: ", abs(date - metadata[-1] + dt.timedelta(minutes=XCORR_INTERVAL)) 
+            #if len(metadata) % 10 == 0:# (date - metadata[-1]) >= dt.timedelta(hours=1):
+        #    with open(u'{}.part.pickle'.format(OUTFILESPATH), 'wb') as f:
+        #        print "\nExporting cross-correlations calculated until now." 
+        #        pickle.dump(xc, f, protocol=2)
+        #    metadata.append(date)
                 
-        elif len(metadata) == 0:
-            metadata.append(date)
+        #elif len(metadata) == 0:
+        #    metadata.append(date)
 
     
             
         #also create a metadata dump file for use only if the program needs to be restarted
         #use replace() to get rid of basename to create file named metadata.pickle in 
         #correct path
+            
+        #with open(u'{}.part.pickle'.format(OUTFILESPATH), 'wb') as f:
+        #    print "\nExporting cross-correlations calculated until now." 
+        #    pickle.dump(xc, f, protocol=2)    
         with open(METADATA_PATH, 'wb') as f:
             print "\nExporting re-start metadata of time-series calculated until \
 now."
@@ -757,37 +843,53 @@ now."
         xc.export(outprefix=OUTFILESPATH, stations=stations, verbose=True)
     
         # exporting to png file
-        print "Exporting cross-correlations to file: {}.png".format(OUTFILESPATH)
+    print "Exporting cross-correlations to file: {}.png".format(OUTFILESPATH)
         # optimizing time-scale: max time = max distance / vmin (vmin = 2.5 km/s)
-        maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
-        maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
+    maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
+    maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
         
-    
-#        if PLOT_DISTANCE:
-                #plot distance plot of cross-correlations
-#            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
-#                    outfile=OUTFOLDERS, showplot=False)
-        
-#        if PLOT_CLASSIC:
+
+    if PLOT_DISTANCE:
+            #plot distance plot of cross-correlations
+        xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+                    + '.png', showplot=False, stack_type='linear')
+                    
+        #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+        #            outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+        #            + '.png', showplot=False, stack_type='PWS')
+                    
+        #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+        #            outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+        #            + '.png', showplot=False, stack_type='SNR')
+                    
+                    
+        #    xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+        #            outfile=os.path.join(OUTFOLDERS, OUTFILESNAME)\
+        #            + '.png', showplot=False, stack_type='combined')                    
+                    
+                    
+    if PLOT_CLASSIC:
             #plot individual cross-correlations
-#            xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-#                    outfile=OUTFOLDERS, showplot=False)
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                    outfile=OUTFOLDERS, showplot=False)
 
         
         #xc.plot_SNR(plot_type='individual', outfile=OUT_SNR)
 
     # removing file containing periodical exports of cross-corrs
     # only do this if the full file exists!     
-    #try:
-    #    os.remove(u'{}.part.pickle'.format(OUTFILESPATH))
-    #except:
-    #    pass
+    try:
+        os.remove(u'{}.part.pickle'.format(OUTFILESPATH))
+    except:
+        pass
 
 
     #remove_config(config_file)
     
 
 total_delta = (dt.datetime.now() - total_time0).total_seconds()
+
 
 print "Calculated every xcorr in time-series in in \
 {:.1f} seconds".format(total_delta)

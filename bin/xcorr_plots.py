@@ -10,6 +10,9 @@ from seissuite.ant import (pscrosscorr)
 import glob
 import os
 import pickle
+import numpy as np
+
+
 #PICKLE_PATH = '/storage/ANT/PROGRAMS/ANT_OUTPUT/OUTPUT/CROSS/06.05.2015-15:53:28/XCORR-STACK_01.01.2014-31.12.2014_datalesspaz.pickle'
 #PICKLE_PATH = '/home/boland/Desktop/XCORR-STACK_01.08.1999-10.06.2000_datalesspaz.part.pickle'
 # import CONFIG class initalised in ./configs/tmp_config.pickle
@@ -52,8 +55,14 @@ pickle_list = []
 folder_list = sorted(glob.glob(os.path.join(CROSSCORR_DIR, '*')))
 
 
+
+plot_distance = False #True
+plot_classic = True
+
 print MSEED_DIR
 print CROSSCORR_TMAX
+
+central_frequencies = np.arange(5.0, 20.0, 1)
 
 
 for folder in folder_list:
@@ -89,6 +98,7 @@ else:
     PICKLE_PATH = pickle_list[int(res)-1]
     OUTFILESPATH = PICKLE_PATH[:-7]
     out_basename = os.path.basename(OUTFILESPATH)        
+<<<<<<< HEAD
     OUTPATH = os.path.dirname(OUTFILESPATH)    
     OUTFOLDERS = os.path.join(OUTPATH, 'XCORR_PLOTS')
 
@@ -96,14 +106,68 @@ else:
     print "\nOpening {} file to process ... ".format(OUTFOLDERS)
 
 
+=======
+    print out_basename
+    print "\nOpening {} file to process ... ".format(out_basename)
+>>>>>>> iese
     # re-initialising .part.pickle collection of cross-correlations
     xc = pscrosscorr.load_pickled_xcorr(PICKLE_PATH)
 
     
     # optimizing time-scale: max time = max distance / vmin (vmin = 2.5 km/s)
     maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
-    maxt = min(CROSSCORR_TMAX, maxdist / 2.5)
+    maxt = max(CROSSCORR_TMAX, maxdist / 2.5)
     
+<<<<<<< HEAD
+    if plot_distance:
+        #for central_freq in central_frequencies:
+            #plot distance plot of cross-correlations
+            #plot distance plot of cross-correlations
+            
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=out_basename + '_linear'\
+                    + '.png', showplot=False, stack_type='linear', fill=True)
+                    
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=out_basename + '_linear'\
+                    + 'abs' + '.png', showplot=False, stack_type='linear', absolute=True)   
+                    
+            xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+                    outfile=out_basename + '_linear'\
+                    + 'fill_abs' + '.png', showplot=False, stack_type='linear', fill=True,
+                    absolute=True)                        
+            #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+            #        outfile=out_basename + '_PWS'\
+            #        + '.png', showplot=False, stack_type='PWS')
+                    
+            #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+            #        outfile=out_basename + '_SNR'\
+            #        + '.png', showplot=False, stack_type='SNR')
+                    
+                    
+            #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
+            #        outfile=out_basename + '_combined'\
+            #        + '.png', showplot=False, stack_type='combined')   
+
+
+    if plot_classic:
+#        for central_freq in central_frequencies:
+    #    central_freq = 1.0
+            #plot individual cross-correlations
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                    outfile=".png", showplot=False, stack_type='PWS')
+                    
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                    outfile=".png", showplot=False, stack_type='linear'), 
+
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+                    outfile=".png", showplot=False, stack_type='combined'),  
+                    
+
+        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+<<<<<<< HEAD
+                outfile="~", showplot=False)
+=======
     #plot distance plot of cross-correlations
     #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
     #outfile="/home/boland/Desktop/something1342.png", showplot=False)
@@ -123,3 +187,8 @@ else:
         #plot individual cross-correlations
         xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
                 outfile=OUTFOLDERS, showplot=False)
+>>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
+=======
+                    outfile=".png", showplot=False, stack_type='SNR'),                     
+    #            freq_central=central_freq)
+>>>>>>> iese
