@@ -182,7 +182,7 @@ USE_DATALESSPAZ = True             ; use dataless files to remove instrument res
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
 
 
-FIRSTDAY = 01/10/2005                ; first day of cross-correlation (dd/MM/yyyy)
+FIRSTDAY = 01/10/2007                ; first day of cross-correlation (dd/MM/yyyy)
 LASTDAY = 01/01/2010                 ; last day of cross-correlation (dd/MM/yyyy)
 
 

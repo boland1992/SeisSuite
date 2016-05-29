@@ -177,7 +177,7 @@ BBOX_SMALL = [-101.154848, -101.120574, 19.885633, 19.922488]
 
 # test the first 3 months of 2014 for cross-correlation!
 
-XCORR_INTERVAL = 45.0             ; number of minutes in xcorr time series
+XCORR_INTERVAL = 1440.0             ; number of minutes in xcorr time series
 USE_DATALESSPAZ = True             ; use dataless files to remove instrument response?
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
 
@@ -186,18 +186,18 @@ FIRSTDAY = 01/10/2005                ; first day of cross-correlation (dd/MM/yyy
 LASTDAY = 01/01/2010                 ; last day of cross-correlation (dd/MM/yyyy)
 
 
-MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%
+MINFILL = 0.60                       ; minimum data fill within xcorr interval, default at 80%
 CROSSCORR_STATIONS_SUBSET = null     ; subset of stations (null if all, else JSON list)
 CROSSCORR_SKIPLOCS = ["50"]          ; locations to skip (JSON list)
 PERIODMIN = 0.05                      ; bandpass filtering minimum period
-PERIODMAX = 10                     ; bandpass filtering maximum period 
+PERIODMAX = 5                     ; bandpass filtering maximum period 
 CORNERS = 2                          ; number of corners?
 ZEROPHASE = True	             ; zerophase?
 PERIOD_RESAMPLE = 0.02             ; resample period to decimate traces, after band-pass, currently at 50Hz.
 ONEBIT_NORM = False                  ; one-bit normalization?
 PERIODMIN_EARTHQUAKE = 12.0          ; estimated earthquake period minimum for filtering
 PERIODMAX_EARTHQUAKE = 75.0          ; estimated earthquake period maximum for filtering 
-WINDOW_FREQ = 0.002                 ; freq window (Hz) to smooth ampl spectrum
+WINDOW_FREQ = 0.005                 ; freq window (Hz) to smooth ampl spectrum
 CROSSCORR_TMAX = 60                 ; number of seconds for xcorr window both positive and negative
 
 PLOT_CLASSIC = True                 ; Plot all xcorr station pairs. Take note: this takes a LONG time for large networks!
@@ -214,7 +214,7 @@ PLOT_DISTANCE = True                 ; Plot only time-series offset of all xcorr
 # - estimate min spectral SNR, in FTANs()
 
 
-PERIOD_BANDS = [[0.05, 0.5], [0.5, 1.0], [1.0, 5.0], [5.0, 10.0]]
+PERIOD_BANDS = [[0.05, 0.5], [0.5, 1.0], [1.0, 2.5], [2.5, 5.0]]
 
 
 # default parameters to define the signal and noise windows used to
