@@ -281,10 +281,12 @@ class Preprocess:
                     (set None if response is directly attached to trace)
 
         """
-        
+
         # =======================================
         # Check if any data to work with to begin
         # =======================================
+	#print type(trace)
+	#print "trace: ", trace
         if np.all(trace.data == 0.0):
             # no data -> skipping trace
             raise pserrors.CannotPreprocess("Only zeros")
@@ -352,7 +354,7 @@ class Preprocess:
             trace.detrend(type='linear')
             delta = (dt.datetime.now() - t1).total_seconds()
             if verbose:
-                print "\nProcessed trim in {:.1f} seconds".format(delta)
+                print "Processed trim in {:.1f} seconds".format(delta)
         
         #plt.figure()
         #plt.title("TDD")
@@ -373,7 +375,7 @@ class Preprocess:
             
             
             if verbose:
-                print "\nProcessed filters in {:.1f} seconds".format(delta)
+                print "Processed filters in {:.1f} seconds".format(delta)
         
         
         #plt.figure()
@@ -402,7 +404,7 @@ class Preprocess:
             trace = self.time_norm(trace, trcopy)        
             delta = (dt.datetime.now() - t0).total_seconds()
             if verbose:
-                print "\nProcessed time-normalisation in {:.1f} seconds"\
+                print "Processed time-normalisation in {:.1f} seconds"\
                 .format(delta)
         #plt.figure()
         #plt.title("NORMALISATION")
@@ -417,7 +419,7 @@ class Preprocess:
             trace = self.spectral_whitening(trace)
             delta = (dt.datetime.now() - t0).total_seconds()
             if verbose:
-                print "\nProcessed spectral whitening in {:.1f} seconds".\
+                print "Processed spectral whitening in {:.1f} seconds".\
                 format(delta)
         #plt.figure()
         #plt.title("SPECTRAL WHITENING")
