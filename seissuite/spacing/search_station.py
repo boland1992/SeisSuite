@@ -30,7 +30,6 @@ import matplotlib.pyplot as plt
 from math import sqrt, atan2, asin, degrees, radians, tan, sin, cos
 from shapely.geometry import asPolygon, Polygon
 from descartes.patch import PolygonPatch
-from matplotlib.colors import LogNorm
 from scipy.spatial import ConvexHull
 from scipy.cluster.vq import kmeans
 from shapely.affinity import scale
@@ -459,7 +458,7 @@ class Geodesic:
         else:
             return np.zeros_like(path)
         
-    def fast_paths(self, coord_list):
+    def fast_paths(self, coord_list, km_points=None, per_lims=None):
         """
         Function that takes many point coordinate combinations and quickly
         passes them through the paths_calc function. coord_list MUST be

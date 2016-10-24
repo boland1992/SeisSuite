@@ -15,7 +15,9 @@ low point density points as a new cluster to search for new station points.
 # MODULES
 #------------------------------------------------------------------------------
 import os
-import fiona
+#import fiona
+import pysal
+
 import pickle
 import pyproj
 import datetime
@@ -34,8 +36,6 @@ from scipy.cluster.vq import kmeans
 from shapely.affinity import scale
 from matplotlib.path import Path
 from shapely import geometry
-
-
 
 
 #------------------------------------------------------------------------------
@@ -67,13 +67,18 @@ class InShape:
         self.output = 0.
     
     def shape_poly(self):
-        with fiona.open(self.boundary) as fiona_collection:
+        #with fiona.open(self.boundary) as fiona_collection:
             # In this case, we'll assume the shapefile only has one later
-            shapefile_record = fiona_collection.next()
+       #     shapefile_record = fiona_collection.next()
             # Use Shapely to create the polygon
-            self.polygon = geometry.asShape( shapefile_record['geometry'] )
-            return self.polygon
-            
+       #     self.polygon = geometry.asShape( shapefile_record['geometry'] )
+       #     return self.polygon
+        # Now, open the shapefile using pysal's FileIO
+        shps = pysal.open(self.boundary , 'r')
+        poly = shps.next()
+        self.polygon = geometry.asShape(poly)
+        return self.polygon
+      
     def point_check(self, coord):
         """
         Function that takes a single (2,1) shape input, converts the points
@@ -540,6 +545,66 @@ class Coordinates:
         del inputs[-N:]
         return np.asarray(inputs)
         
+
+    def decluster(self,  inputs=None, degree_dist=1., verbose=False):
+        """
+        Function that deletes points that are too close together
+        given a set degree range and returns only one point to represent
+        that cluster. Default is one degree distance. Inputs must be (2,N)
+        lon-lat coordinate arrays/lists.
+        """
+        from sklearn.cluster import DBSCAN
+        import random 
+        
+        if inputs is None:
+            if self.input_list is not None:
+                inputs = self.input_list
+            elif self.input_list is None:
+                raise "There are no list input. "
+                
+        
+        #scan for all points that are within a degree radius of one another! 
+        db = DBSCAN(eps=degree_dist).fit(inputs)
+        core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+        core_samples_mask[db.core_sample_indices_] = True
+        labels = db.labels_
+        unique_labels = set(labels)
+
+        clusters = []
+        cluster_keep = []
+        
+
+        for k in unique_labels:
+            if k != -1:
+                class_member_mask = (labels == k)        
+                cluster = inputs[class_member_mask & core_samples_mask]
+
+    # Select only 1 random point from each cluster to keep. Remove all others!          
+                clusters.append(cluster)
+                cluster_keep.append(cluster[random.randint(0,len(cluster)-1)])
+        
+        
+        cluster_keep = np.asarray(cluster_keep)
+        # flatten clusters array 
+        clusters = np.asarray(list(itertools.chain(*clusters)))
+        
+        # remove all points in clusters from the overall coords array
+        inputs = np.asarray([point for point in inputs if 
+                             point not in clusters])
+                             
+        if verbose:                     
+            print "clusters array shape: ", clusters.shape
+            print "inputs array shape: ", inputs.shape
+            print "cluster_keep array shape: ",cluster_keep.shape
+        
+        if len(cluster_keep) > 0:
+            output_coords = np.append(inputs, cluster_keep, axis=0)
+        # place single representative point from cluster into coord list
+        else:
+            output_coords = inputs
+        
+        return output_coords
+        
 class Density:
     """
     Class defined to perform to density field operations e.g. 2d histogram, 
@@ -651,7 +716,7 @@ class Density:
         return np.column_stack((Hdensx, Hdensy))
 
     
-    def plot_field(self, grad=False, SHAPE=None, swell=0.05):
+    def plot_field(self, grad=False, SHAPE=None, swell=0.00):
         
         lonmin, lonmax, latmin, latmax = self.plot_lims()
         
@@ -673,6 +738,7 @@ class Density:
             plt.pcolor(self.xedges, self.yedges, H_masked, norm=LogNorm(\
             vmin=np.min(H_masked), vmax=np.max(H_masked)), cmap='rainbow',\
             alpha=0.6, zorder = 3)
+
             col = plt.colorbar()
             col.ax.set_ylabel('Points Per Bin')
         elif grad:
