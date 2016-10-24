@@ -75,6 +75,7 @@ import sqlite3 as lite
 import shutil
 import numpy as np
 import matplotlib.pyplot as plt
+from obspy.core import Trace
 
 
 # set epoch timestamp 
@@ -92,9 +93,9 @@ psd = False
 #import numpy as np
 # turn on multiprocessing to get one merged trace per station?
 # to preprocess trace? to stack cross-correlations?
-MULTIPROCESSING = {'merge trace': False,
-                   'process trace': False,
-                   'cross-corr': False}
+MULTIPROCESSING = {'merge trace': True,
+                   'process trace': True,
+                   'cross-corr': True}
 # how many concurrent processes? (set None to let multiprocessing module decide)
 NB_PROCESSES = None
 if any(MULTIPROCESSING.values()):
@@ -565,11 +566,20 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
             
 
 
-            if not trace or response is False:
-                return
+            #if not trace or response is False:
+            #    return
             
-    
+    	    if not type(trace) is Trace:
+		print trace
+		#plt.figure()
+		#plt.plot(trace)
+		#plt.show()
+		#quit()
+		return
+
+
             try:
+
                 Preprocess.preprocess_trace(trace=trace, paz=response, 
                                             verbose=False)
                 msg = 'ok'
@@ -617,7 +627,7 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
         # (parallelization is difficult because of inventories)
         # =====================================================
         
-    
+        #print "traces1: ", traces
         responses = []
         for tr in traces:
             
@@ -655,7 +665,7 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
             else:
                 responses.append(None)
                                            
-        
+        #print "traces2: ", traces
         print '\nTraces merged and responses removed in {:.1f} seconds'\
         .format((dt.datetime.now() - merge_t0).total_seconds()) 
 
@@ -666,22 +676,22 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
 
         t0 = dt.datetime.now()
         # must have more than one trace for cross-correlations!
-        traces = np.array(traces)
-        traces_check = traces[traces != np.array(None)]
+        #traces = np.array(traces)
+        #traces_check = traces[traces != np.array(None)]
+        #print "traces3: ", traces
 
-        if len(traces_check) > 1:
-            if MULTIPROCESSING['process trace']:
+
+        if MULTIPROCESSING['process trace']:
                 # multiprocessing turned on: one process per station
                 pool = mp.Pool(NB_PROCESSES)
                 traces = pool.map(preprocessed_trace, zip(traces, responses))
                 pool.close()
                 pool.join()
             
-            else:
+        else:
                 # multiprocessing turned off: processing stations one after another
                 try:
-                    traces = [preprocessed_trace((tr, res)) for tr, 
-                              res in zip(traces, responses)]
+                    traces = map(preprocessed_trace, zip(traces, responses))
                 except:
                     continue
         # setting up dict of current date's traces, {station: trace}
@@ -714,9 +724,9 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
         # ======================================================
     
         
-        if len(tracedict) < 2:
-            print "No cross-correlation for this day"
-            continue
+        #if len(tracedict) < 2:
+        #    print "No cross-correlation for this interval"
+        #    continue
     
         t0 = dt.datetime.now()
         xcorrdict = {}
@@ -754,8 +764,8 @@ starttime <= ? AND endtime >= ?', (search_start, search_end))
             xcorrdict = {(s1, s2): xcorr for ((s1, _), (s2, _)), 
                          xcorr in zip(pairs, xcorrs)}
             print 
-        
-        #print "Stacking cross-correlations"
+
+        print "Stacking cross-correlations"
         xc.add(tracedict=tracedict,
                stations=stations,
                xcorr_tmax=CROSSCORR_TMAX,
@@ -836,12 +846,20 @@ now."
             pickle.dump(metadata, f, protocol=2)
     
     # exporting cross-correlations
+    	if not xc.pairs():
+            print "No cross-correlation calculated: nothing to export!"
+
+    	else:
+    	    # exporting to binary and ascii files
+	    print "Exporting updated cross-correlations to file: ", OUTFILESPATH
+     	    xc.export(outprefix=OUTFILESPATH+'.part', stations=stations, verbose=False)
+    
+
     if not xc.pairs():
         print "No cross-correlation could be calculated: nothing to export!"
     else:
-        # exporting to binary and ascii files
-        xc.export(outprefix=OUTFILESPATH, stations=stations, verbose=True)
-    
+    	    # exporting to binary and ascii files
+        xc.export(outprefix=OUTFILESPATH+'.part', stations=stations, verbose=True)
         # exporting to png file
     print "Exporting cross-correlations to file: {}.png".format(OUTFILESPATH)
         # optimizing time-scale: max time = max distance / vmin (vmin = 2.5 km/s)
