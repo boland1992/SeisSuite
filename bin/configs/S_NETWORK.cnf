@@ -168,7 +168,7 @@ BBOX_SMALL = [135, 155, -40, -25]
 # Comment out the FIRSTDAY and LASTDAY variables in order to have it determined automatically from the SQL databases (must run the create_database.py script for this to work!)
 
 RANDOM_STACK = False
-XCORR_INTERVAL = 45.0                ; number of minutes in xcorr time series
+XCORR_INTERVAL = 1440.0                ; number of minutes in xcorr time series
 USE_DATALESSPAZ = True               ; use dataless files to remove instrument response?
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
 FIRSTDAY = 01/01/2014                ; first day of cross-correlation (d/m/y)

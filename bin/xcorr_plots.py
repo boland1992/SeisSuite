@@ -98,7 +98,6 @@ else:
     PICKLE_PATH = pickle_list[int(res)-1]
     OUTFILESPATH = PICKLE_PATH[:-7]
     out_basename = os.path.basename(OUTFILESPATH)        
-<<<<<<< HEAD
     OUTPATH = os.path.dirname(OUTFILESPATH)    
     OUTFOLDERS = os.path.join(OUTPATH, 'XCORR_PLOTS')
 
@@ -106,10 +105,8 @@ else:
     print "\nOpening {} file to process ... ".format(OUTFOLDERS)
 
 
-=======
     print out_basename
     print "\nOpening {} file to process ... ".format(out_basename)
->>>>>>> iese
     # re-initialising .part.pickle collection of cross-correlations
     xc = pscrosscorr.load_pickled_xcorr(PICKLE_PATH)
 
@@ -118,7 +115,6 @@ else:
     maxdist = max([xc[s1][s2].dist() for s1, s2 in xc.pairs()])
     maxt = max(CROSSCORR_TMAX, maxdist / 2.5)
     
-<<<<<<< HEAD
     if plot_distance:
         #for central_freq in central_frequencies:
             #plot distance plot of cross-correlations
@@ -165,9 +161,8 @@ else:
                     
 
         xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-<<<<<<< HEAD
                 outfile="~", showplot=False)
-=======
+
     #plot distance plot of cross-correlations
     #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
     #outfile="/home/boland/Desktop/something1342.png", showplot=False)
@@ -187,8 +182,5 @@ else:
         #plot individual cross-correlations
         xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
                 outfile=OUTFOLDERS, showplot=False)
->>>>>>> 561db556e4ab402ce7b410117402acd2170b7722
-=======
                     outfile=".png", showplot=False, stack_type='SNR'),                     
     #            freq_central=central_freq)
->>>>>>> iese

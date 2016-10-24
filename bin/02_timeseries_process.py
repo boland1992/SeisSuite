@@ -155,14 +155,11 @@ for i in range(0, 100):
     PLOT_CLASSIC = CONFIG.PLOT_CLASSIC
     PLOT_DISTANCE = CONFIG.PLOT_DISTANCE
     MAX_DISTANCE = CONFIG.MAX_DISTANCE
-<<<<<<< HEAD
     RANDOM_STACK = CONFIG.RANDOM_STACK
-=======
     RESP_REMOVE = CONFIG.RESP_REMOVE
     
     #FULL_COMB = CONFIG.FULL_COMB
 
->>>>>>> a02db0a39759d104fbc6316bbbbf735d88df870c
     # initialise the required databases if they haven't already been.
     #if no two SQL databases exist, then create them! 
     TIMELINE_DB = os.path.join(DATABASE_DIR, 'timeline.db')
