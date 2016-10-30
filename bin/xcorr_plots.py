@@ -150,18 +150,21 @@ else:
 #        for central_freq in central_frequencies:
     #    central_freq = 1.0
             #plot individual cross-correlations
-        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-                    outfile=".png", showplot=False, stack_type='PWS')
-                    
-        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-                    outfile=".png", showplot=False, stack_type='linear'), 
-
-        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-                    outfile=".png", showplot=False, stack_type='combined'),  
-                    
-
-        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
-                outfile="~", showplot=False)
+        xc.plot(plot_type='classic', xlim=(-CROSSCORR_TMAX, CROSSCORR_TMAX), 
+                    outfile=OUTFOLDERS, showplot=False)#, stack_type='PWS')
+#                    
+#        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+#                    outfile=".png", showplot=False, stack_type='PWS')
+#                    
+#        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+#                    outfile=".png", showplot=False, stack_type='linear'), 
+#
+#        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+#                    outfile=".png", showplot=False, stack_type='combined'),  
+#                    
+#
+#        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+#                outfile="~", showplot=False)
 
     #plot distance plot of cross-correlations
     #xc.plot(plot_type='distance', xlim=(-maxt, maxt), 
@@ -180,7 +183,6 @@ else:
         
     if PLOT_CLASSIC:
         #plot individual cross-correlations
-        xc.plot(plot_type='classic', xlim=(-maxt, maxt), 
+        xc.plot(plot_type='classic', xlim=(-CROSSCORR_TMAX, CROSSCORR_TMAX), 
                 outfile=OUTFOLDERS, showplot=False)
-                    outfile=".png", showplot=False, stack_type='SNR'),                     
     #            freq_central=central_freq)

@@ -75,7 +75,7 @@ AUTOMATE = True
 
 
 #FOLDER = DEFAULT
-FOLDER = /storage/MASTERS/CONFIGURATIONS/S_NETWORK
+FOLDER = /storage/MASTERS/CONFIGURATIONS/S_NETWORK_OG
  
 #set the folder where the computer programs in seismology have been installed if required. 
 # example CPIS dir:
@@ -167,12 +167,12 @@ BBOX_SMALL = [135, 155, -40, -25]
 
 # Comment out the FIRSTDAY and LASTDAY variables in order to have it determined automatically from the SQL databases (must run the create_database.py script for this to work!)
 
-RANDOM_STACK = False
-XCORR_INTERVAL = 1440.0                ; number of minutes in xcorr time series
+RANDOM_STACK = True
+XCORR_INTERVAL = 45.0                ; number of minutes in xcorr time series
 USE_DATALESSPAZ = True               ; use dataless files to remove instrument response?
 USE_STATIONXML = False               ; use stationXML files to remove instrument response?
 FIRSTDAY = 01/01/2014                ; first day of cross-correlation (d/m/y)
-LASTDAY = 31/12/2014                 ; last day of cross-correlation (d/m/y)
+LASTDAY = 31/01/2014                 ; last day of cross-correlation (d/m/y)
 MINFILL = 0.80                       ; minimum data fill within xcorr interval, default at 80%
 CROSSCORR_STATIONS_SUBSET = null     ; subset of stations (null if all, else JSON list)
 CROSSCORR_SKIPLOCS = ["50"]          ; locations to skip (JSON list)
